@@ -1,0 +1,39 @@
+# Secrets (never commit)
+.env
+.env.local
+.env*.local
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+.vercel/
+.turbo/
+
+# Foundry
+contracts/out/
+contracts/cache/
+cache/
+broadcast/*/31337/
+contracts/broadcast/*/31337/
+broadcast/**/dry-run/
+
+# Logs / OS / editors
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Local scratch
+scripts/.out/
