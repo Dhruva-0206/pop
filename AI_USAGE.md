@@ -20,6 +20,7 @@ The planning documents in `specs/` were written with AI assistance and are inclu
 | Fri 01:20 | Claude Code | Network mode (local fork vs testnet), fork funding, deploy + seed scripts | `packages/shared/src/network.ts`, `scripts/fork*.ts`, `scripts/deploy.ts`, `scripts/seed-seller.ts` | Team approved fork-first; testnet deploy waits for GO |
 | Fri 01:45 | Claude Code | Phase 2 pages + API: checkout, order, dashboard, simulated courier, settle button; fork e2e script | `apps/web/src/app/**`, `apps/web/src/lib/**`, `packages/shared/src/server/*`, `scripts/e2e-fork.ts` | Team to click through on a laptop + phone |
 | Fri 00:20 | Claude Code | Arkiv, Supabase and World smoke-test code | `scripts/smoke-arkiv.ts`, `scripts/smoke-db.ts`, `apps/web/src/lib/server/world.ts`, `apps/web/src/app/api/world/*`, `apps/web/src/app/dev/world/*` | Pending live runs with team-provided keys |
+| Fri 6 Nov (2nd machine) | Claude Code | App security fixes (buyer-signed order registration, login nonce, faucet guards, World review gating), doc drift, Foundry install, contract fixes (`forceRefundBanned`, self-purchase check) with 16 tests, fork e2e | `apps/web/src/app/api/**`, `apps/web/src/lib/**`, `packages/shared/src/server/store.ts`, `contracts/src/PoPCheckout.sol`, `contracts/test/*`, `scripts/e2e-fork.ts`, docs | **Team must review the two contract changes before any testnet deploy** |
 
 The prompt given to the agent is saved in `specs/prompts/`.
 

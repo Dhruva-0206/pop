@@ -24,13 +24,15 @@ Re-run: `npx tsx scripts/smoke-whitechain.ts`
 ## Contracts (local)
 | What | Result |
 |---|---|
-| `forge test` | 39 tests + 4 stateful invariants (64 runs × 32 calls) pass (Fri 01:00 IST) |
+| `forge test` | Fri 6 Nov, 2nd machine, forge 1.9.0: **56 passed, 0 failed** (55 unit/fuzz + invariant suite of 4 invariants, 64 runs x 32 calls; also held at 512 runs x 32) |
 | Deploy dry run | local anvil fork of 1874, `token()` = 0xcedf… (Fri 00:15) |
 
 ## LOCAL FORK end-to-end (NOT real payments; anvil fork, chain id 31337, real USDT bytecode)
 | When (IST) | Result |
 |---|---|
 | Fri 02:05 | `scripts/e2e-fork.ts` PASS: pay → confirm (idempotent) → seller sign-in sees decrypted ship-to → ship → wrong code rejected → code accepted → random wallet finalizes → seller withdraws 0.99; unshipped order refunded 1.00 via finalize + withdrawFor; handover refused → Disputed |
+
+| Fri 6 Nov (2nd machine) | `scripts/e2e-fork.ts` PASS after the security fixes (buyer-signed order registration, single-use login nonce, on-chain listing id); same path as above. Fork-only addresses, not real payments |
 
 ## Smoke tests
 | Test | When (IST) | Result |
