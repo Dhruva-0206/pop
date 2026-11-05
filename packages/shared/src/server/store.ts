@@ -1,6 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import type { NetworkMode } from "../network";
+import { listingIdHash } from "../terms";
 
 /**
  * Private app data. Interim backend: a JSON file per network mode in pop/.data/ (gitignored, dev only),
@@ -40,6 +42,8 @@ type Db = {
   listings: ListingRow[];
   orders: OrderRow[];
   processedEvents: string[]; // `${chainId}:${txHash}:${logIndex}`
+  loginNonces?: { address: string; nonce: string; expiresAt: number }[];
+  reviewClaims?: { nullifierHash: string; sellerWallet: string; orderId: string; createdAt: string }[];
   faucetGrants?: { address: string; ipHash: string; gasTx?: string; usdtTx?: string; createdAt: string }[];
 };
 
@@ -104,6 +108,50 @@ export function createFileStore(mode: NetworkMode) {
       const db = load();
       db.faucetGrants = [...(db.faucetGrants ?? []), { ...g, createdAt: new Date().toISOString() }];
       save(db);
+    },
+    /** Remove a grant (used when the faucet transfer failed, so the wallet can try again). */
+    removeFaucetGrant(address: string) {
+      const db = load();
+      db.faucetGrants = (db.faucetGrants ?? []).filter((g) => lc(g.address) !== lc(address));
+      save(db);
+    },
+    /** Listing whose Offer.listingId (on-chain bytes32) equals keccak(slug). */
+    listingByIdHash: (hash: string) => load().listings.find((x) => listingIdHash(x.id).toLowerCase() === hash.toLowerCase()),
+    /** One-time login nonce, bound to an address, valid 5 minutes. At most 5 pending per address. */
+    issueLoginNonce(address: string): string {
+      const db = load();
+      const now = Date.now();
+      const live = (db.loginNonces ?? []).filter((n) => n.expiresAt > now);
+      const mine = live.filter((n) => n.address === lc(address));
+      const nonce = randomBytes(16).toString("hex");
+      db.loginNonces = [...live.filter((n) => !mine.includes(n)), ...mine.slice(-4), { address: lc(address), nonce, expiresAt: now + 5 * 60_000 }];
+      save(db);
+      return nonce;
+    },
+    /** Returns true exactly once per issued nonce (the nonce is deleted on use). */
+    consumeLoginNonce(address: string, nonce: string): boolean {
+      const db = load();
+      const now = Date.now();
+      const list = db.loginNonces ?? [];
+      const hit = list.find((n) => n.nonce === nonce && n.address === lc(address) && n.expiresAt > now);
+      db.loginNonces = list.filter((n) => n !== hit && n.expiresAt > now);
+      save(db);
+      return !!hit;
+    },
+    /**
+     * Atomic (one synchronous read-modify-write, single process) claim of "this human reviews this seller",
+     * mirroring UNIQUE(nullifier_hash, seller_wallet). Also one review per order. False if already claimed.
+     */
+    claimReviewNullifier(nullifierHash: string, sellerWallet: string, orderId: string): boolean {
+      const db = load();
+      const claims = db.reviewClaims ?? [];
+      const dup = claims.some(
+        (c) => (c.nullifierHash === nullifierHash && c.sellerWallet === lc(sellerWallet)) || c.orderId === orderId,
+      );
+      if (dup) return false;
+      db.reviewClaims = [...claims, { nullifierHash, sellerWallet: lc(sellerWallet), orderId, createdAt: new Date().toISOString() }];
+      save(db);
+      return true;
     },
     patchOrder(id: string, patch: Partial<OrderRow>) {
       const db = load();

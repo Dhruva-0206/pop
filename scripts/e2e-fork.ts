@@ -77,13 +77,27 @@ async function buyerPays(): Promise<{ id: bigint; code: string; buyer: Hex }> {
       /* token log */
     }
   }
+  const { orderRegisterMessage } = await import("../apps/web/src/lib/messages");
+  const delivery = { name: "Arjun (test)", phone: "+91 90000 00000", address: "Flat 1, Test Building, Mumbai" };
+  // A stranger (not the buyer) must not be able to pre-register the order with fake ship-to details.
+  const stranger = privateKeyToAccount(generatePrivateKey());
+  const fake = { name: "Fake", phone: "00000", address: "Fake address nowhere" };
+  const denied = await api("/api/orders/confirm", {
+    txHash: tx,
+    delivery: fake,
+    signature: await stranger.signMessage({ message: orderRegisterMessage(tx, fake) }),
+  });
+  if (denied.status !== 403) throw new Error(`non-buyer registration not rejected: ${denied.status}`);
   const c = await api("/api/orders/confirm", {
     txHash: tx,
-    listingId: "jhumka-01",
-    delivery: { name: "Arjun (test)", phone: "+91 90000 00000", address: "Flat 1, Test Building, Mumbai" },
+    delivery,
+    signature: await acct.signMessage({ message: orderRegisterMessage(tx, delivery) }),
   });
   if (c.j.orderId !== id.toString()) throw new Error(`confirm mismatch ${JSON.stringify(c.j)}`);
-  const again = await api("/api/orders/confirm", { txHash: tx, listingId: "jhumka-01" });
+  const again = await api("/api/orders/confirm", {
+    txHash: tx,
+    signature: await acct.signMessage({ message: orderRegisterMessage(tx, undefined) }),
+  });
   if (again.j.fresh !== false) throw new Error("confirm not idempotent");
   return { id, code, buyer: acct.address };
 }
@@ -93,11 +107,13 @@ const A = await buyerPays();
 log(`order #${A.id} paid (${await state(A.id)}); confirm stored once, second confirm idempotent`);
 
 const seller = walletOf("SELLER_PK");
-const issuedAt = new Date().toISOString();
 const { sellerLoginMessage } = await import("../apps/web/src/lib/messages");
-const sig = await seller.signMessage({ message: sellerLoginMessage(seller.account.address, issuedAt) });
-const login = await api("/api/auth/seller", { address: seller.account.address, issuedAt, signature: sig });
+const { j: nj } = await api("/api/auth/seller/nonce", { address: seller.account.address });
+const sig = await seller.signMessage({ message: sellerLoginMessage(seller.account.address, nj.nonce) });
+const login = await api("/api/auth/seller", { address: seller.account.address, nonce: nj.nonce, signature: sig });
 if (login.status !== 200) throw new Error(`seller login ${JSON.stringify(login.j)}`);
+const replay = await api("/api/auth/seller", { address: seller.account.address, nonce: nj.nonce, signature: sig });
+if (replay.status !== 401) throw new Error("login replay not rejected");
 const so = await api("/api/seller/orders", undefined, "pop_seller");
 const mine = so.j.orders.find((x: { orderId: string }) => x.orderId === A.id.toString());
 if (!mine?.delivery?.address) throw new Error("seller can't see decrypted delivery details");

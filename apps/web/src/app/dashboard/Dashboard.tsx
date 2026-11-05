@@ -61,12 +61,18 @@ export default function Dashboard() {
     setMsg("");
     const acct = getTestAccount(cfg, "seller", false);
     if (!acct) return setMsg("Load your seller test key first.");
-    const issuedAt = new Date().toISOString();
-    const signature = await acct.signMessage({ message: sellerLoginMessage(acct.address, issuedAt) });
+    const n = await fetch("/api/auth/seller/nonce", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ address: acct.address }),
+    });
+    const nj = await n.json();
+    if (!n.ok) return setMsg(nj.error ?? "Sign-in failed");
+    const signature = await acct.signMessage({ message: sellerLoginMessage(acct.address, nj.nonce) });
     const r = await fetch("/api/auth/seller", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ address: acct.address, issuedAt, signature }),
+      body: JSON.stringify({ address: acct.address, nonce: nj.nonce, signature }),
     });
     const j = await r.json();
     if (!r.ok) return setMsg(j.error ?? "Sign-in failed");

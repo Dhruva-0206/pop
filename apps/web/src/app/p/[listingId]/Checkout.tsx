@@ -9,6 +9,7 @@ import { getTestAccount, saveCode, walletOf } from "@/lib/client/wallet";
 import { newDeliveryCode } from "@/lib/client/code";
 import { priceLabel, short, usdt, when } from "@/lib/client/format";
 import { TestModeBanner } from "@/components/Banners";
+import { orderRegisterMessage } from "@/lib/messages";
 
 type ListingResp = {
   listing: {
@@ -153,11 +154,13 @@ export default function Checkout() {
 
       // 4) Server reads the receipt itself and stores the order (delivery details encrypted).
       setStep("Saving your order…");
-      await fetch("/api/orders/confirm", {
+      const signature = await acct.signMessage({ message: orderRegisterMessage(tx, form) });
+      const reg = await fetch("/api/orders/confirm", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ txHash: tx, listingId: l.id, delivery: form }),
+        body: JSON.stringify({ txHash: tx, signature, delivery: form }),
       });
+      if (!reg.ok) throw new Error(`Paid (order #${orderId}), but saving delivery details failed. Open /o/${orderId}.`);
       router.push(`/o/${orderId}?new=1`);
     } catch (e) {
       setStep(e instanceof Error ? e.message.split("\n")[0] : "Something went wrong");
