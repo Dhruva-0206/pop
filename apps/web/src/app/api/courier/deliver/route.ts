@@ -29,6 +29,6 @@ export async function POST(req: Request) {
   }
   const tx = await w.writeContract({ address: d.checkout, abi: checkoutAbi, functionName: "confirmDelivery", args });
   const rc = await pub.waitForTransactionReceipt({ hash: tx });
-  if (rc.status === "success") store.patchOrder(parsed.data.orderId, { courierStatus: "Delivered (code accepted)" });
+  if (rc.status === "success") await store.patchOrder(parsed.data.orderId, { courierStatus: "Delivered (code accepted)" });
   return NextResponse.json({ ok: rc.status === "success", tx });
 }

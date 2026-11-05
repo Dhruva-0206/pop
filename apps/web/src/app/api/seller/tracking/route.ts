@@ -12,10 +12,10 @@ export async function POST(req: Request) {
   if (!s) return NextResponse.json({ error: "sign in" }, { status: 401 });
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad request" }, { status: 400 });
-  const o = store.order(parsed.data.orderId);
+  const o = await store.order(parsed.data.orderId);
   if (!o || o.sellerWallet.toLowerCase() !== s.wallet.toLowerCase()) {
     return NextResponse.json({ error: "not your order" }, { status: 403 });
   }
-  store.patchOrder(o.orderId, { trackingNo: parsed.data.trackingNo });
+  await store.patchOrder(o.orderId, { trackingNo: parsed.data.trackingNo });
   return NextResponse.json({ ok: true });
 }

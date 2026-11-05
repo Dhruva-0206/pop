@@ -30,8 +30,8 @@ export async function POST(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: "bad request" }, { status: 400 });
   const to = getAddress(parsed.data.address);
   const ipHash = createHash("sha256").update(clientIp(req)).digest("hex").slice(0, 16);
-  if (store.faucetGrantFor(to)) return NextResponse.json({ ok: true, already: true });
-  const today = store.faucetGrantsToday();
+  if (await store.faucetGrantFor(to)) return NextResponse.json({ ok: true, already: true });
+  const today = await store.faucetGrantsToday();
   if (today.length >= DAILY_CAP) return NextResponse.json({ error: "daily faucet cap reached" }, { status: 429 });
   if (!net.isLocalFork && today.filter((g) => g.ipHash === ipHash).length >= PER_IP_CAP) {
     return NextResponse.json({ error: "too many test wallets from this network today" }, { status: 429 });
@@ -50,7 +50,8 @@ export async function POST(req: Request) {
   }
 
   // Record first so concurrent requests can't double-grant; roll back if the transfers fail.
-  store.recordFaucetGrant({ address: to, ipHash });
+  // Atomic in Postgres (insert ... on conflict do nothing): a concurrent request for the same wallet gets false here.
+  if (!(await store.recordFaucetGrant({ address: to, ipHash }))) return NextResponse.json({ ok: true, already: true });
   try {
     const gasTx = await w.sendTransaction({ to, value: GAS });
     await pub.waitForTransactionReceipt({ hash: gasTx });
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
     await pub.waitForTransactionReceipt({ hash: usdtTx });
     return NextResponse.json({ ok: true, gasTx, usdtTx, usdt: USDT });
   } catch {
-    store.removeFaucetGrant(to);
+    await store.removeFaucetGrant(to);
     return NextResponse.json({ error: "faucet transfer failed, try again" }, { status: 502 });
   }
 }

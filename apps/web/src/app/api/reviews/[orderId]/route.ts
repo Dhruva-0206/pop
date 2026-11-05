@@ -6,7 +6,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ orderId: strin
   await connection();
   const { orderId } = await ctx.params;
   if (!/^\d+$/.test(orderId)) return NextResponse.json({ error: "bad id" }, { status: 400 });
-  const r = store.review(orderId);
+  const r = await store.review(orderId);
   if (!r) return NextResponse.json({ exists: false });
   return NextResponse.json({
     exists: true,

@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ ok: false, error: "bad request" }, { status: 400 });
   const { seller, orderId, buyerSignature } = parsed.data;
-  const r = store.review(orderId);
+  const r = await store.review(orderId);
   if (!r || r.sellerHandle.toLowerCase() !== seller.trim().toLowerCase()) {
     return NextResponse.json({ ok: false, error: "no accepted review for this order" }, { status: 404 });
   }

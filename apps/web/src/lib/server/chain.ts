@@ -4,12 +4,12 @@ import { dirname, resolve } from "node:path";
 import { createPublicClient, createWalletClient, http, type Address, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { networkFor, parseMode, type Deployment } from "@pop/shared";
-import { createFileStore } from "@pop/shared/server/store";
+import { createStore } from "@pop/shared/server/store";
 
 export const mode = parseMode(process.env.NETWORK_MODE);
 export const net = networkFor(mode, process.env.FORK_RPC_URL, process.env.WHITECHAIN_RPC_URL);
 export const pub = createPublicClient({ chain: net.chain, transport: http(net.rpcUrl) });
-export const store = createFileStore(mode);
+export const store = createStore(mode);
 
 function findRoot(): string {
   let d = process.cwd();

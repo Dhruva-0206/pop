@@ -9,9 +9,9 @@ export async function GET() {
   await connection();
   const s = await getSession<{ wallet: string }>("pop_seller");
   if (!s) return NextResponse.json({ error: "sign in" }, { status: 401 });
-  const seller = store.sellerByWallet(s.wallet);
+  const seller = await store.sellerByWallet(s.wallet);
   const rows = await Promise.all(
-    store.ordersBySeller(s.wallet).map(async (o) => {
+    (await store.ordersBySeller(s.wallet)).map(async (o) => {
       let delivery: unknown = null;
       if (o.addressEnc) {
         try {

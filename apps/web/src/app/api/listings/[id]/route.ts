@@ -6,7 +6,7 @@ import { deployment, pub, store } from "@/lib/server/chain";
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   await connection();
   const { id } = await ctx.params;
-  const l = store.listing(id);
+  const l = await store.listing(id);
   if (!l || !l.active) return NextResponse.json({ error: "not found" }, { status: 404 });
   const d = deployment();
   const seller = l.sellerWallet as `0x${string}`;

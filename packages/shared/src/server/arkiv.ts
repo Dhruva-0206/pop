@@ -25,7 +25,7 @@ export const ReviewSchema = defineSchema(ARKIV_SCHEMAS.review, {
   rating: u64().indexed(),
   created_at: u64().indexed(),
   reviewer_key: str().indexed(), // hex keccak(nullifier, seller), never the raw nullifier
-  buyer_history: u64().indexed(), // 0 = not computed yet
+  buyer_history: u64().indexed(), // bucket lower bound: 1, 2 (2-5) or 6 (6+) protected orders by this buyer
   pay_tx: str(),
   text: bytes(),
   buyer_sig: bytes(),
@@ -57,6 +57,8 @@ export type PublishInput = {
   text: string;
   reviewerKey: string;
   payTx: string;
+  /** Bucket lower bound: 1, 2 (2-5 protected orders) or 6 (6+), from the orders table. */
+  buyerHistory: number;
   buyerSig: Hex;
   createdAt: number; // unix seconds
   /** 24 h for DEV reviews (they should fade), ~180 days otherwise (schema max is 7,884,000 blocks). */
@@ -65,8 +67,8 @@ export type PublishInput = {
 export type PublishResult = { entityKey: Hex; createTx?: string; transferTx?: string; created: boolean; transferred: boolean };
 
 /**
- * Idempotent publish of one review: look for an entity by (creator = attestor, order_id, seller) first, create it only
- * if absent, transfer ownership to the buyer only if the attestor still owns it, then read back and verify.
+ * Idempotent publish of one review: look for an entity by (creator = attestor, order_id, seller, pay_tx) first, create it
+ * only if absent, transfer ownership to the buyer only if the attestor still owns it, then read back and verify.
  * Safe to call again after any partial failure: it never creates a second entity for the same order.
  * Writes are never blind-retried inside this function.
  */
@@ -82,14 +84,17 @@ export function publishReview(i: PublishInput): Promise<PublishResult> {
 
     const findMine = () =>
       reader
-        .select({ $key: true, $owner: true, $creator: true, $creationFlags: true })
+        .select({ $key: true, $owner: true, $creator: true, $creationFlags: true, pay_tx: true })
         .from(ReviewSchema)
         .createdBy(attestor.address)
         .where(and(eq("order_id", u256(i.orderId)), eq("seller", addr(i.seller))))
-        .limit(5)
+        .limit(50)
         .fetch();
 
-    const existing = (await findMine()).entities[0];
+    // Order ids are only unique per checkout DEPLOYMENT (a redeploy or a fork restart starts again at 1), so
+    // (order_id, seller) alone can match an entity from another deployment. The payment tx hash is globally
+    // unique: only an entity with the same pay_tx is "this review".
+    const existing = (await findMine()).entities.find((e) => String(e.pay_tx.value).toLowerCase() === i.payTx.toLowerCase());
     let entityKey = existing?.$key as Hex | undefined;
     let createTx: string | undefined;
     let created = false;
@@ -104,7 +109,7 @@ export function publishReview(i: PublishInput): Promise<PublishResult> {
           rating: u64(BigInt(i.rating)),
           created_at: u64(BigInt(i.createdAt)),
           reviewer_key: i.reviewerKey,
-          buyer_history: u64(0n),
+          buyer_history: u64(BigInt(i.buyerHistory)),
           pay_tx: i.payTx,
           text: new TextEncoder().encode(i.text),
           buyer_sig: Buffer.from(i.buyerSig.slice(2), "hex"),

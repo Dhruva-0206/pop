@@ -22,6 +22,7 @@ type Ok = {
     verified: { count: number; average: number | null; items: Review[] };
     dev: { count: number; items: Review[] };
     ignoredNotReadonly: number;
+    ignoredUnmatched?: number;
     error?: string;
   };
   attestor: string;
@@ -130,6 +131,11 @@ export default function Verify() {
         {rv.dev.count > 0 && (
           <div className="rounded border border-dashed border-neutral-400 bg-neutral-50 p-2 text-xs text-neutral-600">
             {rv.dev.count} developer test review{rv.dev.count === 1 ? "" : "s"} written without a World ID proof. Not counted above.
+          </div>
+        )}
+        {(rv.ignoredUnmatched ?? 0) > 0 && (
+          <div className="text-xs text-neutral-500">
+            {rv.ignoredUnmatched} entries ignored because their payment is not a protected order on this contract.
           </div>
         )}
         {rv.ignoredNotReadonly > 0 && (

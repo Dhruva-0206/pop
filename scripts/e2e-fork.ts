@@ -9,8 +9,6 @@
 import { decodeEventLog, erc20Abi, keccak256, toHex, type Hex } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { createWalletClient, http } from "viem";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import {
   APP_NAME,
   EIP712_VERSION,
@@ -25,7 +23,7 @@ import {
   registryAbi,
   termsHash,
 } from "../packages/shared/src/index";
-import { createFileStore } from "../packages/shared/src/server/store";
+import { createStore } from "../packages/shared/src/server/store";
 import { ReviewSchema, arkivReader, readSellerReviews } from "../packages/shared/src/server/arkiv";
 import { wordlist } from "@scure/bip39/wordlists/english.js";
 import { assertLocalAnvil, loadDeployment, net, pub, walletOf } from "./chain";
@@ -241,16 +239,23 @@ if (!cfgJson.devSkipWorld) {
   if (!ent.$creationFlags?.readonly) throw new Error("entity is not readonly");
   if (Number(ent.rating.value) !== 5 || String(ent.seller.value).toLowerCase() !== sellerAddr.toLowerCase()) throw new Error("entity fields wrong");
   if (!String(ent.reviewer_key.value).startsWith("dev-")) throw new Error("dev review must carry a dev- reviewer key");
+  // buyer_history comes from the orders table: buckets 1, 2-5, 6+ (stored as the bucket's lower bound).
+  const { historyBucket } = await import("../packages/shared/src/server/store");
+  const bucketsOk = [historyBucket(1), historyBucket(2), historyBucket(5), historyBucket(6), historyBucket(40)].join(",") === "1,2,2,6,6";
+  if (!bucketsOk) throw new Error("historyBucket boundaries wrong");
+  const buyerOrders = await createStore("fork").buyerOrderCount(A.buyer);
+  if (buyerOrders !== 1 || Number(ent.buyer_history.value) !== historyBucket(buyerOrders)) {
+    throw new Error(`buyer_history wrong: orders=${buyerOrders} entity=${String(ent.buyer_history.value)}`);
+  }
   const raw = ent.text.value as unknown;
   const textBack = typeof raw === "string" && raw.startsWith("0x") ? Buffer.from(raw.slice(2), "hex").toString("utf8") : String(raw);
   if (textBack !== longText.trim()) throw new Error("review text mismatch on Arkiv");
   log("Arkiv entity: creator = attestor, owner = buyer, readonly, rating/text match what the buyer signed");
 
   // Retry without a second nullifier row: mark the row failed (as if the write had died), then retry.
-  const dataFile = resolve(import.meta.dirname, "..", ".data", "fork.json");
-  const claimCount = () => JSON.parse(readFileSync(dataFile, "utf8")).reviewClaims.length as number;
-  const claimsBefore = claimCount();
-  createFileStore("fork").patchReview(A.id.toString(), { status: "failed", arkivKey: undefined, error: "simulated failure" });
+  const db = createStore("fork"); // Postgres, schema pop_fork: the same database the web server uses
+  const claimsBefore = await db.reviewClaimCount();
+  await db.patchReview(A.id.toString(), { status: "failed", arkivKey: undefined, error: "simulated failure" });
   const retryBody = async (signer: Signer) => ({
     seller: HANDLE,
     orderId: A.id.toString(),
@@ -259,9 +264,13 @@ if (!cfgJson.devSkipWorld) {
   rejected("retry by a non-buyer", await api("/api/reviews/retry", await retryBody(impostor)), 403);
   const rt = await api("/api/reviews/retry", await retryBody(A.acct));
   if (rt.j.status !== "synced" || rt.j.arkivKey !== key) throw new Error(`retry did not reuse the entity: ${JSON.stringify(rt.j)}`);
-  if (claimCount() !== claimsBefore) throw new Error("retry created a second nullifier claim");
-  const mine = (await readSellerReviews(need("ARKIV_ACCESS_KEY"), attestorAddr, sellerAddr)).rows.filter((r) => r.orderId === A.id.toString());
-  if (mine.length !== 1) throw new Error(`expected exactly 1 Arkiv entity for the order, found ${mine.length}`);
+  if ((await db.reviewClaimCount()) !== claimsBefore) throw new Error("retry created a second nullifier claim");
+  // Order ids restart on every fork/deployment, so entities from earlier runs can share (order id, seller): match the payment tx too.
+  const payTxA = (await db.order(A.id.toString()))?.fundTx.toLowerCase();
+  const sameOrderId = (await readSellerReviews(need("ARKIV_ACCESS_KEY"), attestorAddr, sellerAddr)).rows.filter((r) => r.orderId === A.id.toString());
+  const mine = sameOrderId.filter((r) => r.payTx.toLowerCase() === payTxA);
+  if (mine.length !== 1) throw new Error(`expected exactly 1 Arkiv entity for this payment, found ${mine.length}`);
+  if (sameOrderId.length > 1) log(`(${sameOrderId.length - 1} older Arkiv entit${sameOrderId.length === 2 ? "y" : "ies"} share order id #${A.id} from earlier fork runs: ignored because their payment tx differs)`);
   log("failed write retried: same entity key, no second Arkiv entity, no second nullifier claim");
 
   // /verify data: contract counters + Arkiv, dev reviews kept out of the verified count.

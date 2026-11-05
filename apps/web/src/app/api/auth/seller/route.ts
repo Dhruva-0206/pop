@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad request" }, { status: 400 });
   const address = getAddress(parsed.data.address);
-  if (!store.consumeLoginNonce(address, parsed.data.nonce)) {
+  if (!(await store.consumeLoginNonce(address, parsed.data.nonce))) {
     return NextResponse.json({ error: "nonce unknown, expired or already used" }, { status: 401 });
   }
   const ok = await verifyMessage({
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     signature: parsed.data.signature as `0x${string}`,
   });
   if (!ok) return NextResponse.json({ error: "bad signature" }, { status: 401 });
-  const seller = store.sellerByWallet(address);
+  const seller = await store.sellerByWallet(address);
   if (!seller) return NextResponse.json({ error: "not a PoP seller wallet" }, { status: 403 });
   await setSession("pop_seller", { wallet: address });
   return NextResponse.json({ ok: true, handle: seller.handle });

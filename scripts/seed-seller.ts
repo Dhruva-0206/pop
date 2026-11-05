@@ -1,7 +1,7 @@
 /**
  * Seeds the demo seller @meera.jewels on the current NETWORK_MODE:
  * 1) attestor signs a tier-1 (staff-checked bio code) Registration (EIP-712), seller submits registerSeller;
- * 2) seller signs an EIP-712 Offer for one listing; listing saved to the app store.
+ * 2) seller signs an EIP-712 Offer for one listing; listing saved to the app database (Postgres, schema per NETWORK_MODE; run `npm run db:migrate` first).
  * Idempotent: skips registration if already active. Usage: npx tsx scripts/seed-seller.ts
  */
 import { getAddress, keccak256, toHex, zeroHash } from "viem";
@@ -17,13 +17,13 @@ import {
   termsHash,
   type Terms,
 } from "../packages/shared/src/index";
-import { createFileStore } from "../packages/shared/src/server/store";
+import { createStore } from "../packages/shared/src/server/store";
 import { loadDeployment, mode, net, pub, walletOf } from "./chain";
 
 const HANDLE = "meera.jewels";
 const SLUG = "jhumka-01";
 const dep = loadDeployment();
-const store = createFileStore(mode);
+const store = createStore(mode);
 const attestor = walletOf("ATTESTOR_PK");
 const seller = walletOf("SELLER_PK");
 const sellerAddr = seller.account.address;
@@ -60,7 +60,7 @@ if (!active) {
 } else {
   console.log("seller already registered");
 }
-store.upsertSeller({ wallet: sellerAddr, handle: HANDLE, handleHash: hHash, handleTier: 1, bioCode, createdAt: new Date().toISOString() });
+await store.upsertSeller({ wallet: sellerAddr, handle: HANDLE, handleHash: hHash, handleTier: 1, bioCode, createdAt: new Date().toISOString() });
 
 // ---- 2) one listing with a seller-signed Offer ----
 const terms: Terms = {
@@ -95,7 +95,7 @@ const offerSig = await seller.signTypedData({
 const digest = await pub.readContract({ address: dep.checkout, abi: checkoutAbi, functionName: "offerDigest", args: [offer] });
 console.log(`offer digest ${digest}`);
 
-store.upsertListing({
+await store.upsertListing({
   id: SLUG,
   sellerWallet: getAddress(sellerAddr),
   sellerHandle: HANDLE,

@@ -54,8 +54,8 @@ export async function POST(req: Request) {
       .catch(() => false);
     if (!signedByBuyer) return NextResponse.json({ error: "only the buyer can register this order" }, { status: 403 });
     const orderId = a.orderId.toString();
-    const listing = store.listingByIdHash(a.listingId);
-    const fresh = store.recordOrder(`${net.chain.id}:${txHash}:${log.logIndex}`, {
+    const listing = await store.listingByIdHash(a.listingId);
+    const fresh = await store.recordOrder(`${net.chain.id}:${txHash}:${log.logIndex}`, {
       orderId,
       sellerWallet: a.seller,
       buyerWallet: a.buyer,

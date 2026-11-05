@@ -12,7 +12,7 @@ export async function POST(req: Request) {
   if (!(await courierSession())) return NextResponse.json({ error: "sign in" }, { status: 401 });
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad request" }, { status: 400 });
-  if (!store.order(parsed.data.orderId)) return NextResponse.json({ error: "unknown order" }, { status: 404 });
-  store.patchOrder(parsed.data.orderId, { courierStatus: `${parsed.data.status} (simulated)` });
+  if (!(await store.order(parsed.data.orderId))) return NextResponse.json({ error: "unknown order" }, { status: 404 });
+  await store.patchOrder(parsed.data.orderId, { courierStatus: `${parsed.data.status} (simulated)` });
   return NextResponse.json({ ok: true });
 }

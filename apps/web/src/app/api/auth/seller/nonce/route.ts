@@ -11,6 +11,6 @@ export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad request" }, { status: 400 });
   const address = getAddress(parsed.data.address);
-  if (!store.sellerByWallet(address)) return NextResponse.json({ error: "not a PoP seller wallet" }, { status: 403 });
-  return NextResponse.json({ nonce: store.issueLoginNonce(address) });
+  if (!(await store.sellerByWallet(address))) return NextResponse.json({ error: "not a PoP seller wallet" }, { status: 403 });
+  return NextResponse.json({ nonce: await store.issueLoginNonce(address) });
 }

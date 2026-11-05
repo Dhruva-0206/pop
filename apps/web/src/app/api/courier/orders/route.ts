@@ -8,7 +8,7 @@ export async function GET() {
   await connection();
   if (!(await courierSession())) return NextResponse.json({ error: "sign in" }, { status: 401 });
   const rows = await Promise.all(
-    store.allOrders().map(async (o) => ({
+    (await store.allOrders()).map(async (o) => ({
       orderId: o.orderId,
       listingId: o.listingId,
       trackingNo: o.trackingNo,

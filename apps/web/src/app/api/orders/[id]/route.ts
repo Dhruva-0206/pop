@@ -9,8 +9,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   if (!/^\d+$/.test(id)) return NextResponse.json({ error: "bad id" }, { status: 400 });
   const live = await readOrder(BigInt(id));
   if (!live) return NextResponse.json({ error: "not found" }, { status: 404 });
-  const meta = store.order(id);
-  const listing = meta?.listingId ? store.listing(meta.listingId) : undefined;
+  const meta = await store.order(id);
+  const listing = meta?.listingId ? await store.listing(meta.listingId) : undefined;
   return NextResponse.json({
     order: live,
     meta: meta

@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import { encodePacked, isHex, keccak256, type Address } from "viem";
 import { DEV_REVIEWER_PREFIX } from "@pop/shared/server/arkiv";
+import { historyBucket } from "@pop/shared/server/store";
 import { pub, store } from "@/lib/server/chain";
 import { readOrder } from "@/lib/server/orders";
 import { publishReviewRow } from "@/lib/server/reviews";
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
   if (!skipWorld && !idkitResult) return NextResponse.json({ ok: false, error: "World ID proof required" }, { status: 400 });
 
   const action = reviewActionFor(seller);
-  const sellerRow = store.sellerByHandle(seller);
+  const sellerRow = await store.sellerByHandle(seller);
   if (!sellerRow || (!skipWorld && !action)) {
     return NextResponse.json({ ok: false, error: "reviews are not enabled for this seller" }, { status: 404 });
   }
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
   if (order.state !== "Released") {
     return NextResponse.json({ ok: false, error: "reviews open after the order is complete and the seller is paid" }, { status: 409 });
   }
-  const already = store.review(orderId);
+  const already = await store.review(orderId);
   if (already) {
     return NextResponse.json(
       {
@@ -100,7 +101,9 @@ export async function POST(req: Request) {
   }
 
   const nullifierHash = createHash("sha256").update(nullifier).digest("hex"); // store a hash, not the raw nullifier
-  const claimed = store.claimReview(nullifierHash, {
+  // Buyer history bucket (1, 2-5, 6+) from the orders table; includes the order being reviewed.
+  const buyerHistory = historyBucket(await store.buyerOrderCount(order.buyer));
+  const claimed = await store.claimReview(nullifierHash, {
     orderId,
     sellerWallet: sellerRow.wallet,
     sellerHandle: sellerRow.handle,
@@ -109,7 +112,8 @@ export async function POST(req: Request) {
     text,
     reviewerKey: publicKey,
     buyerSig: buyerSignature,
-    payTx: store.order(orderId)?.fundTx,
+    payTx: (await store.order(orderId))?.fundTx,
+    buyerHistory,
     devSkippedWorld: skipWorld,
   });
   if (!claimed) {

@@ -42,7 +42,7 @@ export type PublishOutcome = { status: "synced" | "failed"; arkivKey?: string; e
  * The Arkiv helper looks the entity up by (attestor, order, seller) first, so a retry never creates a duplicate.
  */
 export async function publishReviewRow(orderId: string): Promise<PublishOutcome> {
-  const r = store.review(orderId);
+  const r = await store.review(orderId);
   if (!r) return { status: "failed", error: "no such review" };
   if (r.status === "synced" && r.arkivKey) return { status: "synced", arkivKey: r.arkivKey };
   try {
@@ -56,11 +56,12 @@ export async function publishReviewRow(orderId: string): Promise<PublishOutcome>
       text: r.text,
       reviewerKey: r.reviewerKey,
       payTx: r.payTx ?? "",
+      buyerHistory: r.buyerHistory,
       buyerSig: r.buyerSig as Hex,
       createdAt: Math.floor(Date.parse(r.createdAt) / 1000),
       devEntity: r.devSkippedWorld,
     });
-    store.patchReview(orderId, {
+    await store.patchReview(orderId, {
       status: "synced",
       arkivKey: res.entityKey,
       createTx: res.createTx ?? r.createTx,
@@ -70,7 +71,7 @@ export async function publishReviewRow(orderId: string): Promise<PublishOutcome>
     return { status: "synced", arkivKey: res.entityKey };
   } catch (e) {
     const msg = scrub(e instanceof Error ? e.message : String(e));
-    store.patchReview(orderId, { status: "failed", error: msg });
+    await store.patchReview(orderId, { status: "failed", error: msg });
     return { status: "failed", error: msg };
   }
 }
