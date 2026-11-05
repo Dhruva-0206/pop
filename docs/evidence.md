@@ -14,7 +14,12 @@ Re-run: `npx tsx scripts/smoke-whitechain.ts`
 | What | Value |
 |---|---|
 | Attestor (writer) wallet | `0xeF0CC7f7f280083e425A741957B920c7eF39A21c` |
-| Smoke entity | pending (needs access key + tGLM) |
+| Smoke entity (`pop_review_v1`, readonly, order_id 999000001, a clearly fake test entity, 24 h expiry) | key `0x731d721cf6b3b621983f30bc21ee2a1ee1f6e40917e3113203a5e9b6cee6f620` |
+| Create tx (block 265818) | `0xcb2da0660b9328b2705ba0fae2736fdd787899e446f4c825eeb6223fb31d0e63` |
+| changeOwnership tx (block 265821) | `0x0d7ec9768699fe503c72fa762b3f80b1b89bb7b6fa979b9e6f81e72b4ad6ce5e` |
+| Read back (Fri 6 Nov) | `$creator` = attestor `0xeF0C…A21c`, `$owner` = test buyer `0xC47e…34cE`, `readonly: true`, expires at block 309018 |
+
+Re-run (safe, queries first and creates nothing if the entity exists): `npm run smoke:arkiv`. The two tx hashes were recovered by reading the blocks at the entity's `$createdAt` / `$updatedAt` for the attestor's transactions.
 
 ## World
 | What | Result |
@@ -39,6 +44,6 @@ Re-run: `npx tsx scripts/smoke-whitechain.ts`
 |---|---|---|
 | A. Whitechain read | Fri 00:05 | PASS (token readable; wallets unfunded) |
 | B. Contracts on anvil | Fri 00:15 | PASS (34 tests + fork deploy) |
-| C. Arkiv create/query/transfer | | BLOCKED: needs ARKIV_ACCESS_KEY + tGLM |
+| C. Arkiv create/query/transfer | Fri 6 Nov | **PASS** (create, query by creator, changeOwnership to buyer; creator stays attestor) |
 | D. World server verify | | BLOCKED: needs World app + rp_id + signing key |
 | E. Supabase unique constraint | | BLOCKED: needs DATABASE_URL |
