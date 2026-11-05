@@ -37,3 +37,6 @@ Thumbs.db
 
 # Local scratch
 scripts/.out/
+
+# Foundry broadcasts from local anvil forks (fork reports chainId 1874 too)
+contracts/broadcast-local/
