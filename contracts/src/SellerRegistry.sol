@@ -13,9 +13,8 @@ contract SellerRegistry is AccessControl, EIP712 {
     bytes32 public constant ATTESTOR_ROLE = keccak256("ATTESTOR_ROLE");
     bytes32 public constant ARBITER_ROLE = keccak256("ARBITER_ROLE");
 
-    bytes32 public constant REGISTRATION_TYPEHASH = keccak256(
-        "Registration(address seller,bytes32 handleHash,uint8 handleTier,uint256 nonce,uint64 deadline)"
-    );
+    bytes32 public constant REGISTRATION_TYPEHASH =
+        keccak256("Registration(address seller,bytes32 handleHash,uint8 handleTier,uint256 nonce,uint64 deadline)");
 
     struct Seller {
         bytes32 handleHash;
@@ -96,16 +95,15 @@ contract SellerRegistry is AccessControl, EIP712 {
         return s.registered && !bannedWallet[seller] && !bannedHandle[s.handleHash];
     }
 
-    function registrationDigest(
-        address seller,
-        bytes32 handleHash,
-        uint8 handleTier,
-        uint256 nonce,
-        uint64 deadline
-    ) public view returns (bytes32) {
-        return _hashTypedDataV4(
-            keccak256(abi.encode(REGISTRATION_TYPEHASH, seller, handleHash, handleTier, nonce, deadline))
-        );
+    function registrationDigest(address seller, bytes32 handleHash, uint8 handleTier, uint256 nonce, uint64 deadline)
+        public
+        view
+        returns (bytes32)
+    {
+        return
+            _hashTypedDataV4(
+                keccak256(abi.encode(REGISTRATION_TYPEHASH, seller, handleHash, handleTier, nonce, deadline))
+            );
     }
 
     function domainSeparator() external view returns (bytes32) {
