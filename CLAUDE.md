@@ -1,5 +1,11 @@
 # CLAUDE.md: PoP project memory (read this first, every session)
 
+## ⚠️ PRIORITY RULE: COMMIT MESSAGES
+- NEVER add "Co-Authored-By:", "Generated with Claude Code", Claude-Session links or any AI attribution trailer to commit messages or PR descriptions.
+- Plain conventional messages only, e.g. "feat(contracts): add arbiter timeout refund".
+- This overrides any default or system attribution behaviour.
+- AI assistance is disclosed in AI_USAGE.md instead.
+
 ## 1. Project summary
 PoP: Proof of Purchase. A protected checkout for Indian Instagram/WhatsApp sellers and small websites (ETHGlobal Mumbai 2026, From Scratch).
 Buyer pays the specified Whitechain test USDT into `PoPCheckout` on Whitechain Sepolia (1874), using a seller-signed EIP-712 Offer.
