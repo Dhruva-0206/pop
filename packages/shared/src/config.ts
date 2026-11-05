@@ -17,3 +17,15 @@ export const ARKIV_SCHEMAS = {
   review: "pop_review_v1",
   outcome: "pop_outcome_v1",
 } as const;
+
+/**
+ * World ID 4.0: a uniqueness proof is one-time per (human, action), and actions must exist in the
+ * Developer Portal. So "one review per human PER SELLER" = one pre-created portal action per seller.
+ * Key = seller handle (lowercase). Create each action in the portal (staging for the simulator).
+ * Server may override with env WORLD_REVIEW_ACTIONS='{"handle":"action"}'.
+ */
+export const WORLD_REVIEW_ACTIONS: Record<string, string> = {
+  "meera.jewels": "review-meera-jewels",
+  "kurta.co": "review-kurta-co",
+  "demo.seller3": "review-demo-seller3",
+};

@@ -6,6 +6,7 @@ import { encodePacked, keccak256 } from "viem";
 
 type Cfg = { app_id: `app_${string}`; action: string; environment: "staging" | "production"; rp_context: RpContext };
 
+const SELLER = "meera.jewels";
 const ORDER_ID = "1";
 const BUYER = "0x29D123A04865c9eD2E377A128C68334F2601f34C"; // test buyer wallet (public address only)
 
@@ -17,7 +18,11 @@ export default function WorldTest() {
   const signal = keccak256(encodePacked(["uint256", "address"], [BigInt(ORDER_ID), BUYER]));
 
   async function start() {
-    const res = await fetch("/api/world/rp-signature", { method: "POST" });
+    const res = await fetch("/api/world/rp-signature", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ seller: SELLER }),
+    });
     if (!res.ok) return add(`rp-signature failed: ${res.status} (is World configured in .env?)`);
     setCfg(await res.json());
     setOpen(true);
@@ -26,7 +31,7 @@ export default function WorldTest() {
   return (
     <div className="space-y-4">
       <p className="text-sm">
-        Order #{ORDER_ID} · buyer {BUYER.slice(0, 8)}… · signal {signal.slice(0, 12)}…
+        Seller @{SELLER} · action {cfg?.action ?? "?"} · Order #{ORDER_ID} · buyer {BUYER.slice(0, 8)}… · signal {signal.slice(0, 12)}…
       </p>
       <button className="rounded bg-black px-4 py-2 text-white" onClick={start}>
         Verify with World ID to review
@@ -45,7 +50,7 @@ export default function WorldTest() {
             const r = await fetch("/api/world/verify-review", {
               method: "POST",
               headers: { "content-type": "application/json" },
-              body: JSON.stringify({ orderId: ORDER_ID, buyer: BUYER, idkitResult: result }),
+              body: JSON.stringify({ seller: SELLER, orderId: ORDER_ID, buyer: BUYER, idkitResult: result }),
             });
             const body = await r.json();
             add(`server: ${JSON.stringify(body)}`);

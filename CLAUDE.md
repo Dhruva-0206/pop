@@ -25,7 +25,7 @@ Deadline: **Sat 7 Nov 09:00 IST** (target submit 07:00). Partner prizes: Whitech
 - Stack (submission tags): EVM, Optimism (Whitechain is an OP Stack L2); Foundry; OpenZeppelin Contracts; Next.js; React; PostgreSQL; Supabase.
 - Also used: viem + wagmi, @arkiv-network/sdk 1.0.x (server only), World IDKit 4.x + server verify, Tailwind, qrcode, html5-qrcode, @scure/bip39, zod, Vitest, Vercel (two projects).
 - Not used: Scaffold-ETH, ethers.js, web3.js, Privy, Self, Anon Aadhaar, Semaphore, The Graph. Hardhat only if Foundry fails (it didn't).
-- Review rule: **one review per unique human PER SELLER**. Enforced by Postgres `UNIQUE(nullifier_hash, seller_wallet)`; Arkiv gets only `keccak(nullifier, seller)`.
+- Review rule: **one review per unique human PER SELLER**. Enforced by Postgres `UNIQUE(nullifier_hash, seller_wallet)`; Arkiv gets only `keccak(nullifier, seller)`. World ID 4.0 proofs are one-time per (human, action), so each seller has its OWN pre-created portal action (`WORLD_REVIEW_ACTIONS` in packages/shared); the DB constraint stays as defence in depth.
 - Handle proof: staff-checked bio code (tier 1) first; Reclaim (tier 2) only later if time allows.
 - DB: Supabase Postgres. Buyer PII is AES-256-GCM encrypted; never on any chain or on Arkiv.
 - API never moves money on its own; it reads receipts/state before writing to Arkiv/DB; chain-derived writes are idempotent.
@@ -123,6 +123,7 @@ Contracts: _not deployed to Whitechain_ (dry run only on a local anvil fork).
 - Fri 01:00 (team GO): **Arbiter timeout.** Constructor param `arbiterTimeout` (demo 300 s, production 14 days). A Disputed order not resolved in time can be `finalize`d by anyone into a full buyer refund, `OrderRefunded` reason 4. `disputedAt` is set on both entry paths (handover refused, buyer dispute). After the timeout `resolveDispute` reverts `TooLate`, so the arbiter can't race the refund with a release.
 - Fri 01:00 (team): kept as decided: handover-refused only before deliverBy; `withdrawFor` pays only the owner; `confirmDelivery` allowed while Shipped even after deliverBy; token stays a constructor param (immutable).
 - Fri 01:00: Stateful invariant suite `test/invariant/PoPInvariant.t.sol` (handler with all 10 actions, 64 runs × 32 calls): balance == locked + credits (and locked == sum of open orders, credits == sum of accounts); courier never raises a credit; each order reaches exactly one terminal state; no order locked forever (warp + `finalize` ends every open order). Forge 1.9 reports the invariant suite as "1 test".
+- Fri 01:05: **World: one action per seller.** Docs: 4.0 uniqueness proofs are one-time per (human, action) and actions must exist in the portal ("action not found" otherwise; dynamic action strings not documented). `WORLD_REVIEW_ACTIONS` map handle → action; `/api/world/rp-signature` and `/verify-review` now take `seller`; sellers without an action get 404 (no shared fallback). Signal still keccak(orderId, buyer). Details in docs/WORLD_DEBRIEF.md.
 - Fri 01:00: Commit rule: no AI trailers (see top). `.claude/settings.json` sets `attribution` commit/pr "" + sessionUrl false (+ deprecated `includeCoAuthoredBy: false` for older versions). History check: 0 co-authored lines in last 20 commits; no rewrite.
 - Fri 00:12: OZ: `forge install ...@v5.6.1 --shallow` failed ("tag not found"); without `--shallow` it works. OZ v5.6.1, forge-std v1.17.0 as submodules.
 - Fri 00:25: World IDKit 4.6.0 installed. SDK error codes include `nullifier_replayed` and `max_verifications_reached` → World may itself refuse a 2nd proof from the same human for one action. If so, per-seller reviews need one action per seller. Test in smoke D.
@@ -153,7 +154,7 @@ Contracts: _not deployed to Whitechain_ (dry run only on a local anvil fork).
 - [ ] Whitechain faucet (WBT) for deployer / faucet / courier / arbiter: https://faucet.testnet.whitechain.io (GitHub login)
 - [ ] Ask the Whitechain mentor: how to get test USDT at `0xcedf…55a7` (docs list `0xaa79…8f46`) + gate 5
 - [ ] Arkiv: access key (hub.arkiv.network/access-keys, network Rabdi) + tGLM for the attestor (hub.arkiv.network/faucet)
-- [ ] World Developer Portal (developer.world.org): app in `external` mode, World ID 4.0 enabled → `app_id`, `rp_id`, signing key; staging action `review`
+- [ ] World Developer Portal (developer.world.org): app in `external` mode, World ID 4.0 enabled → `app_id`, `rp_id`, signing key; **staging actions `review-meera-jewels`, `review-kurta-co`, `review-demo-seller3`** (not a single `review`)
 - [ ] Supabase project → `DATABASE_URL`
 - [ ] Ask organizers about specs/ (gate 7)
 - [ ] Vercel (later)

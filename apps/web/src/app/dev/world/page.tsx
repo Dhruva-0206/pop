@@ -8,7 +8,7 @@ export default function Page() {
       <div className="rounded bg-amber-100 px-3 py-1 text-xs font-bold">TEST MODE · developer smoke test</div>
       <h1 className="text-xl font-semibold">World ID review check</h1>
       <p className="text-sm text-neutral-600">
-        Opens World ID for the action &quot;review&quot;. Use simulator.worldcoin.org with the staging environment.
+        Opens World ID with the seller&apos;s review action (one action per seller). Use simulator.worldcoin.org with the staging environment.
       </p>
       <WorldTest />
     </main>
