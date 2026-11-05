@@ -11,6 +11,11 @@ The planning documents in `specs/` were written with AI assistance and are inclu
 | When (IST) | Tool | Purpose | Files | Human review |
 |---|---|---|---|---|
 | Thu 5 Nov 23:45 → | Claude Code (Claude Opus 5.5) | Lead-engineer agent following the team's written prompt: repo setup, Foundry install, docs lookup, scaffolding | `.gitignore`, `README.md`, `CLAUDE.md`, `AI_USAGE.md`, `.env.example` | Team chose the tool options (Foundry via Git Bash, kept LICENSE); reviews each commit |
+| Thu 23:50 | Claude Code (web-fetch sub-agents) | Read current docs for Whitechain, Arkiv SDK 1.0.x (official skills repo), World IDKit 4.x; findings logged in CLAUDE.md and docs/friction-log.md | (research only) | Team reviews the logged decisions |
+| Fri 00:00 | Claude Code | Scaffold: npm workspaces, Foundry + OZ, two Next apps (create-next-app), shared package, Supabase migration, doc stubs | `package.json`, `packages/shared/*`, `apps/*` (generated boilerplate), `supabase/migrations/0001_init.sql`, `docs/*`, `arkiv/*` | Team to review the SQL schema and shared EIP-712 types |
+| Fri 00:05 | Claude Code | Wallet generator (keys written only to .env, never shown) and Whitechain read smoke test | `scripts/gen-wallets.ts`, `scripts/env.ts`, `scripts/smoke-whitechain.ts` | Team funds the printed addresses |
+| Fri 00:08 | Claude Code | Contracts drafted from the team's spec (Spec v3 §6, Architecture §5.3) and 34 Foundry tests | `contracts/src/*`, `contracts/test/*`, `contracts/script/Deploy.s.sol` | **Must be reviewed by the team before any testnet deploy** (state machine, courier limit, withdrawFor) |
+| Fri 00:20 | Claude Code | Arkiv, Supabase and World smoke-test code | `scripts/smoke-arkiv.ts`, `scripts/smoke-db.ts`, `apps/web/src/lib/server/world.ts`, `apps/web/src/app/api/world/*`, `apps/web/src/app/dev/world/*` | Pending live runs with team-provided keys |
 
 The prompt given to the agent is saved in `specs/prompts/`.
 
