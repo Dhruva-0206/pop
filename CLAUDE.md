@@ -55,6 +55,11 @@ Deadline: **Sat 7 Nov 09:00 IST** (target submit 07:00). Partner prizes: Whitech
 - Web: `npm run dev -w apps/web` · build: `npm run build -w apps/web`
 - Demo store: `npm run dev -w apps/demo-store`
 - Scripts: `npx tsx scripts/<name>.ts` (loads `pop/.env`)
+- **Network mode** (`NETWORK_MODE` in .env): `fork` = LOCAL anvil fork of Whitechain state (real USDT bytecode) with chain id **31337** (so nothing signed there replays on 1874); `testnet` = real 1874. Addresses in `deployments/<mode>.json` (fork file gitignored).
+- Fork loop (3 terminals): `npm run fork` (keep running) → `npm run fork:up` (fund via anvil storage writes + deploy + seed @meera.jewels) → `npm run dev:web`. Then `npx tsx scripts/e2e-fork.ts` drives the whole path through the API.
+- Fork restarts lose state: rerun `npm run fork:up` and delete `.data/fork.json`.
+- Dashboard demo seller: paste `SELLER_PK` from .env into /dashboard (TEST MODE, browser only). Courier passcode = `COURIER_PASSCODE` in .env.
+- App data: interim JSON store `.data/<mode>.json` (gitignored) until `DATABASE_URL` arrives; then swap to Postgres.
 - Deploy (ASK FIRST): `forge script script/Deploy.s.sol --rpc-url $WHITECHAIN_RPC_URL --broadcast --verify --verifier blockscout --verifier-url https://explorer.testnet.whitechain.io/api/`
 - OneDrive: EPERM/EBUSY during npm install means pause OneDrive sync (tell the user; don't move folders).
 
@@ -64,9 +69,9 @@ Deadline: **Sat 7 Nov 09:00 IST** (target submit 07:00). Partner prizes: Whitech
 - ◐ `confirmDelivery` + `confirmReceived` + `finalize` (both refunds + release) + `withdraw` (contract + tests done)
 - ◐ `reportHandoverRefused` → Disputed + `resolveDispute` (contract + tests done; no page)
 - ◐ Seller registry with handle tier + ban (contract + tests done)
-- ☐ Onboarding (bio-code handle proof, one product, link/QR/badge)
-- ☐ Product checkout with terms card + test-mode wallet + capped faucet
-- ☐ Order page with code QR + 6 words; courier simulator
+- ◐ Onboarding (bio-code handle proof, one product, link/QR/badge): seeded by script only; no /onboard page yet
+- ◐ Product checkout with terms card + test-mode wallet + capped faucet (works on LOCAL FORK)
+- ◐ Order page with code QR + 6 words; courier simulator (works on LOCAL FORK)
 - ☐ World-gated review → Arkiv readonly entity → transfer to buyer; duplicate + cancelled paths
 - ☐ Verify page reading Arkiv + contract; red for unknown/banned
 - ☐ Separate demo store with Pay with PoP + its own Arkiv read
@@ -123,6 +128,12 @@ Contracts: _not deployed to Whitechain_ (dry run only on a local anvil fork).
 - Fri 01:00 (team GO): **Arbiter timeout.** Constructor param `arbiterTimeout` (demo 300 s, production 14 days). A Disputed order not resolved in time can be `finalize`d by anyone into a full buyer refund, `OrderRefunded` reason 4. `disputedAt` is set on both entry paths (handover refused, buyer dispute). After the timeout `resolveDispute` reverts `TooLate`, so the arbiter can't race the refund with a release.
 - Fri 01:00 (team): kept as decided: handover-refused only before deliverBy; `withdrawFor` pays only the owner; `confirmDelivery` allowed while Shipped even after deliverBy; token stays a constructor param (immutable).
 - Fri 01:00: Stateful invariant suite `test/invariant/PoPInvariant.t.sol` (handler with all 10 actions, 64 runs × 32 calls): balance == locked + credits (and locked == sum of open orders, credits == sum of accounts); courier never raises a credit; each order reaches exactly one terminal state; no order locked forever (warp + `finalize` ends every open order). Forge 1.9 reports the invariant suite as "1 test".
+- Fri 01:20: **Fork uses chain id 31337, not 1874**: our wallet keys are real testnet keys; a tx signed for 1874 on the fork could be replayed on the real chain once funded. 31337 makes fork txs useless elsewhere. Codehash binds chainid, so fork codes never work on testnet either.
+- Fri 01:20: Fork USDT funding: the token is a proxy; plain mapping slots 0..49 failed, so `fork-fund.ts` finds the balance key from `eth_createAccessList` of balanceOf and verifies it by write-and-read (always restores probed keys; a first version corrupted the proxy slot on the local fork, fixed by restart).
+- Fri 01:30: Interim app store = JSON file per mode (`.data/`), same shapes as 0001_init.sql, because DATABASE_URL isn't set. Postgres adapter replaces it when keys arrive.
+- Fri 01:45: Cache Components kept ON. All API routes call `await connection()` (request-time, never cached). Pages that show live chain/order state are client components that poll those APIs; dynamic-param pages wrap them in `<Suspense>` (Next 16 requires it for `useParams` under Cache Components). Build shows API routes as ƒ and /p, /o as partial prerender (static shell + streamed live part).
+- Fri 01:55: Lint: turned off `react-hooks/set-state-in-effect` (polling pattern); fixed `react-hooks/purity` instead of disabling it.
+- Fri 01:55: Dashboard auth = signed message (timestamped, 5 min, known seller wallet) → HMAC cookie; courier = team passcode → HMAC cookie. Seller test key is pasted into the browser in TEST MODE (operator laptop only).
 - Fri 01:05: **World: one action per seller.** Docs: 4.0 uniqueness proofs are one-time per (human, action) and actions must exist in the portal ("action not found" otherwise; dynamic action strings not documented). `WORLD_REVIEW_ACTIONS` map handle → action; `/api/world/rp-signature` and `/verify-review` now take `seller`; sellers without an action get 404 (no shared fallback). Signal still keccak(orderId, buyer). Details in docs/WORLD_DEBRIEF.md.
 - Fri 01:00: Commit rule: no AI trailers (see top). `.claude/settings.json` sets `attribution` commit/pr "" + sessionUrl false (+ deprecated `includeCoAuthoredBy: false` for older versions). History check: 0 co-authored lines in last 20 commits; no rewrite.
 - Fri 00:12: OZ: `forge install ...@v5.6.1 --shallow` failed ("tag not found"); without `--shallow` it works. OZ v5.6.1, forge-std v1.17.0 as submodules.
@@ -131,6 +142,12 @@ Contracts: _not deployed to Whitechain_ (dry run only on a local anvil fork).
 - Fri 00:30: Next.js 16.4.5 (create-next-app default: Cache Components on). Shared package via `transpilePackages`.
 
 ## 9. Progress log (IST, newest first)
+- Fri 02:05: Phase 2 ugly path a–f done on LOCAL FORK; `scripts/e2e-fork.ts` PASS (pay → confirm → seller sign-in → ship → wrong code rejected → code accepted → anyone finalizes → seller withdraws 0.99; unshipped order refunded 1.00; handover refused → Disputed). Keys for C/D/E still empty.
+- Fri 01:55: /o, /dashboard, /courier pages + settle button (fccde76, 57144c4, 5f15d73, 732ac55).
+- Fri 01:45: Checkout /p/[listingId] + API routes (ad6e80b, 1e57ca9).
+- Fri 01:25: Fork deployed (registry 0xb031…19B2, checkout 0x2a4C…38CC, chain 31337), seller @meera.jewels tier 1 seeded, listing jhumka-01 (1bac901).
+- Fri 01:05: World: one action per seller (18a888e).
+- Fri 01:00: Arbiter timeout + invariant suite: 39 tests + 4 invariants (9c71f34). Commit rule + attribution off (56b6f8d, 4a34524).
 - Fri 00:32: Both Next apps `npm run build` OK; lint clean. (63b5316)
 - Fri 00:28: Smoke D code ready: `/api/world/rp-signature`, `/api/world/verify-review`, `/dev/world` (ab99791). Waiting on World app/rp_id/signing key.
 - Fri 00:20: Smoke C (Arkiv) + E (Supabase) scripts ready, typecheck clean; fail cleanly on missing keys (f4c0d42).
@@ -146,9 +163,9 @@ Contracts: _not deployed to Whitechain_ (dry run only on a local anvil fork).
 - Thu 23:45: Tools: git 2.56.0, node 26.13.0, npm 11.20.0; Foundry missing; WSL not installed.
 
 ## 10. Next 3 actions
-1. When keys arrive: run `npm run smoke:arkiv`, `npm run smoke:db`, and `/dev/world` with the simulator; log results.
-2. When the deployer has WBT and the team says go: deploy + verify on 1874 (Phase 2 step 1).
-3. Phase 2 ugly path (only after user says go).
+1. When keys land: run smoke C (`npm run smoke:arkiv`), D (`/dev/world` + simulator), E (`npm run smoke:db`) immediately; then swap the JSON store for Postgres.
+2. Review pipeline (World proof → on-chain Released check → UNIQUE(nullifier, seller) → Arkiv readonly review → changeOwnership to buyer), /verify page, demo store.
+3. Testnet: when deployer has WBT + team GO, `NETWORK_MODE=testnet ALLOW_TESTNET_DEPLOY=yes npm run deploy`, then one real USDT pay.
 
 ## 11. User action items
 - [ ] Whitechain faucet (WBT) for deployer / faucet / courier / arbiter: https://faucet.testnet.whitechain.io (GitHub login)
