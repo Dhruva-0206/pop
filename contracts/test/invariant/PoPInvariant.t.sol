@@ -9,6 +9,7 @@ import {MockUSDT} from "../mocks/MockUSDT.sol";
 /// @notice Drives random sequences of every public action against one checkout.
 contract Handler is Test {
     PoPCheckout public checkout;
+    SellerRegistry public registry;
     MockUSDT public usdt;
     uint256 internal sellerPk;
     address public seller;
@@ -24,8 +25,17 @@ contract Handler is Test {
     bool public courierRaisedCredit; // set if a courier call raised anyone's credit
     uint256 public nonce;
 
-    constructor(PoPCheckout c, MockUSDT u, uint256 sellerPk_, address courier_, address arbiter_, address treasury_) {
+    constructor(
+        PoPCheckout c,
+        SellerRegistry r,
+        MockUSDT u,
+        uint256 sellerPk_,
+        address courier_,
+        address arbiter_,
+        address treasury_
+    ) {
         checkout = c;
+        registry = r;
         usdt = u;
         sellerPk = sellerPk_;
         seller = vm.addr(sellerPk_);
@@ -155,6 +165,21 @@ contract Handler is Test {
         _track();
     }
 
+    /// Bans are permanent and stop all later pays, so only ban rarely (1 in 16 calls) to keep coverage of the rest.
+    function arbiterBans(uint256 seed) external {
+        if (seed % 16 != 0) return;
+        vm.prank(arbiter);
+        try registry.ban(seller) {} catch {}
+    }
+
+    function arbiterForceRefunds(uint256 seed) external {
+        (uint256 id, bool ok) = _pick(seed);
+        if (!ok) return;
+        vm.prank(arbiter);
+        try checkout.forceRefundBanned(id) {} catch {}
+        _track();
+    }
+
     function finalize(uint256 seed) external {
         (uint256 id, bool ok) = _pick(seed);
         if (!ok) return;
@@ -207,7 +232,7 @@ contract PoPInvariantTest is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(attestorPk, digest);
         registry.registerSeller(seller, keccak256("inv"), 1, 1, deadline, abi.encodePacked(r, s, v));
 
-        handler = new Handler(checkout, usdt, sellerPk, courier, arbiter, treasury);
+        handler = new Handler(checkout, registry, usdt, sellerPk, courier, arbiter, treasury);
         targetContract(address(handler));
     }
 

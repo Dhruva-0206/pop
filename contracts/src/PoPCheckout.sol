@@ -112,7 +112,7 @@ contract PoPCheckout is AccessControl, EIP712, ReentrancyGuard {
     event DisputeOpened(uint256 indexed orderId, bytes32 evidenceHash);
     event DisputeResolved(uint256 indexed orderId, uint16 buyerBps, bytes32 decisionHash);
     event OrderReleased(uint256 indexed orderId, uint256 sellerAmount, uint256 fee);
-    event OrderRefunded(uint256 indexed orderId, uint256 amount, uint8 reason); // 1 no-ship, 2 no-delivery, 3 dispute, 4 arbiter timeout
+    event OrderRefunded(uint256 indexed orderId, uint256 amount, uint8 reason); // 1 no-ship, 2 no-delivery, 3 dispute, 4 arbiter timeout, 5 banned seller
     event Withdrawn(address indexed account, uint256 amount);
     event OffersRevoked(address indexed seller, uint256 minVersion);
 
@@ -133,6 +133,8 @@ contract PoPCheckout is AccessControl, EIP712, ReentrancyGuard {
     error BadCode();
     error BadBps();
     error NothingToWithdraw();
+    error SelfPurchase();
+    error SellerNotBanned();
 
     constructor(
         IERC20 token_,
@@ -178,6 +180,7 @@ contract PoPCheckout is AccessControl, EIP712, ReentrancyGuard {
         if (o.price == 0 || o.shipWithin == 0 || o.deliverWithin == 0 || o.maxUnits == 0 || codeHash == bytes32(0)) {
             revert BadOffer();
         }
+        if (msg.sender == o.seller) revert SelfPurchase(); // no self-purchases to farm completed orders
         if (block.timestamp > o.validUntil) revert OfferExpired();
         if (o.version < minOfferVersion[o.seller]) revert OfferRevoked();
         if (!registry.isActive(o.seller)) revert SellerNotActive();
@@ -292,6 +295,21 @@ contract PoPCheckout is AccessControl, EIP712, ReentrancyGuard {
             o.state = State.Split;
             _settle(o.buyer, buyerAmount, o.seller, sellerGross - fee, fee, amount);
         }
+    }
+
+    /// @notice Arbiter-only: refund a still-open order (Funded, Shipped, Delivered or Disputed) of a BANNED seller
+    /// to the buyer in full. It can only ever pay the buyer: no release, no fee, no split, no other recipient.
+    /// Terminal orders (Released, Refunded, Split) are untouched, so each order still ends in exactly one terminal state.
+    function forceRefundBanned(uint256 id) external nonReentrant onlyRole(ARBITER_ROLE) {
+        Order storage o = _orders[id];
+        State s = o.state;
+        if (s != State.Funded && s != State.Shipped && s != State.Delivered && s != State.Disputed) revert BadState();
+        // Every order's seller was registered at pay time, so "not active" here means banned.
+        if (registry.isActive(o.seller)) revert SellerNotBanned();
+        uint256 amount = o.amount;
+        o.state = State.Refunded;
+        _settle(o.buyer, amount, o.seller, 0, 0, amount);
+        emit OrderRefunded(id, amount, 5);
     }
 
     // ---------------------------------------------------------------- deadlines (anyone)

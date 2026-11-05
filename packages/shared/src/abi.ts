@@ -324,6 +324,19 @@ export const checkoutAbi = [
   },
   {
     "type": "function",
+    "name": "forceRefundBanned",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "getOrder",
     "inputs": [
       {
@@ -1446,7 +1459,17 @@ export const checkoutAbi = [
   },
   {
     "type": "error",
+    "name": "SelfPurchase",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "SellerNotActive",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SellerNotBanned",
     "inputs": []
   },
   {
