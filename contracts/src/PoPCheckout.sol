@@ -297,13 +297,13 @@ contract PoPCheckout is AccessControl, EIP712, ReentrancyGuard {
         }
     }
 
-    /// @notice Arbiter-only: refund a still-open order (Funded, Shipped, Delivered or Disputed) of a BANNED seller
-    /// to the buyer in full. It can only ever pay the buyer: no release, no fee, no split, no other recipient.
+    /// @notice Arbiter-only: refund a still-open order (Funded, Shipped or Disputed) of a BANNED seller
+    /// to the buyer in full. Delivered orders are deliberately excluded (the buyer confirmed receipt; the dispute window applies). It can only ever pay the buyer: no release, no fee, no split, no other recipient.
     /// Terminal orders (Released, Refunded, Split) are untouched, so each order still ends in exactly one terminal state.
     function forceRefundBanned(uint256 id) external nonReentrant onlyRole(ARBITER_ROLE) {
         Order storage o = _orders[id];
         State s = o.state;
-        if (s != State.Funded && s != State.Shipped && s != State.Delivered && s != State.Disputed) revert BadState();
+        if (s != State.Funded && s != State.Shipped && s != State.Disputed) revert BadState();
         // Every order's seller was registered at pay time, so "not active" here means banned.
         if (registry.isActive(o.seller)) revert SellerNotBanned();
         uint256 amount = o.amount;

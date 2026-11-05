@@ -75,7 +75,7 @@ Deadline: **Sat 7 Nov 09:00 IST** (target submit 07:00). Partner prizes: Whitech
 - ☐ World-gated review → Arkiv readonly entity → transfer to buyer; duplicate + cancelled paths
 - ☐ Verify page reading Arkiv + contract; red for unknown/banned
 - ☐ Separate demo store with Pay with PoP + its own Arkiv read
-- ◐ Proof page; Foundry tests (invariants + failure paths): **55 `test_` functions** (28 checkout, 5 arbiter timeout, 6 registry, 16 force-refund/self-purchase) + 4 invariant functions (`test/invariant/PoPInvariant.t.sol`). `forge test` on the 2nd machine (Fri 6 Nov): **56 passed, 0 failed** (Forge counts the invariant suite as 1 test)
+- ◐ Proof page; Foundry tests (invariants + failure paths): **56 `test_` functions** (28 checkout, 5 arbiter timeout, 6 registry, 17 force-refund/self-purchase) + 5 invariant functions (`test/invariant/PoPInvariant.t.sol`). `forge test` on the 2nd machine (Fri 6 Nov): **57 passed, 0 failed** (Forge counts the invariant suite as 1 test)
 
 **SHOULD**
 - ◐ Reputation-tiered dispute window (in contract + test)
@@ -115,7 +115,7 @@ Specified USDT: 0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7 (Tether USD, USDT, 6 
 Contracts: _not deployed to Whitechain_ (dry run only on a local anvil fork).
 
 ## 8. Blockers and decisions log
-- Fri 6 Nov: **Contract decision: `forceRefundBanned`** includes orders in `Delivered` (dispute window still open) as well as Funded/Shipped/Disputed: a banned seller is not paid for any order that is not already terminal. Team to confirm this is wanted (it also refunds a buyer who already received the goods). It never touches Released/Refunded/Split and never pays anyone but the buyer. **`pay` rejects `msg.sender == seller`** (stops cheap self-purchase farming of the trusted tier; does not stop a seller using a second wallet).
+- Fri 6 Nov: **Contract decision (team, final): `forceRefundBanned` covers only `Funded`, `Shipped` and `Disputed`.** `Delivered` orders are excluded: the buyer confirmed receipt, so the normal dispute window (`openDispute` then `resolveDispute`, or `finalize`) is the remedy; a buyer who disputes during the window makes the order `Disputed`, and then it is force-refundable. It never touches Released/Refunded/Split and never pays anyone but the buyer (reason 5). (An earlier draft included `Delivered`; reversed by the team.) **`pay` rejects `msg.sender == seller`** (stops cheap self-purchase farming of the trusted tier; does not stop a seller using a second wallet). Tests: `contracts/test/ForceRefundAndSelfPurchase.t.sol`; invariant `invariant_forceRefundNeverTouchesDelivered`.
 - Fri 03:34: **Wallets regenerated on purpose** (the originals held nothing and nothing was deployed). New addresses are in §7 and HANDOFF.md §8; keys only in each machine's `.env`. **NEVER run `npm run wallets` / `scripts/gen-wallets.ts` again and never regenerate wallets** (it would invalidate every address and any funding).
 - Thu 23:48: Foundry via Git Bash foundryup (user chose option a). WSL not installed. Foundry cannot run in PowerShell.
 - Thu 23:48: Kept the teammate's LICENSE (MIT, existing copyright line) per user.

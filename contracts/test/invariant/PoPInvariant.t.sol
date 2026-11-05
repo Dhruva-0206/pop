@@ -23,6 +23,7 @@ contract Handler is Test {
     mapping(uint256 => PoPCheckout.State) public firstTerminal; // None until the order ends
     bool public terminalChanged; // set if an ended order ever changes state
     bool public courierRaisedCredit; // set if a courier call raised anyone's credit
+    bool public forcedRefundedDelivered; // set if forceRefundBanned ever succeeded on a Delivered order
     uint256 public nonce;
 
     constructor(
@@ -175,8 +176,11 @@ contract Handler is Test {
     function arbiterForceRefunds(uint256 seed) external {
         (uint256 id, bool ok) = _pick(seed);
         if (!ok) return;
+        PoPCheckout.State before = checkout.getOrder(id).state;
         vm.prank(arbiter);
-        try checkout.forceRefundBanned(id) {} catch {}
+        try checkout.forceRefundBanned(id) {
+            if (before == PoPCheckout.State.Delivered) forcedRefundedDelivered = true;
+        } catch {}
         _track();
     }
 
@@ -261,6 +265,11 @@ contract PoPInvariantTest is Test {
     function invariant_courierNeverRaisesCredit() public view {
         assertFalse(handler.courierRaisedCredit());
         assertEq(checkout.credit(handler.courier()), 0);
+    }
+
+    /// Team decision: a Delivered order is never force-refunded (only Funded, Shipped, Disputed).
+    function invariant_forceRefundNeverTouchesDelivered() public view {
+        assertFalse(handler.forcedRefundedDelivered());
     }
 
     function invariant_exactlyOneTerminalState() public view {

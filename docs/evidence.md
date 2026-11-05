@@ -24,7 +24,7 @@ Re-run: `npx tsx scripts/smoke-whitechain.ts`
 ## Contracts (local)
 | What | Result |
 |---|---|
-| `forge test` | Fri 6 Nov, 2nd machine, forge 1.9.0: **56 passed, 0 failed** (55 unit/fuzz + invariant suite of 4 invariants, 64 runs x 32 calls; also held at 512 runs x 32) |
+| `forge test` | Fri 6 Nov, 2nd machine, forge 1.9.0: **57 passed, 0 failed** (56 unit/fuzz + invariant suite of 5 invariants, 64 runs x 32; also held at 512 runs x 32) |
 | Deploy dry run | local anvil fork of 1874, `token()` = 0xcedf… (Fri 00:15) |
 
 ## LOCAL FORK end-to-end (NOT real payments; anvil fork, chain id 31337, real USDT bytecode)

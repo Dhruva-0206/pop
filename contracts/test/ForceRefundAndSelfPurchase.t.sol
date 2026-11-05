@@ -43,11 +43,31 @@ contract ForceRefundAndSelfPurchaseTest is Base {
         _assertFullRefundToBuyer(id);
     }
 
-    function test_ForceRefund_delivered_inDisputeWindow() public {
+    /// Team decision: Delivered orders are NOT force-refundable. The buyer confirmed receipt; the normal
+    /// dispute window (openDispute / resolveDispute) is the remedy, and finalize pays the seller afterwards.
+    function test_ForceRefund_delivered_reverts_andOrderSettlesNormally() public {
         uint256 id = _payAndShip();
         vm.prank(buyer);
         checkout.confirmReceived(id);
         _ban();
+        vm.prank(arbiter);
+        vm.expectRevert(PoPCheckout.BadState.selector);
+        checkout.forceRefundBanned(id);
+        assertEq(uint8(_state(id)), uint8(PoPCheckout.State.Delivered));
+        vm.warp(block.timestamp + LONG_W + 1);
+        checkout.finalize(id);
+        assertEq(uint8(_state(id)), uint8(PoPCheckout.State.Released));
+        assertGt(checkout.credit(seller), 0);
+        _assertSolvent();
+    }
+
+    function test_ForceRefund_delivered_buyerDisputeThenArbiter() public {
+        uint256 id = _payAndShip();
+        vm.prank(buyer);
+        checkout.confirmReceived(id);
+        _ban();
+        vm.prank(buyer);
+        checkout.openDispute(id, keccak256("photo")); // Disputed: now force-refundable
         _force(id);
         _assertFullRefundToBuyer(id);
     }
@@ -173,8 +193,6 @@ contract ForceRefundAndSelfPurchaseTest is Base {
     function test_ForceRefund_bannedSellerCanStillNotBeReleasedLater() public {
         // After ban + force refund the order can't be finalized into a release.
         uint256 id = _payAndShip();
-        vm.prank(buyer);
-        checkout.confirmReceived(id);
         _ban();
         _force(id);
         vm.warp(block.timestamp + LONG_W + 1);
