@@ -1,39 +1,60 @@
 import { NextResponse, connection } from "next/server";
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { isHex } from "viem";
+import { encodePacked, isHex, keccak256, type Address } from "viem";
+import { DEV_REVIEWER_PREFIX } from "@pop/shared/server/arkiv";
 import { pub, store } from "@/lib/server/chain";
 import { readOrder } from "@/lib/server/orders";
-import { reviewActionFor, reviewSignal, verifyReviewProof } from "@/lib/server/world";
-import { reviewAuthMessage } from "@/lib/messages";
+import { publishReviewRow } from "@/lib/server/reviews";
+import { devSkipWorld, reviewActionFor, reviewSignal, reviewerKey, verifyReviewProof } from "@/lib/server/world";
+import { REVIEW_TEXT_MAX, normaliseReviewText, reviewAuthMessage } from "@/lib/messages";
 
 const Body = z.object({
   seller: z.string().min(1).max(64), // seller handle
   orderId: z.string().regex(/^\d+$/),
-  /** Signature by the buyer wallet over reviewAuthMessage(orderId, seller). */
+  rating: z.number().int().min(1).max(5),
+  text: z.string().max(REVIEW_TEXT_MAX * 4).default(""), // raw; the real limit is applied after normalisation
+  /** Signature by the buyer wallet over reviewAuthMessage(orderId, seller, rating, text). */
   buyerSignature: z.string().refine((s) => isHex(s)),
-  idkitResult: z.record(z.string(), z.unknown()),
+  idkitResult: z.record(z.string(), z.unknown()).optional(),
+  /** DEV ONLY: honoured only when POP_DEV_SKIP_WORLD=1 on a local `next dev` server. Ignored everywhere else. */
+  skipWorld: z.boolean().optional(),
 });
 
 /**
- * World-gated review check. Order of checks (cheapest and most private first, World last):
+ * Review pipeline. Order of checks (cheapest and most private first, World last):
  *  1. the seller has a review action and is a known seller;
- *  2. the order is Released ON-CHAIN and belongs to that seller;
- *  3. the caller is the order's on-chain buyer (wallet signature; the buyer address is read from the chain, not the request);
- *  4. the World proof is valid for this action and signal keccak(orderId, buyer);
- *  5. the (nullifier, seller) pair is claimed atomically (UNIQUE(nullifier, seller) defence in depth; one review per order).
- * Success is only returned after all five. The raw nullifier is never returned or logged.
- * Still TODO (Phase 2): rating/text, Arkiv readonly write, changeOwnership to the buyer.
+ *  2. the order is Released ON-CHAIN and belongs to that seller; no review exists for it yet;
+ *  3. the caller is the order's on-chain buyer (wallet signature over order, seller, rating and text);
+ *  4. the World proof is valid for this action and signal keccak(orderId, buyer)  [skippable ONLY by the DEV flag];
+ *  5. the (nullifier, seller) pair and the pending review row are claimed atomically (one review per order);
+ *  6. the readonly Arkiv entity is created by the attestor and transferred to the buyer. This step is retryable
+ *     (POST /api/reviews/retry) WITHOUT a second nullifier claim; the row keeps entity key + status.
+ * The raw nullifier is never stored, returned or logged.
  */
 export async function POST(req: Request) {
   await connection();
+
+  const dev = devSkipWorld();
+  if (dev === "forbidden") {
+    // Fail closed: someone enabled the DEV skip on a deployed/production build.
+    console.error("[world] POP_DEV_SKIP_WORLD is set on a non-development build. Refusing all reviews until it is removed.");
+    return NextResponse.json({ ok: false, error: "server misconfigured" }, { status: 500 });
+  }
+
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ ok: false, error: "bad request" }, { status: 400 });
-  const { seller, orderId, buyerSignature, idkitResult } = parsed.data;
+  const { seller, orderId, rating, buyerSignature, idkitResult } = parsed.data;
+  const text = normaliseReviewText(parsed.data.text);
+  if (text.length > REVIEW_TEXT_MAX) return NextResponse.json({ ok: false, error: `review text is limited to ${REVIEW_TEXT_MAX} characters` }, { status: 400 });
+  const skipWorld = dev === "on" && parsed.data.skipWorld === true;
+  if (!skipWorld && !idkitResult) return NextResponse.json({ ok: false, error: "World ID proof required" }, { status: 400 });
 
   const action = reviewActionFor(seller);
   const sellerRow = store.sellerByHandle(seller);
-  if (!action || !sellerRow) return NextResponse.json({ ok: false, error: "reviews are not enabled for this seller" }, { status: 404 });
+  if (!sellerRow || (!skipWorld && !action)) {
+    return NextResponse.json({ ok: false, error: "reviews are not enabled for this seller" }, { status: 404 });
+  }
 
   const order = await readOrder(BigInt(orderId));
   if (!order || order.seller.toLowerCase() !== sellerRow.wallet.toLowerCase()) {
@@ -42,24 +63,67 @@ export async function POST(req: Request) {
   if (order.state !== "Released") {
     return NextResponse.json({ ok: false, error: "reviews open after the order is complete and the seller is paid" }, { status: 409 });
   }
+  const already = store.review(orderId);
+  if (already) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: already.status === "synced" ? "this order already has a review" : "your review was accepted but not published yet: use retry",
+        status: already.status,
+        retry: already.status !== "synced",
+      },
+      { status: 409 },
+    );
+  }
 
   const isBuyer = await pub
     .verifyMessage({
-      address: order.buyer as `0x${string}`,
-      message: reviewAuthMessage(orderId, seller),
+      address: order.buyer as Address,
+      message: reviewAuthMessage(orderId, seller, rating, text),
       signature: buyerSignature as `0x${string}`,
     })
     .catch(() => false);
   if (!isBuyer) return NextResponse.json({ ok: false, error: "only the buyer of this order can review it" }, { status: 403 });
 
-  const signal = reviewSignal(BigInt(orderId), order.buyer as `0x${string}`);
-  const v = await verifyReviewProof(idkitResult as never, action, signal);
-  if (!v.ok) return NextResponse.json({ ok: false, error: v.reason }, { status: v.status });
+  let nullifier: string;
+  let publicKey: string;
+  if (skipWorld) {
+    console.warn(`[world] DEV: World proof SKIPPED for order ${orderId} (POP_DEV_SKIP_WORLD=1). Not a verified human.`);
+    nullifier = `dev-skip:${orderId}`;
+    publicKey = DEV_REVIEWER_PREFIX + keccak256(encodePacked(["uint256", "address"], [BigInt(orderId), sellerRow.wallet as Address])).slice(2);
+  } else {
+    const signal = reviewSignal(BigInt(orderId), order.buyer as Address);
+    const v = await verifyReviewProof(idkitResult as never, action!, signal);
+    if (!v.ok) return NextResponse.json({ ok: false, error: v.reason }, { status: v.status });
+    nullifier = v.nullifier;
+    publicKey = reviewerKey(v.nullifier, sellerRow.wallet as Address);
+  }
 
-  const nullifierHash = createHash("sha256").update(v.nullifier).digest("hex"); // store a hash, not the raw nullifier
-  if (!store.claimReviewNullifier(nullifierHash, sellerRow.wallet, orderId)) {
+  const nullifierHash = createHash("sha256").update(nullifier).digest("hex"); // store a hash, not the raw nullifier
+  const claimed = store.claimReview(nullifierHash, {
+    orderId,
+    sellerWallet: sellerRow.wallet,
+    sellerHandle: sellerRow.handle,
+    buyerWallet: order.buyer,
+    rating,
+    text,
+    reviewerKey: publicKey,
+    buyerSig: buyerSignature,
+    payTx: store.order(orderId)?.fundTx,
+    devSkippedWorld: skipWorld,
+  });
+  if (!claimed) {
     return NextResponse.json({ ok: false, error: "this person has already reviewed this seller, or this order already has a review" }, { status: 409 });
   }
-  console.log(`[world] review claimed env=${v.environment} action=${action} order=${orderId}`);
-  return NextResponse.json({ ok: true, environment: v.environment, action, signal });
+
+  const out = await publishReviewRow(orderId);
+  console.log(`[review] order=${orderId} accepted; arkiv=${out.status}${skipWorld ? " (DEV, no World proof)" : ""}`);
+  return NextResponse.json({
+    ok: true,
+    status: out.status,
+    arkivKey: out.arkivKey,
+    retry: out.status === "failed",
+    error: out.error,
+    devSkippedWorld: skipWorld,
+  });
 }

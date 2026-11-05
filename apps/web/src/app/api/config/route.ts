@@ -1,5 +1,6 @@
 import { NextResponse, connection } from "next/server";
 import { deployment, mode, net } from "@/lib/server/chain";
+import { devSkipWorld } from "@/lib/server/world";
 
 /** Public network config for the browser (addresses, RPC, labels). No secrets. Always request-time. */
 export async function GET() {
@@ -16,5 +17,6 @@ export async function GET() {
     token: d.token,
     tokenDecimals: d.tokenDecimals,
     explorer: net.isLocalFork ? null : "https://explorer.testnet.whitechain.io",
+    devSkipWorld: devSkipWorld() === "on",
   });
 }

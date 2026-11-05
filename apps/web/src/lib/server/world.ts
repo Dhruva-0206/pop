@@ -17,6 +17,20 @@ export function worldConfig() {
 }
 
 /**
+ * DEV-ONLY escape hatch: skip ONLY the World proof so the Arkiv review path can be tested before the portal actions exist.
+ * Set `POP_DEV_SKIP_WORLD=1` in the shell of a local `next dev` (never in .env, never in Vercel).
+ * - "off": normal (default).
+ * - "on": allowed because this is a local development server.
+ * - "forbidden": the flag is set on a production/deployed build. Callers must refuse loudly (fail closed).
+ * Reviews written this way carry a `dev-` reviewer key, expire after 24 h and are never counted as verified humans.
+ */
+export function devSkipWorld(): "off" | "on" | "forbidden" {
+  if (process.env.POP_DEV_SKIP_WORLD?.trim() !== "1") return "off";
+  const deployed = process.env.NODE_ENV !== "development" || !!process.env.VERCEL || !!process.env.VERCEL_ENV;
+  return deployed ? "forbidden" : "on";
+}
+
+/**
  * One portal action per seller (World ID 4.0 proofs are one-time per human per action).
  * Returns undefined for sellers without an action: the review flow must refuse, never fall back to a shared action.
  */

@@ -15,6 +15,25 @@ export const deliveryFingerprint = (d: DeliveryDetails | undefined) =>
 export const orderRegisterMessage = (txHash: string, delivery: DeliveryDetails | undefined) =>
   `${APP_NAME} order registration\nPayment tx: ${txHash.toLowerCase()}\nDelivery details: ${deliveryFingerprint(delivery)}\nThis signature only proves you made this payment. It moves no money.`;
 
-/** Signed by the BUYER wallet to prove they are the buyer when publishing a review. Moves no money. */
-export const reviewAuthMessage = (orderId: string, sellerHandle: string) =>
-  `${APP_NAME} review\nOrder: ${orderId}\nSeller: ${sellerHandle.trim().toLowerCase()}\nThis signature only proves you are the buyer of this order. It moves no money.`;
+export const REVIEW_TEXT_MAX = 500;
+
+/** Trim, and drop control characters except tab/newline. Client and server must both use this before hashing. */
+export const normaliseReviewText = (t: string) =>
+  Array.from(t)
+    .filter((ch) => {
+      const c = ch.codePointAt(0)!;
+      return c === 9 || c === 10 || (c >= 32 && c !== 127);
+    })
+    .join("")
+    .trim();
+
+/**
+ * Signed by the BUYER wallet when publishing a review: proves they are the buyer AND fixes the rating and text,
+ * so the attestor that writes the Arkiv entity cannot alter what the buyer said. Moves no money.
+ */
+export const reviewAuthMessage = (orderId: string, sellerHandle: string, rating: number, text: string) =>
+  `${APP_NAME} review\nOrder: ${orderId}\nSeller: ${sellerHandle.trim().toLowerCase()}\nRating: ${rating}\nText: ${keccak256(toBytes(normaliseReviewText(text)))}\nThis signature only proves you are the buyer of this order and fixes what you wrote. It moves no money.`;
+
+/** Signed by the BUYER wallet to retry publishing an already-accepted review to Arkiv. Moves no money. */
+export const reviewRetryMessage = (orderId: string, sellerHandle: string) =>
+  `${APP_NAME} review retry\nOrder: ${orderId}\nSeller: ${sellerHandle.trim().toLowerCase()}\nThis signature only asks PoP to retry publishing your review. It moves no money.`;

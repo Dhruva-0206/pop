@@ -37,12 +37,34 @@ export type OrderRow = {
   fundTx: string;
   updatedAt: string;
 };
+/** A review accepted by the server. The Arkiv write is retryable; the nullifier claim is made once, with this row. */
+export type ReviewStatus = "pending" | "synced" | "failed";
+export type ReviewRow = {
+  orderId: string;
+  sellerWallet: string;
+  sellerHandle: string;
+  buyerWallet: string;
+  rating: number;
+  text: string;
+  reviewerKey: string; // public: keccak(nullifier, seller), or "dev-..." when the World proof was skipped (DEV only)
+  buyerSig: string; // buyer's signature over (order, seller, rating, text fingerprint)
+  payTx?: string;
+  devSkippedWorld: boolean;
+  arkivKey?: string;
+  createTx?: string;
+  transferTx?: string;
+  status: ReviewStatus;
+  error?: string;
+  createdAt: string;
+  updatedAt: string;
+};
 type Db = {
   sellers: SellerRow[];
   listings: ListingRow[];
   orders: OrderRow[];
   processedEvents: string[]; // `${chainId}:${txHash}:${logIndex}`
   loginNonces?: { address: string; nonce: string; expiresAt: number }[];
+  reviews?: ReviewRow[];
   reviewClaims?: { nullifierHash: string; sellerWallet: string; orderId: string; createdAt: string }[];
   faucetGrants?: { address: string; ipHash: string; gasTx?: string; usdtTx?: string; createdAt: string }[];
 };
@@ -140,18 +162,31 @@ export function createFileStore(mode: NetworkMode) {
     },
     /**
      * Atomic (one synchronous read-modify-write, single process) claim of "this human reviews this seller",
-     * mirroring UNIQUE(nullifier_hash, seller_wallet). Also one review per order. False if already claimed.
+     * mirroring UNIQUE(nullifier_hash, seller_wallet), together with the pending review row. One review per order.
+     * Returns false (and writes nothing) if the human already reviewed this seller or the order already has a review.
+     * A failed Arkiv write is retried against the SAME row, so a retry never needs a second claim.
      */
-    claimReviewNullifier(nullifierHash: string, sellerWallet: string, orderId: string): boolean {
+    claimReview(nullifierHash: string, review: Omit<ReviewRow, "status" | "createdAt" | "updatedAt" | "error">): boolean {
       const db = load();
       const claims = db.reviewClaims ?? [];
       const dup = claims.some(
-        (c) => (c.nullifierHash === nullifierHash && c.sellerWallet === lc(sellerWallet)) || c.orderId === orderId,
+        (c) => (c.nullifierHash === nullifierHash && c.sellerWallet === lc(review.sellerWallet)) || c.orderId === review.orderId,
       );
-      if (dup) return false;
-      db.reviewClaims = [...claims, { nullifierHash, sellerWallet: lc(sellerWallet), orderId, createdAt: new Date().toISOString() }];
+      if (dup || (db.reviews ?? []).some((r) => r.orderId === review.orderId)) return false;
+      const now = new Date().toISOString();
+      db.reviewClaims = [...claims, { nullifierHash, sellerWallet: lc(review.sellerWallet), orderId: review.orderId, createdAt: now }];
+      db.reviews = [...(db.reviews ?? []), { ...review, status: "pending", createdAt: now, updatedAt: now }];
       save(db);
       return true;
+    },
+    review: (orderId: string) => load().reviews?.find((r) => r.orderId === orderId),
+    reviewsBySeller: (w: string) => (load().reviews ?? []).filter((r) => lc(r.sellerWallet) === lc(w)),
+    patchReview(orderId: string, patch: Partial<ReviewRow>) {
+      const db = load();
+      const r = db.reviews?.find((x) => x.orderId === orderId);
+      if (!r) return;
+      Object.assign(r, patch, { updatedAt: new Date().toISOString() });
+      save(db);
     },
     patchOrder(id: string, patch: Partial<OrderRow>) {
       const db = load();

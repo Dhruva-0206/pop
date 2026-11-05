@@ -8,7 +8,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./server/store": "./src/server/store.ts",
-    "./server/crypto": "./src/server/crypto.ts"
+    "./server/crypto": "./src/server/crypto.ts",
+    "./server/arkiv": "./src/server/arkiv.ts"
   },
   "peerDependencies": { "viem": "^2.0.0" }
 }

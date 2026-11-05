@@ -9,6 +9,7 @@ import { getTestAccount, loadCode, walletOf } from "@/lib/client/wallet";
 import { STATE_LABEL, countdown, priceLabel, usdt, when } from "@/lib/client/format";
 import { TestModeBanner, TxLink } from "@/components/Banners";
 import { FinalizeButton } from "@/components/FinalizeButton";
+import { ReviewBox } from "@/components/ReviewBox";
 
 type Live = {
   orderId: string;
@@ -151,6 +152,8 @@ export default function OrderView() {
           I received it
         </button>
       )}
+
+      {isBuyer && o.state === "Released" && d.listing && <ReviewBox cfg={cfg} orderId={o.orderId} sellerHandle={d.listing.sellerHandle} />}
 
       {o.canFinalize && <FinalizeButton cfg={cfg} orderId={o.orderId} onDone={load} />}
 
