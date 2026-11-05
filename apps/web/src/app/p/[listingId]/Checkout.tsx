@@ -7,7 +7,7 @@ import { checkoutAbi, deliveryCodeHash, termsHash, type Terms } from "@pop/share
 import { publicClientOf, useConfig } from "@/lib/client/config";
 import { getTestAccount, saveCode, walletOf } from "@/lib/client/wallet";
 import { newDeliveryCode } from "@/lib/client/code";
-import { countdown, priceLabel, short, usdt } from "@/lib/client/format";
+import { priceLabel, short, usdt, when } from "@/lib/client/format";
 import { TestModeBanner } from "@/components/Banners";
 
 type ListingResp = {
@@ -223,7 +223,7 @@ export default function Checkout() {
         {busy ? "Working…" : `Pay ${priceLabel(l.priceInr, l.priceUnits, cfg.tokenDecimals)}`}
       </button>
       {step && <div className="text-sm text-neutral-700">{step}</div>}
-      <div className="text-center text-xs text-neutral-400">Offer valid for {countdown(Number(l.offer.validUntil), Math.floor(Date.now() / 1000))}</div>
+      <div className="text-center text-xs text-neutral-400">Offer valid until {when(Number(l.offer.validUntil))}</div>
     </main>
   );
 }
