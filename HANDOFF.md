@@ -77,7 +77,7 @@ A protected checkout that makes **paying upfront as safe as COD**:
 ### Data
 - **PostgreSQL on Supabase**: private data only. Schema: `supabase/migrations/0001_init.sql`.
 - Buyer address encrypted with **AES-256-GCM**. **No personal data ever goes on any chain or on Arkiv.**
-- **Currently a local JSON file (`.data/<mode>.json`) stands in** because `DATABASE_URL` isn't set. **This must be replaced with Supabase before deploying to Vercel** (Vercel has no persistent disk).
+- **Supabase Postgres is the only store now** (the JSON file store was deleted). `DATABASE_URL` is required; schema per mode: testnet `public`, fork `pop_fork`. `npm run db:migrate` applies the schema; `npm run db:reset-fork` wipes the fork data.
 
 ### Submission-form tags (select exactly these)
 | Dropdown | Select |
@@ -174,7 +174,7 @@ npm run fork:up     # fund wallets + deploy + seed @meera.jewels + listing jhumk
 npm run dev:web     # http://localhost:3000/p/jhumka-01
 npx tsx scripts/e2e-fork.ts   # full journey through API + contracts (currently PASSES)
 ```
-If the fork restarts, rerun `npm run fork:up` and delete `.data/fork.json`.
+If the fork restarts, run `npm run db:reset-fork` and then `npm run fork:up` again.
 
 ---
 
@@ -265,7 +265,7 @@ Readers trust only rows whose `$creator` is our attestor and, for reviews, only 
 
 ### Building (in this order)
 1. Run smoke C, D, E as soon as the keys land; log the results
-2. **Replace the JSON store with Supabase** (required for Vercel)
+2. **Replace the JSON store with Supabase** (DONE Fri 6 Nov, see CLAUDE.md §8)
 3. Deploy + verify on 1874 (**ask the team first**) → one real USDT `pay` → save explorer links in `docs/evidence.md`
 4. Review flow: World proof → order Released on-chain + buyer matches → `UNIQUE(nullifier, seller)` → Arkiv readonly review → `changeOwnership` to buyer
 5. `/verify/[handle]`: Arkiv + contract counters; red for unknown or banned

@@ -46,4 +46,4 @@ Re-run (safe, queries first and creates nothing if the entity exists): `npm run 
 | B. Contracts on anvil | Fri 00:15 | PASS (34 tests + fork deploy) |
 | C. Arkiv create/query/transfer | Fri 6 Nov | **PASS** (create, query by creator, changeOwnership to buyer; creator stays attestor) |
 | D. World server verify | | BLOCKED: needs World app + rp_id + signing key |
-| E. Supabase unique constraint | | BLOCKED: needs DATABASE_URL |
+| E. Supabase unique constraint | Fri 6 Nov | **PASS** (migration applied; same human + same seller rejected with SQLSTATE 23505 on `review_nullifiers_human_seller_uq`; same human + different seller allowed). Now exercised by the app's review claim in the fork e2e |
