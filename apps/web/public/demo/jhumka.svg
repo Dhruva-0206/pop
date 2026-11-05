@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Silver jhumka earrings">
+  <rect width="240" height="240" fill="#f5f1ea"/>
+  <g fill="none" stroke="#6b7280" stroke-width="3" stroke-linecap="round">
+    <path d="M80 40v18M160 40v18"/>
+  </g>
+  <g fill="#c0c4cc" stroke="#6b7280" stroke-width="3">
+    <path d="M52 100a28 28 0 0 1 56 0z"/>
+    <path d="M132 100a28 28 0 0 1 56 0z"/>
+  </g>
+  <g fill="#9ca3af" stroke="#6b7280" stroke-width="2">
+    <circle cx="58" cy="116" r="6"/><circle cx="80" cy="120" r="6"/><circle cx="102" cy="116" r="6"/>
+    <circle cx="138" cy="116" r="6"/><circle cx="160" cy="120" r="6"/><circle cx="182" cy="116" r="6"/>
+  </g>
+  <g fill="#e5e7eb" stroke="#6b7280" stroke-width="2">
+    <circle cx="80" cy="140" r="5"/><circle cx="160" cy="140" r="5"/>
+  </g>
+  <text x="120" y="210" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#6b7280">demo product image</text>
+</svg>

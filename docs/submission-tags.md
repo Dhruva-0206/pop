@@ -11,4 +11,4 @@
 | Databases | PostgreSQL | `supabase/migrations/0001_init.sql` |
 | Databases | Supabase | Hosted Postgres for private data (pending project creation) |
 
-Not in a dropdown (README "Tools used"): viem, wagmi, @arkiv-network/sdk 1.0.1, @worldcoin/idkit 4.x, Tailwind, qrcode, html5-qrcode, @scure/bip39, zod, Vitest, Vercel.
+Not in a dropdown (README "Tools used"): viem, @arkiv-network/sdk 1.0.1, @worldcoin/idkit 4.x, Tailwind, qrcode, html5-qrcode, @scure/bip39, zod, Vercel.

@@ -23,7 +23,7 @@ Deadline: **Sat 7 Nov 09:00 IST** (target submit 07:00). Partner prizes: Whitech
 ## 2. Locked decisions
 - Name "PoP" lives in ONE place: `packages/shared` `APP_NAME` + the EIP-712 domain name. Change both together, only before the first testnet deploy.
 - Stack (submission tags): EVM, Optimism (Whitechain is an OP Stack L2); Foundry; OpenZeppelin Contracts; Next.js; React; PostgreSQL; Supabase.
-- Also used: viem + wagmi, @arkiv-network/sdk 1.0.x (server only), World IDKit 4.x + server verify, Tailwind, qrcode, html5-qrcode, @scure/bip39, zod, Vitest, Vercel (two projects).
+- Also used: viem, @arkiv-network/sdk 1.0.x (server only), World IDKit 4.x + server verify, Tailwind, qrcode, html5-qrcode, @scure/bip39, zod, Vercel (two projects; planned, not configured).
 - Not used: Scaffold-ETH, ethers.js, web3.js, Privy, Self, Anon Aadhaar, Semaphore, The Graph. Hardhat only if Foundry fails (it didn't).
 - Review rule: **one review per unique human PER SELLER**. Enforced by Postgres `UNIQUE(nullifier_hash, seller_wallet)`; Arkiv gets only `keccak(nullifier, seller)`. World ID 4.0 proofs are one-time per (human, action), so each seller has its OWN pre-created portal action (`WORLD_REVIEW_ACTIONS` in packages/shared); the DB constraint stays as defence in depth.
 - Handle proof: staff-checked bio code (tier 1) first; Reclaim (tier 2) only later if time allows.
@@ -41,7 +41,7 @@ Deadline: **Sat 7 Nov 09:00 IST** (target submit 07:00). Partner prizes: Whitech
 | `apps/web/` | PoP Next.js (App Router, TS, Tailwind, src/): pages + API routes |
 | `apps/demo-store/` | Kurta Co. demo merchant (separate Vercel project) |
 | `packages/shared/` | `APP_NAME`, chain defs (1874, 7794095), EIP-712 Offer types, ABIs |
-| `scripts/` | tsx scripts: smoke tests, wallet setup, seed, keeper |
+| `scripts/` | tsx scripts: smoke tests, wallet setup, seed, e2e (no keeper yet) |
 | `supabase/migrations/` | `0001_init.sql` (Architecture §9) |
 | `arkiv/` | Arkiv judging files |
 | `docs/` | evidence.md, friction-log.md, submission-tags.md, WORLD_DEBRIEF.md, limitations.md |
@@ -75,7 +75,7 @@ Deadline: **Sat 7 Nov 09:00 IST** (target submit 07:00). Partner prizes: Whitech
 - ☐ World-gated review → Arkiv readonly entity → transfer to buyer; duplicate + cancelled paths
 - ☐ Verify page reading Arkiv + contract; red for unknown/banned
 - ☐ Separate demo store with Pay with PoP + its own Arkiv read
-- ◐ Proof page; Foundry tests (invariants + failure paths): 34 tests incl. solvency check + split fuzz; a stateful invariant suite is still TODO
+- ◐ Proof page; Foundry tests (invariants + failure paths): 39 `test_` functions (28 checkout, 5 arbiter timeout, 6 registry; static count) + 4 invariant functions (`test/invariant/PoPInvariant.t.sol`). Last run by the authors on the original laptop; not re-run on the 2nd machine yet (no Foundry there)
 
 **SHOULD**
 - ◐ Reputation-tiered dispute window (in contract + test)
@@ -122,7 +122,7 @@ Contracts: _not deployed to Whitechain_ (dry run only on a local anvil fork).
 - Thu 23:55: Docs say solc 0.8.30, evm prague for Whitechain.
 - Fri 00:05: USDT 0xcedf… exists on 1874 (Tether USD, 6 dp). Prize-text address confirmed usable; still need tokens.
 - Fri 00:10: Contract decision: `reportHandoverRefused` only allowed **before deliverBy**, so the courier key can never block the late-delivery refund (protects sentence 1). Test: `test_Courier_cannotBlockLateDeliveryRefund`.
-- Fri 00:10: Contract decision: added `withdrawFor(account)` (anyone can push a credit to its owner) so a keeper can complete refunds; funds only ever go to the credited account.
+- Fri 00:10: Contract decision: added `withdrawFor(account)` (anyone can push a credit to its owner) so a future keeper (not built yet) or anyone can complete refunds; funds only ever go to the credited account.
 - Fri 00:10: `confirmDelivery`/`confirmReceived` allowed while Shipped even after deliverBy (the buyer's code = buyer consent). Race with `finalize` after deliverBy is first-come.
 - Fri 00:10: ~~OPEN QUESTION: a Disputed order has no timeout~~ → resolved Fri 01:00 (below).
 - Fri 01:00 (team GO): **Arbiter timeout.** Constructor param `arbiterTimeout` (demo 300 s, production 14 days). A Disputed order not resolved in time can be `finalize`d by anyone into a full buyer refund, `OrderRefunded` reason 4. `disputedAt` is set on both entry paths (handover refused, buyer dispute). After the timeout `resolveDispute` reverts `TooLate`, so the arbiter can't race the refund with a release.
@@ -142,6 +142,10 @@ Contracts: _not deployed to Whitechain_ (dry run only on a local anvil fork).
 - Fri 00:30: Next.js 16.4.5 (create-next-app default: Cache Components on). Shared package via `transpilePackages`.
 
 ## 9. Progress log (IST, newest first)
+- Fri 6 Nov (2nd machine, Claude Code): **Step 1 verify.** Node v24.19.0, npm 11.6.4. `npm install` OK (435 pkgs; 8 moderate audit notes, untouched). `npm run build` OK for web + demo-store (Next 16.4.5). web lint: 0 errors, 1 warning (`<img>` in OrderView). **No `.env` and no Foundry on this machine**, so `forge build/test`, the fork, `fork:up` and `e2e-fork.ts` were NOT run. Docs claim 39 tests + 4 invariants; static count matches (39 + 4) but is unverified by a run.
+- Fri 6 Nov (2nd machine): **App security fixes (Step 3), typecheck/build/lint OK, NOT yet exercised on a fork.** `/api/orders/confirm` now needs a buyer-wallet signature (`orderRegisterMessage`) and takes the listing from the on-chain `listingId` (`store.listingByIdHash`); seller sign-in uses a server-issued single-use nonce (`POST /api/auth/seller/nonce`); faucet ignores the spoofable leftmost x-forwarded-for, has a global cap (`FAUCET_DAILY_CAP`, default 200), a low-balance guard and rolls the grant back on failure; `/api/world/*` call `connection()`; `verify-review` requires on-chain Released + order seller match + buyer signature, then World verify, then an atomic `(sha256(nullifier), seller)` claim (also one review per order). Still no rating/text/Arkiv write. `scripts/e2e-fork.ts` updated to the new flows (adds non-buyer-registration and login-replay checks).
+- Fri 6 Nov (2nd machine): Doc drift fixed: removed wagmi/Vitest/keeper/arbiter-page claims (neither wagmi nor Vitest is in any package.json; no keeper script or /arbiter page exists); added `apps/web/public/demo/jhumka.svg`; removed the Next.js starter SVGs.
+- PENDING (blocked: Foundry install needs approval): contract fixes (arbiter force-refund for banned sellers; `pay` rejects `msg.sender == seller`) + `npm run abi`.
 - Fri 02:05: Phase 2 ugly path a–f done on LOCAL FORK; `scripts/e2e-fork.ts` PASS (pay → confirm → seller sign-in → ship → wrong code rejected → code accepted → anyone finalizes → seller withdraws 0.99; unshipped order refunded 1.00; handover refused → Disputed). Keys for C/D/E still empty.
 - Fri 01:55: /o, /dashboard, /courier pages + settle button (fccde76, 57144c4, 5f15d73, 732ac55).
 - Fri 01:45: Checkout /p/[listingId] + API routes (ad6e80b, 1e57ca9).

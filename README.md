@@ -24,7 +24,7 @@ _TODO_ (see `specs/PoP_Technical_Architecture.md`).
 | `apps/web/` | PoP Next.js app (pages + API routes) |
 | `apps/demo-store/` | "Kurta Co." demo merchant, a separate app |
 | `packages/shared/` | Name constant, chain definitions, EIP-712 types, ABIs |
-| `scripts/` | Smoke tests, seed, keeper, wallet setup |
+| `scripts/` | Smoke tests, seed, fork e2e, wallet setup |
 | `supabase/` | Postgres migrations (private data only) |
 | `arkiv/` | Arkiv judging docs |
 | `docs/` | Evidence, friction log, limitations, submission tags |
@@ -40,7 +40,7 @@ _TODO_: writer wallet + runnable query.
 _TODO_.
 
 ## Tools used
-Foundry, OpenZeppelin Contracts, Next.js, React, viem + wagmi, @arkiv-network/sdk, World IDKit, Supabase Postgres, Tailwind, zod, Vitest, qrcode, html5-qrcode, @scure/bip39, Vercel.
+Foundry, OpenZeppelin Contracts, Next.js, React, viem, @arkiv-network/sdk, World IDKit, Supabase Postgres, Tailwind, zod, qrcode, html5-qrcode, @scure/bip39, Vercel.
 
 ## Limitations
 See `docs/limitations.md`.
