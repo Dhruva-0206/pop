@@ -99,21 +99,23 @@ Deadline: **Sat 7 Nov 09:00 IST** (target submit 07:00). Partner prizes: Whitech
 | 7 | Organizers OK with planning docs in specs/ | Fri 12:00 | ☐ | user |
 
 ## 7. Addresses, tx hashes, entity keys (NEVER private keys)
-Wallets (keys only in `pop/.env`, generated Fri 00:03 by `scripts/gen-wallets.ts`):
+Wallets (keys only in `pop/.env`; **regenerated Fri 03:34, see §8**; originals held nothing):
 | Role | Address | Needs |
 |---|---|---|
-| deployer (admin, treasury) | 0x2Bfcc8CDFb9ffA1bD823b38F28fE86Ac8E013Fba | WBT |
-| attestor (Arkiv writer, registry signer) | 0x95da11ed9eC58De7684D41E6135970c9D481a42A | tGLM (Arkiv); a little WBT later |
-| courier | 0x2Fa5fF93445276AD6Ca7303DC9c3Ed94FDadB352 | WBT |
-| faucet | 0x4435a5311d54EE8dD6eb4Ff3cf22697d8BbE2B64 | WBT + test USDT |
-| arbiter | 0xEc93Dd34af630c281C15ccE560eA7e9b6Aff3c3E | WBT |
-| demo merchant (Kurta Co.) | 0x93B520c6Cc8A9fe4a4BA1CE89DA57372e0309a89 | WBT later |
-| test buyer | 0x29D123A04865c9eD2E377A128C68334F2601f34C | WBT + test USDT |
+| deployer (admin, treasury) | 0xB7C637cb5a37abbA288ca51f1d2Fd0c6776ABb2c | WBT |
+| attestor (Arkiv writer, registry signer) | 0xeF0CC7f7f280083e425A741957B920c7eF39A21c | tGLM (Arkiv); a little WBT later |
+| courier | 0x63d1FE1aB00f657516Bd7f94fCa9060118532E0C | WBT |
+| faucet | 0x012f9baaDbCF059Fc70DAFcD7eB109404e703A43 | WBT + test USDT |
+| arbiter | 0x502CbFd5c92dF9CbA8f55560471501794610d2E9 | WBT |
+| demo merchant (Kurta Co.) | 0xB6a8fA0698Fdf0a8CD1b94e9101dCE39E63358Cf | WBT later |
+| test buyer | 0xC47e6F52941653B52D1d7213429dd43CFf5234cE | WBT + test USDT |
+| demo seller @meera.jewels (`SELLER_PK`) | 0x0bda864aa008bDa5fA7401A904f51f37866A3dE9 | WBT (local fork funds it) |
 
 Specified USDT: 0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7 (Tether USD, USDT, 6 decimals; read on-chain Fri 00:05).
 Contracts: _not deployed to Whitechain_ (dry run only on a local anvil fork).
 
 ## 8. Blockers and decisions log
+- Fri 03:34: **Wallets regenerated on purpose** (the originals held nothing and nothing was deployed). New addresses are in §7 and HANDOFF.md §8; keys only in each machine's `.env`. **NEVER run `npm run wallets` / `scripts/gen-wallets.ts` again and never regenerate wallets** (it would invalidate every address and any funding).
 - Thu 23:48: Foundry via Git Bash foundryup (user chose option a). WSL not installed. Foundry cannot run in PowerShell.
 - Thu 23:48: Kept the teammate's LICENSE (MIT, existing copyright line) per user.
 - Thu 23:50: Repo-local git identity set (Shantanu Somwanshi, user's email). autocrlf=true.

@@ -13,7 +13,7 @@ Re-run: `npx tsx scripts/smoke-whitechain.ts`
 ## Arkiv Rabdi (7794095)
 | What | Value |
 |---|---|
-| Attestor (writer) wallet | `0x95da11ed9eC58De7684D41E6135970c9D481a42A` |
+| Attestor (writer) wallet | `0xeF0CC7f7f280083e425A741957B920c7eF39A21c` |
 | Smoke entity | pending (needs access key + tGLM) |
 
 ## World
