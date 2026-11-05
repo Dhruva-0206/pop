@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { decodeEventLog, erc20Abi, type Hex } from "viem";
 import { checkoutAbi, deliveryCodeHash, termsHash, type Terms } from "@pop/shared";
@@ -193,7 +194,11 @@ export default function Checkout() {
         <div className="text-sm text-neutral-700">
           {s.completed} protected orders completed · {s.lostDisputes} disputes lost
         </div>
-        <div className="text-xs text-neutral-500">Reviews from verified humans appear here once reviews are live.</div>
+        <div className="text-xs">
+          <Link className="text-emerald-700 underline" href={`/verify/${l.sellerHandle}`}>
+            See @{l.sellerHandle}&apos;s record and reviews
+          </Link>
+        </div>
       </div>
 
       <div className="space-y-1 rounded-xl border p-4 text-sm">
