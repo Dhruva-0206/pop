@@ -235,7 +235,6 @@ Readers trust only rows whose `$creator` is our attestor and, for reviews, only 
 | test buyer | 0xC47e6F52941653B52D1d7213429dd43CFf5234cE | WBT + test USDT |
 | demo seller @meera.jewels (`SELLER_PK`) | 0x0bda864aa008bDa5fA7401A904f51f37866A3dE9 | WBT (local fork funds it) |
 **The `.env` file is not in git.** Wallets were regenerated Fri 03:34 on purpose; the addresses above match the current `.env`. **Never run `npm run wallets` again and never regenerate wallets.**
-**The `.env` file is not in git.** Copy it from the original laptop by USB or in person. Don't regenerate wallets on the new PC, or the addresses above stop matching.
 
 ---
 
