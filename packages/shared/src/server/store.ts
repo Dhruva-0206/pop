@@ -40,6 +40,7 @@ type Db = {
   listings: ListingRow[];
   orders: OrderRow[];
   processedEvents: string[]; // `${chainId}:${txHash}:${logIndex}`
+  faucetGrants?: { address: string; ipHash: string; gasTx?: string; usdtTx?: string; createdAt: string }[];
 };
 
 function repoRoot(): string {
@@ -97,6 +98,13 @@ export function createFileStore(mode: NetworkMode) {
     order: (id: string) => load().orders.find((x) => x.orderId === id),
     ordersBySeller: (w: string) => load().orders.filter((x) => lc(x.sellerWallet) === lc(w)),
     allOrders: () => load().orders,
+    faucetGrantFor: (a: string) => (load().faucetGrants ?? []).find((g) => lc(g.address) === lc(a)),
+    faucetGrantsToday: () => (load().faucetGrants ?? []).filter((g) => Date.now() - Date.parse(g.createdAt) < 86_400_000),
+    recordFaucetGrant(g: { address: string; ipHash: string; gasTx?: string; usdtTx?: string }) {
+      const db = load();
+      db.faucetGrants = [...(db.faucetGrants ?? []), { ...g, createdAt: new Date().toISOString() }];
+      save(db);
+    },
     patchOrder(id: string, patch: Partial<OrderRow>) {
       const db = load();
       const o = db.orders.find((x) => x.orderId === id);

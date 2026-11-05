@@ -25,11 +25,12 @@
     "dev:web": "npm run dev -w @pop/web"
   },
   "devDependencies": {
-    "tsx": "4.23.15",
-    "dotenv": "18.0.9",
-    "typescript": "^5",
+    "@scure/bip39": "^2.4.0",
     "@types/node": "^20",
-    "@types/pg": "8.23.1"
+    "@types/pg": "8.23.1",
+    "dotenv": "18.0.9",
+    "tsx": "4.23.15",
+    "typescript": "^5"
   },
   "dependencies": {
     "@arkiv-network/sdk": "1.0.1",
