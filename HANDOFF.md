@@ -234,6 +234,7 @@ Readers trust only rows whose `$creator` is our attestor and, for reviews, only 
 | demo merchant (Kurta Co.) | 0xB6a8fA0698Fdf0a8CD1b94e9101dCE39E63358Cf | WBT later |
 | test buyer | 0xC47e6F52941653B52D1d7213429dd43CFf5234cE | WBT + test USDT |
 | demo seller @meera.jewels (`SELLER_PK`) | 0x0bda864aa008bDa5fA7401A904f51f37866A3dE9 | WBT (local fork funds it) |
+
 **The `.env` file is not in git.** Wallets were regenerated Fri 03:34 on purpose; the addresses above match the current `.env`. **Never run `npm run wallets` again and never regenerate wallets.**
 
 ---
