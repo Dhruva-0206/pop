@@ -27,6 +27,7 @@ abstract contract Base is Test {
     uint32 constant SHORT_W = 30;
     uint32 constant LONG_W = 120;
     uint32 constant TRUSTED_MIN = 3;
+    uint32 constant ARBITER_TIMEOUT = 300;
     uint32 constant SHIP_WITHIN = 180;
     uint32 constant DELIVER_WITHIN = 300;
     bytes constant CODE = "apple banana cherry dolphin eagle falcon";
@@ -47,7 +48,8 @@ abstract contract Base is Test {
             FEE_BPS,
             SHORT_W,
             LONG_W,
-            TRUSTED_MIN
+            TRUSTED_MIN,
+            ARBITER_TIMEOUT
         );
         _register(seller, HANDLE, 1, 1);
         usdt.mint(buyer, 100 * PRICE);

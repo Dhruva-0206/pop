@@ -69,6 +69,7 @@ contract PoPCheckout is AccessControl, EIP712, ReentrancyGuard {
         uint64 shippedAt;
         uint64 deliverBy;
         uint64 deliveredAt;
+        uint64 disputedAt;
         uint32 deliverWithin;
         uint32 disputeWindow;
         State state;
@@ -81,6 +82,7 @@ contract PoPCheckout is AccessControl, EIP712, ReentrancyGuard {
     uint32 public immutable shortWindow; // dispute window for trusted sellers
     uint32 public immutable longWindow; // dispute window for everyone else
     uint32 public immutable trustedMinCompleted;
+    uint32 public immutable arbiterTimeout; // unresolved dispute -> anyone can refund the buyer
 
     uint256 public nextOrderId;
     mapping(uint256 => Order) internal _orders;
@@ -110,7 +112,7 @@ contract PoPCheckout is AccessControl, EIP712, ReentrancyGuard {
     event DisputeOpened(uint256 indexed orderId, bytes32 evidenceHash);
     event DisputeResolved(uint256 indexed orderId, uint16 buyerBps, bytes32 decisionHash);
     event OrderReleased(uint256 indexed orderId, uint256 sellerAmount, uint256 fee);
-    event OrderRefunded(uint256 indexed orderId, uint256 amount, uint8 reason); // 1 no-ship, 2 no-delivery, 3 dispute
+    event OrderRefunded(uint256 indexed orderId, uint256 amount, uint8 reason); // 1 no-ship, 2 no-delivery, 3 dispute, 4 arbiter timeout
     event Withdrawn(address indexed account, uint256 amount);
     event OffersRevoked(address indexed seller, uint256 minVersion);
 
@@ -142,7 +144,8 @@ contract PoPCheckout is AccessControl, EIP712, ReentrancyGuard {
         uint16 feeBps_,
         uint32 shortWindow_,
         uint32 longWindow_,
-        uint32 trustedMinCompleted_
+        uint32 trustedMinCompleted_,
+        uint32 arbiterTimeout_
     ) EIP712(PoPConfig.DOMAIN_NAME, PoPConfig.DOMAIN_VERSION) {
         if (
             address(token_) == address(0) || address(registry_) == address(0) || admin == address(0)
@@ -150,6 +153,7 @@ contract PoPCheckout is AccessControl, EIP712, ReentrancyGuard {
         ) revert ZeroAddress();
         if (feeBps_ > MAX_FEE_BPS) revert FeeTooHigh();
         if (shortWindow_ == 0 || shortWindow_ > longWindow_) revert BadWindows();
+        if (arbiterTimeout_ == 0) revert BadWindows();
         token = token_;
         registry = registry_;
         treasury = treasury_;
@@ -157,6 +161,7 @@ contract PoPCheckout is AccessControl, EIP712, ReentrancyGuard {
         shortWindow = shortWindow_;
         longWindow = longWindow_;
         trustedMinCompleted = trustedMinCompleted_;
+        arbiterTimeout = arbiterTimeout_;
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(COURIER_ROLE, courier);
         _grantRole(ARBITER_ROLE, arbiter);
@@ -239,6 +244,7 @@ contract PoPCheckout is AccessControl, EIP712, ReentrancyGuard {
         if (o.state != State.Shipped) revert BadState();
         if (block.timestamp > o.deliverBy) revert TooLate();
         o.state = State.Disputed;
+        o.disputedAt = uint64(block.timestamp);
         emit HandoverRefused(id);
     }
 
@@ -250,6 +256,7 @@ contract PoPCheckout is AccessControl, EIP712, ReentrancyGuard {
         if (msg.sender != o.buyer) revert NotBuyer();
         if (block.timestamp > uint256(o.deliveredAt) + o.disputeWindow) revert TooLate();
         o.state = State.Disputed;
+        o.disputedAt = uint64(block.timestamp);
         emit DisputeOpened(id, evidenceHash);
     }
 
@@ -262,6 +269,7 @@ contract PoPCheckout is AccessControl, EIP712, ReentrancyGuard {
         Order storage o = _orders[id];
         if (o.state != State.Disputed) revert BadState();
         if (buyerBps > BPS) revert BadBps();
+        if (block.timestamp > uint256(o.disputedAt) + arbiterTimeout) revert TooLate();
 
         uint256 amount = o.amount;
         uint256 buyerAmount = (amount * buyerBps) / BPS;
@@ -288,7 +296,7 @@ contract PoPCheckout is AccessControl, EIP712, ReentrancyGuard {
 
     // ---------------------------------------------------------------- deadlines (anyone)
 
-    /// @notice Anyone can call. Late ship -> full refund. Late delivery -> full refund. Window over -> release.
+    /// @notice Anyone can call. Late ship / late delivery / arbiter timeout -> full refund. Window over -> release.
     function finalize(uint256 id) external nonReentrant {
         Order storage o = _orders[id];
         State s = o.state;
@@ -310,6 +318,11 @@ contract PoPCheckout is AccessControl, EIP712, ReentrancyGuard {
             uint256 fee = (amount * feeBps) / BPS;
             _settle(o.buyer, 0, o.seller, amount - fee, fee, amount);
             emit OrderReleased(id, amount - fee, fee);
+        } else if (s == State.Disputed) {
+            if (block.timestamp <= uint256(o.disputedAt) + arbiterTimeout) revert TooEarly();
+            o.state = State.Refunded;
+            _settle(o.buyer, amount, o.seller, 0, 0, amount);
+            emit OrderRefunded(id, amount, 4);
         } else {
             revert BadState();
         }
