@@ -40,3 +40,7 @@ scripts/.out/
 
 # Foundry broadcasts from local anvil forks (fork reports chainId 1874 too)
 contracts/broadcast-local/
+
+# Local fork deployments and dev data
+deployments/fork.json
+.data/

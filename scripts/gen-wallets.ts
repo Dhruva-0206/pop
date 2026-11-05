@@ -16,6 +16,7 @@ const ROLES = [
   ["arbiter", "ARBITER_PK"],
   ["demo merchant (Kurta Co.)", "MERCHANT_PK"],
   ["test buyer (smoke tests)", "TEST_BUYER_PK"],
+  ["demo seller (@meera.jewels)", "SELLER_PK"],
 ] as const;
 
 const envPath = resolve(import.meta.dirname, "..", ".env");
@@ -44,5 +45,18 @@ const attestor = rows.find((r) => r.role === "attestor")!.address;
 env = env.replace(/^POP_ATTESTOR_ADDRESS=.*$/m, `POP_ATTESTOR_ADDRESS=${attestor}`);
 if (/^WHITECHAIN_RPC_URL=\s*$/m.test(env)) env = env.replace(/^WHITECHAIN_RPC_URL=.*$/m, "WHITECHAIN_RPC_URL=https://rpc.testnet.whitechain.io");
 
+// App secrets (random, never printed).
+import { randomBytes } from "node:crypto";
+for (const [k, gen] of [
+  ["ADDRESS_ENC_KEY", () => randomBytes(32).toString("base64")],
+  ["SESSION_SECRET", () => randomBytes(32).toString("hex")],
+  ["COURIER_PASSCODE", () => randomBytes(4).toString("hex")],
+] as const) {
+  const re = new RegExp(`^${k}=(.*)$`, "m");
+  const cur = env.match(re)?.[1]?.split("#")[0]?.trim();
+  if (!cur) env = re.test(env) ? env.replace(re, `${k}=${gen()}`) : `${env.trimEnd()}
+${k}=${gen()}
+`;
+}
 writeFileSync(envPath, env);
 console.table(rows);

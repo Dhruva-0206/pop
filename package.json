@@ -3,7 +3,10 @@
   "private": true,
   "description": "PoP: Proof of Purchase. Protected checkout on Whitechain, reviews on Arkiv, World ID-gated.",
   "license": "MIT",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "build:web": "npm run build -w @pop/web",
     "build:store": "npm run build -w @pop/demo-store",
@@ -12,7 +15,14 @@
     "smoke:arkiv": "tsx scripts/smoke-arkiv.ts",
     "smoke:db": "tsx scripts/smoke-db.ts",
     "wallets": "tsx scripts/gen-wallets.ts",
-    "typecheck:shared": "tsc -p packages/shared --noEmit"
+    "typecheck:shared": "tsc -p packages/shared --noEmit",
+    "fork": "tsx scripts/fork.ts",
+    "fork:fund": "tsx scripts/fork-fund.ts",
+    "deploy": "tsx scripts/deploy.ts",
+    "seed": "tsx scripts/seed-seller.ts",
+    "fork:up": "tsx scripts/fork-fund.ts && tsx scripts/deploy.ts && tsx scripts/seed-seller.ts",
+    "abi": "tsx scripts/export-abi.ts",
+    "dev:web": "npm run dev -w @pop/web"
   },
   "devDependencies": {
     "tsx": "4.23.15",
