@@ -36,6 +36,21 @@ contract ForceRefundAndSelfPurchaseTest is Base {
         _assertFullRefundToBuyer(id);
     }
 
+    /// Direct accounting delta: totalLocked falls and totalCredit rises by exactly the order amount, nothing else moves.
+    function test_ForceRefund_accountingDelta_exact() public {
+        uint256 id = _payAndShip();
+        _ban();
+        uint256 lockedBefore = checkout.totalLocked();
+        uint256 creditBefore = checkout.totalCredit();
+        uint256 balBefore = usdt.balanceOf(address(checkout));
+        assertEq(lockedBefore, PRICE);
+        assertEq(creditBefore, 0);
+        _force(id);
+        assertEq(lockedBefore - checkout.totalLocked(), PRICE, "locked down by exactly the amount");
+        assertEq(checkout.totalCredit() - creditBefore, PRICE, "credit up by exactly the amount");
+        assertEq(usdt.balanceOf(address(checkout)), balBefore, "no tokens leave the contract on a force refund");
+    }
+
     function test_ForceRefund_shipped() public {
         uint256 id = _payAndShip();
         _ban();

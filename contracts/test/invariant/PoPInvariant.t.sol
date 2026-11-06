@@ -24,6 +24,7 @@ contract Handler is Test {
     bool public terminalChanged; // set if an ended order ever changes state
     bool public courierRaisedCredit; // set if a courier call raised anyone's credit
     bool public forcedRefundedDelivered; // set if forceRefundBanned ever succeeded on a Delivered order
+    bool public forcedRefundedHealthy; // set if forceRefundBanned ever succeeded while the seller was still active
     uint256 public nonce;
 
     constructor(
@@ -177,9 +178,11 @@ contract Handler is Test {
         (uint256 id, bool ok) = _pick(seed);
         if (!ok) return;
         PoPCheckout.State before = checkout.getOrder(id).state;
+        bool healthy = registry.isActive(checkout.getOrder(id).seller);
         vm.prank(arbiter);
         try checkout.forceRefundBanned(id) {
             if (before == PoPCheckout.State.Delivered) forcedRefundedDelivered = true;
+            if (healthy) forcedRefundedHealthy = true;
         } catch {}
         _track();
     }
@@ -270,6 +273,11 @@ contract PoPInvariantTest is Test {
     /// Team decision: a Delivered order is never force-refunded (only Funded, Shipped, Disputed).
     function invariant_forceRefundNeverTouchesDelivered() public view {
         assertFalse(handler.forcedRefundedDelivered());
+    }
+
+    /// The arbiter can never use forceRefundBanned on a healthy (not banned) seller.
+    function invariant_forceRefundNeverOnHealthySeller() public view {
+        assertFalse(handler.forcedRefundedHealthy());
     }
 
     function invariant_exactlyOneTerminalState() public view {
