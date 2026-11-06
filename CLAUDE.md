@@ -211,3 +211,4 @@ Contracts on Whitechain Sepolia 1874 (deployed Fri 6 Nov, block 12330545, **veri
 - [ ] Supabase project → `DATABASE_URL`
 - [ ] Ask organizers about specs/ (gate 7)
 - [ ] Vercel (later)
+Parallel work (two people, two agents): read parallel.md for claims, locks and the activity log before editing.

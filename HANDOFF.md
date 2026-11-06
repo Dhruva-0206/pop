@@ -369,3 +369,4 @@ Then stop and report: done, gate status, what you need from me. Do not deploy to
 | What if PoP disappears? | Funds stay in the contract; `finalize` and `withdraw` are public; reviews stay on Arkiv, owned by buyers. |
 | Remove a sponsor, what breaks? | World: one person could review many times with many wallets. Arkiv: reputation becomes our private database. Whitechain: the refund becomes our promise instead of code. |
 | Who holds USDT in India? | Nobody in this demo; it's testnet. Production needs a licensed rupee on-ramp; the honest first market is diaspora buyers paying Indian sellers, where COD doesn't exist. |
+Parallel work (two people, two agents): read parallel.md for claims, locks and the activity log before editing.
