@@ -34,14 +34,14 @@ Built from scratch at ETHGlobal Mumbai 2026 (Whitechain, Arkiv and World prize t
 | Specified test USDT (6 decimals) | [`0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7`](https://explorer.testnet.whitechain.io/address/0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7) |
 
 > **Verify in 2 minutes**
-> 1. Open [/proof](https://pop-web-six.vercel.app/proof). It reads the contract live: the order table has a transaction link for every step of every order. As read on Fri 6 Nov about 22:00 IST: 24 orders (12 released, 9 refunded, 1 split, 2 still open).
+> 1. Open [/proof](https://pop-web-six.vercel.app/proof). It reads the contract live: the order table has a transaction link for every step of every order. As last read on Sat 7 Nov: 25 orders (13 released, 9 refunded, 1 split, 2 still open).
 > 2. Open any order's `pay` link in Blockscout, then the contract tab: the source is verified.
 > 3. In the same table find a **Refunded** order whose settle transaction was sent by a third party (order 2, `finalize`), then the buyer's `withdraw`.
 > 4. Open the Arkiv table on `/proof`: two **regular** review entities (orders 1 and 18), creator = our attestor, read-only, owner = the buyer. The other entries are labelled DEV or smoke test.
 > 5. Run the read-only query yourself: `npx tsx scripts/arkiv-query.ts` (needs an [Arkiv access key](https://hub.arkiv.network/access-keys)), or use the snippet in [arkiv/how-you-use-arkiv.md](arkiv/how-you-use-arkiv.md).
 > 6. Check the refusals: [/verify/bad.bazaar](https://pop-web-six.vercel.app/verify/bad.bazaar) is a banned seller, [/verify/meera.jewels.official](https://pop-web-six.vercel.app/verify/meera.jewels.official) is an unregistered look-alike.
 
-Public pages as they look on Fri 6 Nov evening (screenshots taken with a clean browser; no keys, passcodes or wallets on screen):
+Screenshots of the public pages from the evening of 6 Nov. The landing page wording has changed since; no keys, passcodes or wallets are on screen.
 
 | Landing | Checkout | Seller record |
 |---|---|---|
@@ -64,7 +64,7 @@ Our problem framing comes from the team's own experience, not a market study. Wh
 4. The seller ships, the courier asks for the code at the door, the code is entered, and after a short window the seller is paid (1% fee). If anything goes wrong in time, **Settle** refunds you.
 5. After the seller is paid you can leave one review, using World ID.
 
-**For a vendor** (`/onboard`; after the World check, demo mode took about 7 seconds to register and publish when rehearsed on Fri 6 Nov)
+**For a vendor** (`/onboard`; in demo mode, registering and publishing took about 7 seconds after the World check when we rehearsed it)
 1. Type the Instagram handle (and the first product's name and price).
 2. **World ID check**: a proof that you are one unique person, bound to the handle. One person can open one shop. It does not prove who you are.
 3. PoP shows a **bio code** (`POP-` plus six characters). You press "I added it to my bio". With staff approval a team member checks the bio first; in demo mode on testnet that check is skipped and the page says so.
@@ -212,7 +212,7 @@ sequenceDiagram
 
 Solidity 0.8.30 (Prague EVM), OpenZeppelin v5, tested with Foundry. Source: [`contracts/src`](contracts/src).
 
-| Item | Value (read from the deployed contract on Fri 6 Nov) |
+| Item | Value (read from the deployed contract) |
 |---|---|
 | Fee | 100 basis points (1%), taken from the seller's share, paid to the treasury |
 | Ship-by / deliver-by | set per offer by the seller; demo offers use 180 s and 300 s |
@@ -232,28 +232,60 @@ Solidity 0.8.30 (Prague EVM), OpenZeppelin v5, tested with Foundry. Source: [`co
 
 **Rules that stop abuse:** a buyer cannot be the seller (`SelfPurchase`); offers carry a signature, expiry, version and a unit limit; a banned seller cannot take new orders, and the arbiter can refund its open orders in full (`forceRefundBanned`, never for Delivered or finished orders); a dispute nobody decides within the arbiter timeout refunds the buyer; the delivery code is a hash, entered by anyone who holds it, and the contract pays only the order's own seller or buyer.
 
-**Tests I ran on Fri 6 Nov evening** (commands in [Run it locally](#9-run-it-locally)): Foundry **58 passed, 0 failed** (including an invariant suite with 6 invariants); vendor check unit test **11 checks**; fork end-to-end **66 checks**; merchant end-to-end **48 checks** on the fork. An earlier run of the merchant end-to-end on Whitechain Sepolia in real time passed 47 checks ([docs/evidence.md](docs/evidence.md); not re-run tonight).
+**Checks we ran** (commands in [Run it locally](#9-run-it-locally)): Foundry **58 passed, 0 failed** (including an invariant suite with 6 invariants); vendor check unit test **11 checks**; fork end-to-end **66 checks**; merchant end-to-end **48 checks** on the fork. An earlier run of the merchant end-to-end on Whitechain Sepolia in real time passed 47 checks ([docs/evidence.md](docs/evidence.md)); we have not re-run that one since.
 
 ## 7. Sponsors
 
-### Whitechain (Operate: Stablecoin Payments for Business)
-**What the prize asks for:** a drop-in merchant checkout or payment link that a demo app adds in about 20 lines, with merchant and customer views, and extra credit for refunds and accountant exports.
-**What we use:** Whitechain Sepolia (an OP Stack chain, chain 1874, gas token WBT, 1 s blocks per Whitechain's docs) and the specified Whitechain test USDT. We deployed and verified both contracts and ran real orders: release, deadline refund, dispute split, and one order paid from a real phone over mobile data.
-**Why:** the refund after a missed deadline is a public contract call, so it does not depend on PoP.
-**Merchant integration:** `@pop/checkout-sdk` (a private workspace package, not on npm). Kurta Co.'s whole checkout route is [18 lines](apps/demo-store/src/app/api/checkout/route.ts), its signed-webhook receiver [31 lines](apps/demo-store/src/app/api/pop/webhook/route.ts), and the SDK's browser call is 2 lines. **Customer view:** checkout and order pages. **Merchant view:** the Kurta orders page and the PoP `/dashboard` with an order CSV that includes transaction hashes (states, amounts and hashes, not a full fee reconciliation).
-**Evidence:** [docs/evidence.md](docs/evidence.md) (every transaction), [/proof](https://pop-web-six.vercel.app/proof), [WHITECHAIN_FEEDBACK.md](WHITECHAIN_FEEDBACK.md) (what we hit: the 10,000 block log limit, a 403 when one IP polled hard, faucet amounts, the DEX approval).
+### Whitechain: Operate, stablecoin payments for business
 
-### Arkiv (Build on Arkiv, from scratch)
-**What the prize asks for:** a new app whose data lives on Arkiv, judged on four equal criteria, each answered in a file in [`arkiv/`](arkiv).
-**What we use:** the Rabdi testnet (chain 7794095). A review is an Arkiv **entity** of schema `pop_review_v1` with indexed **attributes** (seller, order, rating and more) and an **expiry** (about 180 days). Our attestor is the entity's **creator**; it is created **read-only** and its **owner** is then changed to the buyer.
-**Why:** Arkiv's docs note that anyone can write an entity with your schema's tag, so readers must not trust the tag alone. Our readers accept an entity only if its creator is our attestor, it is read-only, and its payment transaction is a real order on our contract. Kurta Co. does exactly that with **its own access key**, without calling PoP's API.
-**State now:** 12 entities seen by both keys: 2 real World-verified reviews, 9 labelled DEV (from fork tests) and 1 smoke test. **Evidence:** [arkiv/schema.md](arkiv/schema.md), [how-you-use-arkiv.md](arkiv/how-you-use-arkiv.md), [why-arkiv.md](arkiv/why-arkiv.md), [reach.md](arkiv/reach.md), [friction.md](arkiv/friction.md), and the entity table on `/proof`.
+**The problem.** A small shop that takes money before it ships needs the buyer to trust it, and a stranger on Instagram has no way to earn that trust on day one. A card processor or a marketplace can hold the money, but then the refund is the platform's promise and the platform decides.
 
-### World (Best Use of IDKit)
-**What the prize asks for:** IDKit solving a real trust moment, a minimum sufficient credential and why, server-side verification, one success and one meaningful alternative path, and a short debrief.
-**Two trust moments:** (1) **reviews**: one review per human per seller, so reputation cannot be farmed (action per seller, signal = order and buyer); (2) **vendor onboarding**: one human, one shop (one action, signal = the handle).
-**Credential:** the `proofOfHuman` preset. We need uniqueness, not identity, so it is the least that works. A person is a **nullifier** per action; we store only its sha256 and refuse repeats. Verification happens on our server through World's verify endpoint, in the staging environment.
-**Evidence:** two reviews verified with the Simulator (order 1 at 16:43 IST, order 18 at 19:12 IST) and a **same-person replay refused** twice on order 17, all in the World log on `/proof`. A cancelled request is still to be recorded. The vendor check is unit tested (11 checks) but a real vendor proof has not been run yet. **Debrief:** [docs/WORLD_DEBRIEF.md](docs/WORLD_DEBRIEF.md) (times, friction, the one change we would ask for).
+**What we built and why.** PoP is a checkout where the money sits in a contract on Whitechain Sepolia (chain 1874, WBT gas token, 1 second blocks according to Whitechain's docs) and is paid in the specified Whitechain test USDT. We chose an on-chain settlement for one reason: the refund after a missed deadline is a public contract call that anyone can make, so it does not depend on us staying online or being honest. We deployed two contracts, [PoPCheckout and SellerRegistry](https://explorer.testnet.whitechain.io/address/0xB6A894bE070951a7331DebFf615e11F7a076794c?tab=contract), and both are verified on Blockscout (compiler 0.8.30, EVM Prague, optimizer 200 runs). The live [/proof](https://pop-web-six.vercel.app/proof) page lists 25 test orders at last read (13 released, 9 refunded, 1 split by the arbiter, 2 still open), each with a transaction link for every step. One of them, order 19, was paid by a person on a real phone over mobile data.
+
+**For merchants.** A shop adds Pay with PoP with the `@pop/checkout-sdk` package (a private workspace package, not published to npm). The demo shop, Kurta Co., has a [checkout route of 18 lines](apps/demo-store/src/app/api/checkout/route.ts) and a [webhook receiver of 31 lines](apps/demo-store/src/app/api/pop/webhook/route.ts), and the browser side is one call. PoP sends signed webhooks (HMAC), and the shop rechecks every event on chain before it changes its own order book. Vendors who have no website get a payment link and a QR code from `/onboard`, and a `/dashboard` to ship, withdraw and export their orders as CSV with transaction hashes. The CSV lists states, amounts and hashes; it is not a fee reconciliation.
+
+**What worked.** The chain and the public RPC were steady for the whole build, and Blockscout verification worked inside the same `forge script` command that deployed the contracts.
+
+**Friction, and what we would change.**
+- `eth_getLogs` is limited to 10,000 blocks per call. A scan from the deploy block works for a few hours and then fails. We now read events in 9,000 block chunks. Suggestion: say it in the RPC docs next to the endpoint.
+- The prize USDT (`0xcedf...55a7`) is not in the faucet and is easy to miss. We got ours by swapping WBT on YetiTrade. Suggestion: say in the docs which USDT a build must use and how to get it.
+- Blockscout shows the license of both contracts as "none" although the source carries an MIT SPDX line.
+- One IP polling hard got an HTTP 403 from the public RPC; the docs describe a 429 with a retry header.
+
+The full list, with what we saw and what we did, is in [WHITECHAIN_FEEDBACK.md](WHITECHAIN_FEEDBACK.md). Every transaction is in [docs/evidence.md](docs/evidence.md).
+
+### Arkiv: build on Arkiv, from scratch
+
+**The problem.** A seller's reputation usually lives in a platform's database, so the seller cannot take it elsewhere and the buyer cannot check that it was not edited.
+
+**What we built and why.** Each review is an Arkiv entity of schema `pop_review_v1` on the Rabdi testnet (chain 7794095), with indexed attributes (seller, order, rating, a reviewer key and more) and an expiry. Our attestor wallet is the entity's creator, we create it read-only, and then we change its owner to the buyer, so the buyer holds it and nobody, including us, can edit it. Real reviews expire after 180 days (`ExpirationTime.fromDays(180)` in the code); entities written by our local tests carry a 24 hour expiry and are labelled DEV.
+
+**Why a second app matters.** Arkiv's own docs warn that anyone can write an entity with your schema's tag, so a reader cannot trust the tag. Our readers accept an entity only if its creator is our attestor, it is read-only, and its payment transaction is a real order on our contract. Kurta Co., a separate shop with its own server and its own Arkiv access key, reads the reviews this way and shows them in its "Our record" card without calling PoP's API.
+
+**State now.** The entity table on [/proof](https://pop-web-six.vercel.app/proof) lists 17 entities from our attestor: 2 real World-verified reviews (orders 1 and 18), 14 labelled DEV entries written by our local tests, and 1 smoke-test entity.
+
+**What worked.** Creating, reading and handing over ownership worked as documented in the SDK (version 1.0.1).
+
+**Friction.** The docs site and the installed SDK disagreed on a few query helpers and on which chains are exported. Our notes, with what we expected and what we found, are in [arkiv/friction.md](arkiv/friction.md).
+
+The judging answers are in [arkiv/schema.md](arkiv/schema.md), [how-you-use-arkiv.md](arkiv/how-you-use-arkiv.md), [why-arkiv.md](arkiv/why-arkiv.md), [reach.md](arkiv/reach.md) and [friction.md](arkiv/friction.md). You can run the read-only query yourself with `npx tsx scripts/arkiv-query.ts`.
+
+### World: best use of IDKit
+
+**The problem.** Reviews and shops are easy to fake. One person can post many reviews for a friend's shop, or open many shops, and nothing in a plain database stops it.
+
+**What we built and why.** We use World ID at two moments where we need "one real person" and nothing more: (1) a review, which gives one review per person per seller, with one World action per seller and the order and buyer wallet as the signal; (2) opening a shop, which gives one shop per person, with one action for all vendors and the handle as the signal. Both use the `proofOfHuman` preset, because uniqueness is enough and we never need to know who the person is. Our server verifies the proof with World's verify endpoint, and stores only the sha256 of the nullifier, never the raw value. A repeat is refused with a plain message ("You have already reviewed this seller" or "This person already has a PoP shop").
+
+**Where it stands.** Staging environment only, with the World Simulator on a laptop. Two reviews are verified (order 1 at 16:43 IST and order 18 at 19:12 IST on 6 Nov), and a same-person replay on order 17 was refused twice; all three are in the World log on [/proof](https://pop-web-six.vercel.app/proof). The vendor check is unit tested (11 checks) but we have not yet run a real World proof for it. Review actions exist for three sellers today (@meera.jewels, @kurta.co and one demo seller), so a newly onboarded shop cannot yet collect World-verified reviews. A cancelled request in the Simulator is still to be recorded.
+
+**What worked.** The 4.0 server flow and the `proofOfHuman` preset did what the docs describe once we had an app, an RP id, a signing key and the actions in the Developer Portal.
+
+**Friction, and what we would change.**
+- The portal's action form has only an identifier and a description, so one action per seller had to be made by hand. Suggestion: let a relying party create actions through an API, or accept a counterparty-scoped action string.
+- When our server refuses a proof, the widget shows "Verification declined" and passes no reason to the page. We keep our own reason on the page and show it after the widget closes.
+- A phone cannot complete a staging proof, because the widget asks for the real World App.
+
+Times, friction and the full debrief are in [docs/WORLD_DEBRIEF.md](docs/WORLD_DEBRIEF.md).
 
 ## 8. Honest limits
 
@@ -266,7 +298,7 @@ Solidity 0.8.30 (Prague EVM), OpenZeppelin v5, tested with Foundry. Source: [`co
 - **A valid code entered before anyone calls `finalize` still wins.** After a missed delivery deadline the contract does not reject a correct code, so the refund is not irrevocable until someone settles it.
 - **Nobody settles for you.** A refund or release needs one transaction from anyone; the order page offers it, with an opt-in auto-settle that needs the page open.
 - **Delivery details** are encrypted in our database with a key we hold. Payments, wallets, timings and review entities are public.
-- **Only tested by script, not clicked in a browser by a person:** `/onboard`, the `/arbiter` buttons, `/dashboard` shipping, the `/courier` page, dispute and banned-seller refunds on the live testnet, and the newest refusal messages. A real vendor World proof, the Vercel cron firing in Vercel's own log, and Safari are unchecked. See [docs/repo-map.md](docs/repo-map.md).
+- **Only tested by script, not clicked in a browser by a person:** `/onboard`, the `/arbiter` buttons, `/dashboard` shipping, the `/courier` page, dispute and banned-seller refunds on the live testnet, and the newest refusal messages. A real vendor World proof, the Vercel cron firing in Vercel's own log, and Safari are unchecked.
 - **Not built:** outcome entities on Arkiv, Chrome extension, Agent Pass, Swarm, gasless checkout. No prize result is guaranteed.
 
 ## 9. Run it locally
@@ -288,8 +320,8 @@ Solidity 0.8.30 (Prague EVM), OpenZeppelin v5, tested with Foundry. Source: [`co
 | `packages/shared/`, `packages/checkout-sdk/` | shared chain, database and Arkiv code; the merchant SDK |
 | `scripts/` | deploy, fork, seed, end-to-end tests, smoke and demo tools |
 | `supabase/migrations/` | the database schema |
-| `arkiv/`, `docs/` | Arkiv judging files, evidence, deployment, demo script, repo map |
+| `arkiv/`, `docs/` | Arkiv judging files, evidence, deployment notes, demo script |
 
-**AI use:** AI tools helped with planning, code and docs. [AI_USAGE.md](AI_USAGE.md) lists where. The planning documents are in [`specs/`](specs). **Dependencies and licence:** public libraries (Next.js, viem, OpenZeppelin, the Arkiv SDK, World IDKit and others) are listed in the manifests; MIT licence, see [LICENSE](LICENSE).
+**AI use:** we used AI tools heavily, and [AI_USAGE.md](AI_USAGE.md) says exactly where and how. The planning documents are in [`specs/`](specs). **Dependencies and licence:** public libraries (Next.js, viem, OpenZeppelin, the Arkiv SDK, World IDKit and others) are listed in the manifests; MIT licence, see [LICENSE](LICENSE).
 
 **Team** (from the git history): Dhruva Somen Chakrabarty, Shantanu Somwanshi, Tanishqa Chopade.
