@@ -190,7 +190,7 @@ It prints PASS or FAIL for each of these: PoP home; `/api/config` (testnet, chai
 
 ## Re-seed Kurta for the deployed store
 The merchant row in PoP's database stores the store's webhook URL and the one origin PoP may send the buyer back to. After the store has its URL:
-1. Take the chain lock in `parallel.md` and get the human's yes. When `@kurta.co` is already registered (it is on 1874) the script sends no transaction, but it writes to the database.
+1. Get the team's agreement first. When `@kurta.co` is already registered (it is on 1874) the script sends no transaction, but it writes to the database.
 2. From the repo root on a laptop that has `pop/.env`:
    ```
    NETWORK_MODE=testnet \

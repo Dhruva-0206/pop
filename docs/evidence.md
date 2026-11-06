@@ -43,7 +43,7 @@ Checked through the live APIs the pages read (not by looking at the pages): `/ap
 | PoP web | https://pop-web-six.vercel.app | Fri 06 Nov 2026 17:43 IST: `scripts/vercel-smoke.ts` 11 of 11 PASS |
 | Kurta Co. store | https://kurta-store.vercel.app | Fri 06 Nov 2026 17:43 IST: same run, store checks 4 of 4 PASS |
 | Merchant row for @kurta.co (schema `public`) | webhook URL `https://kurta-store.vercel.app/api/pop/webhook`, return origin `https://kurta-store.vercel.app` | Fri 06 Nov 2026 17:43 IST: `npm run seed:merchant` in testnet mode; output said `@kurta.co already registered`; no transaction sent |
-| Webhook dispatcher | `GET https://pop-web-six.vercel.app/api/webhooks/dispatch` answered 200 with `{"scannedTo":12370672,"enqueued":0,"delivered":0,"failed":0}` | Fri 06 Nov 2026 17:43 IST. Whether Vercel Cron fires is not proven yet (see parallel.md section 6) |
+| Webhook dispatcher | `GET https://pop-web-six.vercel.app/api/webhooks/dispatch` answered 200 with `{"scannedTo":12370672,"enqueued":0,"delivered":0,"failed":0}` | Fri 06 Nov 2026 17:43 IST. Whether the Vercel cron fires on its own is not proven yet; the 5 second loop we ran hides it |
 
 Re-run: `npx tsx scripts/vercel-smoke.ts https://pop-web-six.vercel.app https://kurta-store.vercel.app`
 

@@ -10,7 +10,7 @@
  *
  * --stop-after=deliver leaves the order Delivered with the problem window open (the "report a problem" scene).
  * Sellers it can act for: the wallet in SELLER_PK (@meera.jewels) and in MERCHANT_PK (@kurta.co). Any other seller is refused.
- * It sends real test transactions, so the chain lock in parallel.md applies. Do not stop the webhook loop; it does not interfere.
+ * It sends real test transactions, so tell the team before running it. Do not stop the webhook loop; it does not interfere.
  */
 import { keccak256, toHex, type Address } from "viem";
 import { checkoutAbi, codeBytes, ORDER_STATES } from "../packages/shared/src/index";
