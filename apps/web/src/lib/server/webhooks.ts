@@ -129,7 +129,9 @@ async function run(): Promise<Summary> {
       const r = await fetch(m.webhookUrl!, {
         method: "POST",
         redirect: "manual",
-        signal: AbortSignal.timeout(5000),
+        // The receiver rechecks the order on-chain and writes to its own database before answering; over the real testnet that took
+        // more than 5 s in practice (timeouts, then idempotent retries). 15 s fits a serverless function.
+        signal: AbortSignal.timeout(15_000),
         headers: {
           "content-type": "application/json",
           "pop-signature": signWebhook(secretOf.get(m.id)!, t, body),

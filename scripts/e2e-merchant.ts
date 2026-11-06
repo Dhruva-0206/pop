@@ -241,11 +241,23 @@ ok(b.history.map((h) => h.event).join(",") === "order.funded,order.refunded", "o
 // idempotency + delivery bookkeeping
 const db = createStore(mode);
 const merchant = (await db.merchants()).find((m) => m.sellerWallet.toLowerCase() === sellerWallet.account.address.toLowerCase())!;
-const rows = (await db.webhookDeliveries(merchant.id)).filter((r) => [A.id, B.id].map(String).includes(r.orderId));
+// A slow receiver can time out once; PoP retries after a backoff and the receiver is idempotent, so wait for the retries to land.
+let rows = (await db.webhookDeliveries(merchant.id)).filter((r) => [A.id, B.id].map(String).includes(r.orderId));
+for (let i = 0; i < 20 && !(rows.length === 6 && rows.every((r) => r.status === "delivered")); i++) {
+  await sleep(4000);
+  await dispatch();
+  rows = (await db.webhookDeliveries(merchant.id)).filter((r) => [A.id, B.id].map(String).includes(r.orderId));
+}
 ok(rows.length === 6 && rows.every((r) => r.status === "delivered"), `webhook_deliveries: 6 rows (4 for A, 2 for B), all delivered (attempts ${rows.map((r) => r.attempts).join(",")})`);
 // per-merchant rate limit on session creation (counted in Postgres)
+await newSession("rate probe"); // a session created just now (on testnet the run is minutes old by this point, so the last-minute count would be 0)
 await db.setMerchantRateLimit(merchant.id, 1);
-const rl = await http_(POP, "/api/v1/checkout-sessions", { body: {}, headers: { authorization: `Bearer ${API_KEY}` } });
+let rl: Awaited<ReturnType<typeof http_>>;
+try {
+  rl = await http_(POP, "/api/v1/checkout-sessions", { body: {}, headers: { authorization: `Bearer ${API_KEY}` } });
+} finally {
+  await db.setMerchantRateLimit(merchant.id, 30); // never leave the limit at 1 if this run dies
+}
 ok(rl.status === 429 && rl.headers.get("retry-after") === "60", "session creation over the merchant's per-minute limit is rejected (429, Retry-After)");
 const otherKey = await http_(POP, "/api/v1/checkout-sessions", { body: {}, headers: { authorization: "Bearer pop_test_wrongwrongwrongwrongwrong" } });
 ok(otherKey.status === 401, "the limit does not leak: a wrong key still gets 401, not 429");
