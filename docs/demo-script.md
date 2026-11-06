@@ -3,7 +3,7 @@
 Two versions: the 4-minute live finalist flow and the 2 to 4 minute video. Written against the current UI. **We have not rehearsed it end to end by hand yet.** We checked the steps with end-to-end runs and by looking at the pages, but nobody has timed a full run with the real World Simulator, so rehearse before relying on the timings. Where a step depends on something we could not verify, it says so.
 
 ## Setup (30 minutes before, once)
-1. Servers: PoP web and the Kurta store on testnet (see `docs/OVERNIGHT.md` for the start command), `npm run webhooks` in a third terminal. Open `/proof` and check the contract addresses match `docs/evidence.md`.
+1. Servers: PoP web and the Kurta store on testnet, `npm run webhooks` in a third terminal. Open `/proof` and check the contract addresses match `docs/evidence.md`.
 2. Wallets and balances (addresses only, never keys on screen): the test buyer needs about 6 test USDT and a little WBT; the seller wallet and courier need a little WBT. Check on `/proof` or the explorer.
 3. Browsers. Use a laptop, a clean window, 125 percent zoom, notifications off.
    - **Buyer window**: in the console, `localStorage.setItem("pop:testwallet:testnet:1874:buyer", "<TEST_BUYER_PK>")`, then reload. Do this off camera.
@@ -11,7 +11,7 @@ Two versions: the 4-minute live finalist flow and the 2 to 4 minute video. Writt
    - **Courier window**: `/courier`, sign in with the team passcode. Off camera.
    - **Arbiter window**: `/arbiter`, import the arbiter test key and sign in as staff. Off camera.
 4. Seed the scenes **3 to 5 minutes before each segment that needs them**, because the windows are real time: `NETWORK_MODE=testnet ALLOW_DEMO_SEED=yes npx tsx scripts/seed-demo.ts` (export NETWORK_MODE after anything that sources `.env`). By default it runs only the **persistent** scenes, 4 and 5, which stay valid until someone acts on them: a banned seller (@bad.bazaar) with one open order, and a look-alike seller that is not registered (@meera.jewels.official). **Both were seeded on testnet on Fri 6 Nov** (open order #20; `/verify/bad.bazaar` banned, `/p/demo-fake-meera` Pay disabled), so there is nothing to seed for them again unless the order #20 refund has been used. The **timed** scenes need `--scenes=1,2,3` (or `--scenes=all`) and real seconds: an order near ship-by expiry, a Delivered order with the problem window open, a Disputed order. Seed those 3 to 5 minutes before the segment that needs them; they were not run on testnet.
-5. World simulator: open https://simulator.worldcoin.org in a second tab, staging. Have the order #1 review step ready (`docs/OVERNIGHT.md`, ready-to-click checklist).
+5. World simulator: open https://simulator.worldcoin.org in a second tab, staging. Have a Released order that has no review yet ready for the review step (orders #1 and #18 are already reviewed).
 6. Close every tab you do not need. Hide bookmarks.
 
 ## 4-minute live flow (finalist judging)

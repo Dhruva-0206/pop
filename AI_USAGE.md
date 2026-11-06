@@ -43,7 +43,7 @@ These are the numbers we measured, not estimates:
 - **End to end:** `scripts/e2e-fork.ts` passes 66 checks on a local fork. `scripts/e2e-merchant.ts` passes 48 checks on a fork, and an earlier real-time run passed 47 checks on Whitechain Sepolia. `scripts/test-vendor-verification.ts` passes 11 checks.
 - **Live:** `scripts/vercel-smoke.ts` passes 11 of 11 checks against both live sites.
 - **By hand:** a person paid orders 18 and 19 through the live Kurta store, order 19 from a real phone over mobile data, and ran the World Simulator for two reviews. Orders 11 and 25 were paid through the same checkout by Claude Code driving a browser, so they show the flow works but are not hand tests. We list what has only been tested by script in [README.md](README.md) under "Honest limits"; that list includes `/onboard`, the `/arbiter` buttons and `/dashboard` shipping.
-- **Accessibility:** Lighthouse accessibility scored 100 on nine pages on 6 Nov, before the later copy and logo changes (details in [`docs/screens/README.md`](docs/screens/README.md)). We did not test with a screen reader or in Safari.
+- **Accessibility:** Lighthouse accessibility scored 100 on nine pages on 6 Nov, before the later copy and logo changes. We did not test with a screen reader or in Safari.
 - **Every claim in [`docs/evidence.md`](docs/evidence.md)** has a transaction or a query behind it.
 
 ## What AI tools did not do
