@@ -197,12 +197,13 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 ## 3. Active claims
 | Agent or human | Task | Files claimed | Claimed at (IST) |
 |---|---|---|---|
+| agent 1 (Dhruva's agent) | Vendor onboarding: handle, World ID check (one human one shop), bio code, demo auto-approve, link and QR | `apps/web/src/app/onboard/*`, `apps/web/src/app/api/onboard/*`, `apps/web/src/app/api/staff/onboard/route.ts`, `apps/web/src/app/api/world/rp-signature/route.ts`, `apps/web/src/app/api/config/route.ts`, `apps/web/src/app/api/arbiter/seller/route.ts`, `apps/web/src/lib/server/{world,onboarding,vendor}.ts`, `apps/web/src/lib/client/{config,vendor-errors}.ts`, `apps/web/src/lib/messages.ts`, `packages/shared/src/server/store.ts` (vendor methods only), `supabase/migrations/0001_init.sql` (append only), `scripts/test-vendor-verification.ts`, `scripts/e2e-fork.ts` (onboarding steps), `docs/deployment.md`, `docs/WORLD_DEBRIEF.md`, `README.md`, `parallel.md` | Fri 20:00 |
 
 ## 4. Locks
 | Lock | Holder | Since | Note |
 |---|---|---|---|
-| chain (Whitechain 1874 and Arkiv writes) | free | | |
-| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | free | | |
+| chain (Whitechain 1874 and Arkiv writes) | Dhruva's agent | Fri 20:00 | one rehearsal vendor registration on testnet (throwaway handle rehearsal.vendor1) |
+| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | Dhruva's agent | Fri 20:00 | fork e2e for onboarding changes |
 | vercel (deploys and env changes) | free | | |
 
 ## 5. Requests between agents
