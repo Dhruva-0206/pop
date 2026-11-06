@@ -197,6 +197,7 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 ## 3. Active claims
 | Agent or human | Task | Files claimed | Claimed at (IST) |
 |---|---|---|---|
+| agent 1 (Dhruva's agent) | New PoP logo everywhere (assets, favicon set, social image, header, badge, Kurta Pay button, README) | `logo.png` (moved to `docs/brand/`), `docs/brand/*`, `apps/web/public/brand/*`, `apps/web/src/app/{layout.tsx,icon.png,apple-icon.png,favicon.ico,opengraph-image.png,twitter-image.png}`, `apps/web/src/app/api/badge/[handle]/route.ts`, `apps/demo-store/src/app/PayButton.tsx`, `apps/demo-store/public/brand/*`, `README.md`, `parallel.md` | Fri 22:01 |
 
 ## 4. Locks
 | Lock | Holder | Since | Note |
