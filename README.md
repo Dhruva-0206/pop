@@ -301,6 +301,7 @@ Times, friction and the full debrief are in [docs/WORLD_DEBRIEF.md](docs/WORLD_D
 - **Demo mode skips the bio check on testnet.** Shops registered that way are recorded as "handle not checked" (tier 0), and the server's faucet wallet pays their registration fee.
 - **A valid code entered before anyone calls `finalize` still wins.** After a missed delivery deadline the contract does not reject a correct code, so the refund is not irrevocable until someone settles it.
 - **Nobody settles for you.** A refund or release needs one transaction from anyone; the order page offers it, with an opt-in auto-settle that needs the page open.
+- **Unboxing videos are judged by the arbiter off chain.** In production the dispute window would be days, not minutes.
 - **Delivery details** are encrypted in our database with a key we hold. Payments, wallets, timings and review entities are public.
 - **Only tested by script, not clicked in a browser by a person:** `/onboard`, the `/arbiter` buttons, `/dashboard` shipping, the `/courier` page, dispute and banned-seller refunds on the live testnet, and the newest refusal messages. A real vendor World proof, the Vercel cron firing in Vercel's own log, and Safari are unchecked.
 - **Not built:** outcome entities on Arkiv, Chrome extension, Agent Pass, Swarm, gasless checkout. No prize result is guaranteed.
