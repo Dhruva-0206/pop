@@ -26,6 +26,22 @@ Kurta Co. on https://kurta-store.vercel.app, "Pay with PoP", PoP checkout on htt
 
 Store side (read from the live store, `GET /api/orders`, and from `webhook_deliveries` in schema `public`): order book entry `KC-9E24AE5A` is `released` with history funded, shipped, delivered, released, each with the on-chain state the store rechecked. Four webhooks (`order.funded`, `order.shipped`, `order.delivered`, `order.released`), all `delivered` on attempt 1. The store's `/orders` page shows the order as complete. PoP's "Back to Kurta Co." link points at `https://kurta-store.vercel.app/orders`. The proof page lists order 11 after the next read.
 
+## Demo dry run on the live sites (Fri 6 Nov 2026, about 18:30 to 18:55 IST)
+Orders #13 to #16 on 1874, test USDT only, 1.00 each, paid by wallets driven from a script (no browser). Timings and findings are in `docs/demo-script.md`. Never-shipped orders #13 and #14 were settled into refunds by a third party after their 180 s ship-by (their random buyer wallets were not kept, so their 2 test USDT refund credit stays in the checkout contract). #15 is the full release path through `scripts/demo-driver.ts`. #16 is the report-a-problem path: delivered, buyer `openDispute`, arbiter 50/50 split, both sides withdrew.
+| Order | Step | Tx |
+|---|---|---|
+| #13 | pay | [`0xbc9bf6c1…9ae83a`](https://explorer.testnet.whitechain.io/tx/0xbc9bf6c195a1d44946ab3bb437d39b580429cb1afeb1de7a5387bda3ac9ae83a) |
+| #13 | Settle now (finalize) to Refunded | [`0xe1eacd03…21a74b`](https://explorer.testnet.whitechain.io/tx/0xe1eacd034208f5bfdd7274f4f174f6b1e9b17eb40b618e4cefc2d4168621a74b) |
+| #14 | pay | [`0xc8ff8a30…e53bfa`](https://explorer.testnet.whitechain.io/tx/0xc8ff8a30d7895672538f6dfb9e0e41d90f22ecbd1b22720a6f7334b0c8e53bfa) |
+| #14 | Settle now (finalize) to Refunded | [`0x9f9fda2a…70236f`](https://explorer.testnet.whitechain.io/tx/0x9f9fda2a8b0ba57a86151fd911616cc6a14df436d75090c76915aea81470236f) |
+| #15 | pay | [`0xe94b0693…d8eeec`](https://explorer.testnet.whitechain.io/tx/0xe94b069368eaaf22e994b74c613163c55b9e63efe5c2e8e701e77c0657d8eeec) |
+| #15 | ship, courier delivery, finalize, seller withdraw 0.99 USDT | listed with full links on `/proof` (order 15) |
+| #16 | pay | [`0xa1787fee…7b1b03`](https://explorer.testnet.whitechain.io/tx/0xa1787feee6ba856bcec74185db2748e3a2be347cfefaa0523aab0213c87b1b03) |
+| #16 | buyer `openDispute` | [`0xd64d92cb…c31657`](https://explorer.testnet.whitechain.io/tx/0xd64d92cb531fe9a3e0af4598c06cee19bf382bf0e7d535e4e07c189505c31657) |
+| #16 | arbiter `resolveDispute` 50/50 split | [`0x317912f7…acb3d7`](https://explorer.testnet.whitechain.io/tx/0x317912f725369419fb9086c1d9ead89a28b7aaedda0383c4bf6397bedcacb3d7) |
+
+Also: 4 test USDT moved from the faucet wallet to the test buyer wallet (`0x056df20d…283b6873`) so a seed run would have funds; the seed itself was not run on testnet.
+
 ## Whitechain Sepolia (1874)
 | What | Value | Link |
 |---|---|---|
