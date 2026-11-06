@@ -204,7 +204,7 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 | Lock | Holder | Since | Note |
 |---|---|---|---|
 | chain (Whitechain 1874 and Arkiv writes) | Dhruva's agent | Fri 17:49 | one store order through the web checkout, live verification (test USDT and WBT only) |
-| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | free | | |
+| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | agent 2 (second machine) | Fri 18:05 | addendum gates: fresh fork, db:reset-fork, fork:up, seed-merchant, e2e, local prod builds on 3000/3001 |
 | vercel (deploys and env changes) | free | | |
 
 ## 5. Requests between agents
