@@ -17,10 +17,18 @@
 - Thu 23:55: read 4.x docs; found the v1–v3 → 4.0 breaking changes (RP signature, `IDKitRequestWidget`, v4 verify).
 - Fri 00:28: server routes + dev page built against `@worldcoin/idkit` 4.6.0.
 - Fri 01:05: switched to one action per seller (above).
-- Time to first successful verification: _pending (needs app_id / rp_id / signing key)_.
+- Time to first successful verification: _pending the human simulator step (see docs/OVERNIGHT.md)_. From the first docs read (Thu 23:55) to a signed request that World's verify host accepts structurally: about 9 hours of wall clock, mostly waiting for a person to create the portal app, rp_id, signing key and actions.
 
 ## Friction
 See `docs/friction-log.md` [World] entries: v4 breaking changes with v1–v3 tutorials still common; signal check helper (`hashSignal`) not in the docs; "max verifications" undocumented for 4.0; whether `nullifier_replayed` is raised by World or only by the app is unclear; npm page blocked automated fetches (403).
 
 ## Most impactful improvement
-_TODO after the live test._ Candidate: a documented way for a marketplace RP to scope uniqueness per counterparty (seller) without creating thousands of actions.
+_Draft._ Let an RP create and name actions through a documented API, or accept a counterparty-scoped action string, so a marketplace can scope uniqueness per seller without hand-creating one portal action per seller. Second: return a distinct code for an unknown action (today a fake proof gets the same `verification_failed` whether the action exists or not).
+
+## Live log (Fri 6 Nov night, staging)
+- rp-signature works: 300 s validity, one action per seller.
+- Verify host `developer.world.org/api/v4/verify/{rp_id}` answers and the app is migrated. Fake proof: 400 `all_verifications_failed`, item code `verification_failed`, detail "execution reverted (unknown custom error)". Same answer for an existing and a non-existent action, so action existence is not observable without a real proof.
+- Our route refuses wrong action, wrong signal hash, wrong environment, fake proof and no proof with a readable 400 and stores nothing.
+- Docs checked: actions are created in the Developer Portal or with the MCP tool `create_world_id_action` (production or staging). No REST create-action endpoint and nothing about dynamic action strings in the pages we could read (SKILL.md, error codes, verify reference). Nullifiers are scoped to RP and action. `nullifier_replayed` and `max_verifications_reached` exist as client error codes; other replay protection is the RP's own UNIQUE constraint.
+- Mismatches with our code: none found. Notes: our `handleVerify` throws when we refuse a review, which IDKit reports as `failed_by_host_app` as documented, so the UI shows our own server message. `NEXT_PUBLIC_WORLD_APP_ID` is set in .env but unused (the app id comes from the server route). Staging proofs verify only with the Simulator.
+- Still unobserved (needs the simulator): a real proof, the real nullifier format, whether `proofOfHuman` with `allow_legacy_proofs` returns a v3 or v4 response in staging, real `user_rejected` and `cancelled` behavior.

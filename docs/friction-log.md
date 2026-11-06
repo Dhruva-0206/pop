@@ -22,3 +22,7 @@ Format: **[Sponsor] when (IST): title.** Expected / Actual / Repro / Workaround.
 - Fri 6 Nov (Whitechain RPC): `eth_getLogs` is limited to 10,000 blocks per call ("query exceeds max block range 10000"). Any event query starting at the deploy block works for a few hours and then fails for good (blocks are ~1.5 s apart). Fixed with `chunkedLogs` in packages/shared; documented nowhere on docs.whitechain.io that we found.
 
 - Fri 6 Nov (viem): `getBlockNumber()` is cached for ~4 s by default. An event query that starts right after a transaction can then end BEFORE that transaction's block and silently miss its event (found when saving a dispute reason straight after `openDispute`: 409). All server event reads now call `getBlockNumber({ cacheTime: 0 })`.
+
+- Fri 6 Nov night (World): the v4 verify endpoint answers a fake proof identically for an existing and a non-existent action (`all_verifications_failed`, `verification_failed: execution reverted (unknown custom error)`), so an integrator cannot test action setup without a real proof. The error-codes page has no "action not found".
+- Fri 6 Nov night (World): the docs we could read describe creating actions in the Developer Portal or with an MCP tool; no REST endpoint and no statement on dynamic action strings. One action per seller has to be created by hand.
+- Fri 6 Nov night (our tooling): `source .env` after `export NETWORK_MODE=testnet` silently switches a local server back to fork. Export after sourcing.
