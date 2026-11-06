@@ -197,6 +197,7 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 ## 3. Active claims
 | Agent or human | Task | Files claimed | Claimed at (IST) |
 |---|---|---|---|
+| Shantanu's agent (branch badge-ux) | Badge UX: badge image, BadgeKit panel, verify landing, onboard finish | apps/web/src/app/api/badge/**, apps/web/src/components/BadgeKit.tsx, apps/web/src/app/onboard/Onboard.tsx (finish step only), apps/web/src/app/dashboard/Dashboard.tsx (badge section), apps/web/src/app/verify/[handle]/**, scripts/e2e-fork.ts (added checks only), docs/screens/badge/ | Fri 22:25 |
 
 ## 4. Locks
 | Lock | Holder | Since | Note |
