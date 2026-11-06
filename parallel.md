@@ -219,3 +219,27 @@ Format: `[Fri HH:MM IST] agent or human | what changed | files | commit | what t
 [Fri 10:47 IST] agent 1 | working tree state at creation: `git status` was clean and `git log origin/main..HEAD` was empty before this change, so there were no uncommitted or unpushed changes. HEAD was `39ac6b7` ("docs: overnight log commit count, tooling notes"), equal to `origin/main`. The only changes after that are this file and the two link lines, committed and pushed together. Not in git and never to be committed: `.env`, `apps/demo-store/.env.local`, `deployments/fork.json`, `node_modules`, `contracts/out`, `contracts/cache`. | none | none | Nothing else is pending on the first machine. All local servers and the fork were stopped before this task.
 
 [Fri 10:56 IST] agent 2 (Claude Code, second machine) | setup finished, section 2 steps 2 to 8. Nothing sent to any chain, no wallets script, no deploy, no db commands. Results: node v26.13.0, npm 11.20.0, Foundry forge 1.9.0 (Git Bash). `npm install` at `pop/` finished with no change to tracked files (`git status` clean after it; npm audit notes and an esbuild install-script notice only). `forge build` OK; `forge test`: 58 passed, 0 failed, 0 skipped, 5 suites (matches the expected 58). `npm run build:web` exit 0 and `npm run build:store` exit 0. `npm run lint -w @pop/web`: 0 errors, 2 warnings (`<img>` in `apps/web/src/app/onboard/Onboard.tsx` lines 229 and 233; not OrderView as the older log says). `npm run lint -w @pop/demo-store`: 0 errors, 0 warnings. Both `.env` and `apps/demo-store/.env.local` exist and are gitignored. Empty names in `.env`: `CHECKOUT_ADDRESS`, `REGISTRY_ADDRESS`, `RECLAIM_APP_ID`, `RECLAIM_APP_SECRET`, `RECLAIM_INSTAGRAM_PROVIDER_ID`, `NEXT_PUBLIC_BASE_URL`. `WORLD_REVIEW_ACTIONS` is NOT empty on this machine, unlike the list in section 2 step 4. `apps/demo-store/.env.local` has no empty names. | `parallel.md` | see `git log` | Deviations: the clone lives inside OneDrive (`C:\Users\shant\OneDrive\Desktop\ETH\pop`), not outside it as step 1 advises; install worked without EPERM or EBUSY, so I did not move it. Repo-local git identity was already set, no `--global`. Submodules present (forge-std v1.17.0, openzeppelin-contracts). Not run: fork, db scripts, e2e scripts, dev servers.
+
+[Fri 16:43 IST] human (Dhruva) with agent 1 | World smoke D succeeded on 1874: order #1, @meera.jewels, rating 5, review "Arrived on time and matched the photos." A real non-DEV Arkiv entity was written: key `0xa444fb932ea107e2814e191d8adc878e5936fd70c64ea4bd90c936e508c03508` (creator attestor, owner test buyer, readonly, expires at block 8064912, read back with `scripts/arkiv-query.ts` at Arkiv block 289062; 10 entities by the attestor in total). World log row verified, id f2d508a533b2. The simulator showed Unique Human with World ID 4.0 selected. | none (log only) | none | Gate 4 is done for the success path. The denied paths are still open (section 7). The chain lock is free.
+
+[Fri 16:43 IST] human (Dhruva) | tooling note: the dev server on `/dev/world` hot-reloaded in a loop. A production build (`npm run build`, `npm run start`) was the workaround. Likely cause is the file watcher, with the repo under Desktop (possibly OneDrive sync). Not verified. | none | none | Use a production build for any browser run that must stay stable (the World step, the demo).
+
+[Fri 16:43 IST] human (Dhruva) | the overnight rejected rows at 08:46 UTC on `/proof` came from scripted probes (`scripts/world-probe.ts`), not from a person cancelling. | none | none | Do not read those rows as user behaviour in the debrief.
+
+[Fri 11:18 IST] agent 1 | recorded the three entries above, set the chain lock to free (it was already free in section 4, no row change needed), added section 7. Claims table checked: agent 2's UI claim does not include `parallel.md`. | `parallel.md` | see `git log` | Section 7 is the deferred list before the video.
+
+## 7. Deferred to-do (do before the video)
+| # | Item | Owner | Status |
+|---|---|---|---|
+| 1 | World denied path A: cancel in the simulator, expect "cancelled. Nothing was published." and no new log row. Screenshot it. | Dhruva | open |
+| 2 | World denied path B: second review for order #1, expect "this order already has a review" or a World refusal. Copy the exact message, screenshot it. | Dhruva | open |
+| 3 | Deploy block mismatch: the app and `deployments/testnet.json` say 12330534, `docs/evidence.md` and the proof page text say 12330545. Read the creation block from the chain and make every file agree. | Dhruva | open |
+| 4 | Stale test counts in `docs/evidence.md` (should be 58 forge, 65 e2e-fork, 48 e2e-merchant). | Dhruva | open |
+| 5 | Finish `docs/WORLD_DEBRIEF.md` with the real timeline and friction. | Dhruva | open |
+| 6 | Record the real review entity in `docs/evidence.md` and `arkiv/reach.md`. | Dhruva | open |
+| 7 | On `/proof`, group the DEV entries and the old smoke entity (order 999000001) under "Ignored entries". | Dhruva | open |
+| 8 | Vercel setup and deploy (two projects), webhook cron, re-seed Kurta with the deployed URLs. | Dhruva | open |
+| 9 | Browser payment on 1874 by a person, explorer link in README. | Dhruva | open |
+| 10 | Whitechain mentor questions (Operate fit, token, whether script payments count). | Dhruva | open |
+| 11 | Human checks: Safari, real phone, screen reader, `/onboard` and `/arbiter` clicks. | Dhruva | open |
+| 12 | Demo rehearsal, video, submission form. | Dhruva | open |
