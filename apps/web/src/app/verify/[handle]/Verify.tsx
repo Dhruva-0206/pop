@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { short, when } from "@/lib/client/format";
 import { useConfig } from "@/lib/client/config";
 import { TestModeBanner } from "@/components/Banners";
@@ -35,6 +35,19 @@ type NotOk = { registered: false; handle: string; reason: "unknown" | "banned" }
 const TIER = ["Handle not checked", "Handle checked by PoP staff", "Handle proven cryptographically"];
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
+/** Shown when a buyer arrives by clicking a seller's badge: tells them what to check, because a badge picture can be copied. */
+function FromBadge({ handle }: { handle: string }) {
+  const from = useSearchParams().get("from");
+  const [host, setHost] = useState("");
+  useEffect(() => setHost(window.location.host), []);
+  if (from !== "badge" || !host) return null;
+  return (
+    <p className="max-w-prose text-ink-2">
+      You came here from <span className="mono">@{handle}</span>&apos;s PoP badge. Check that the address bar shows <span className="mono">{host}</span> and that the handle matches the shop you are buying from.
+    </p>
+  );
+}
+
 export default function Verify() {
   const { handle } = useParams<{ handle: string }>();
   const { cfg } = useConfig();
@@ -64,6 +77,7 @@ export default function Verify() {
     return (
       <div className="page-wide stack">
         <TestModeBanner cfg={cfg} />
+        <FromBadge handle={data.handle} />
         <div role="alert" className="notice notice-danger stack max-w-2xl p-6">
           <div className="flex flex-wrap items-center gap-3 text-base">
             <Stamp tone="danger">{banned ? "Banned" : "Unknown"}</Stamp>
@@ -89,6 +103,7 @@ export default function Verify() {
   return (
     <div className="page-wide stack">
       <TestModeBanner cfg={cfg} />
+      <FromBadge handle={data.handle} />
 
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:gap-12">
         <div className="stack">
