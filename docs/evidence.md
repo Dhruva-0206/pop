@@ -1,6 +1,16 @@
 # Evidence
 Contract addresses, tx links, Arkiv entity keys and runnable queries. Newest first within each section.
 
+## Live deployments (Vercel Pro)
+| What | Value | Checked |
+|---|---|---|
+| PoP web | https://pop-web-six.vercel.app | Fri 06 Nov 2026 12:13 IST: `scripts/vercel-smoke.ts` 11 of 11 PASS |
+| Kurta Co. store | https://kurta-store.vercel.app | Fri 06 Nov 2026 12:13 IST: same run, store checks 4 of 4 PASS |
+| Merchant row for @kurta.co (schema `public`) | webhook URL `https://kurta-store.vercel.app/api/pop/webhook`, return origin `https://kurta-store.vercel.app` | Fri 06 Nov 2026 12:13 IST: `npm run seed:merchant` in testnet mode; output said `@kurta.co already registered`; no transaction sent |
+| Webhook dispatcher | `GET https://pop-web-six.vercel.app/api/webhooks/dispatch` answered 200 with `{"scannedTo":12370672,"enqueued":0,"delivered":0,"failed":0}` | Fri 06 Nov 2026 12:13 IST. Whether Vercel Cron fires is not proven yet (see parallel.md section 6) |
+
+Re-run: `npx tsx scripts/vercel-smoke.ts https://pop-web-six.vercel.app https://kurta-store.vercel.app`
+
 ## Whitechain Sepolia (1874)
 | What | Value | Link |
 |---|---|---|
