@@ -197,12 +197,12 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 ## 3. Active claims
 | Agent or human | Task | Files claimed | Claimed at (IST) |
 |---|---|---|---|
-| | | | |
+| agent 1 (Dhruva's agent) | Final live verification | `docs/evidence.md`, `parallel.md`, `docs/friction-log.md` (append only, only if a check fails twice) | Fri 17:49 |
 
 ## 4. Locks
 | Lock | Holder | Since | Note |
 |---|---|---|---|
-| chain (Whitechain 1874 and Arkiv writes) | free | | |
+| chain (Whitechain 1874 and Arkiv writes) | Dhruva's agent | Fri 17:49 | one store order through the web checkout, live verification (test USDT and WBT only) |
 | fork (local anvil, schemas `pop_fork` and `kurta_31337`) | free | | |
 | vercel (deploys and env changes) | free | | |
 
