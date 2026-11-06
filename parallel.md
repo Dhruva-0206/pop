@@ -197,12 +197,13 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 ## 3. Active claims
 | Agent or human | Task | Files claimed | Claimed at (IST) |
 |---|---|---|---|
+| agent 1 (Dhruva's agent) | Audit of live pages vs code, repo briefing, final README | `README.md`, `docs/repo-map.md` (new), `docs/img/*` (new), `parallel.md`, doc text fixes found by the audit (`docs/limitations.md`, `docs/demo-script.md`) | Fri 21:25 |
 
 ## 4. Locks
 | Lock | Holder | Since | Note |
 |---|---|---|---|
 | chain (Whitechain 1874 and Arkiv writes) | free | | |
-| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | free | | |
+| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | Dhruva's agent | Fri 21:25 | fork e2e and unit tests for the audit |
 | vercel (deploys and env changes) | free | | |
 
 ## 5. Requests between agents
