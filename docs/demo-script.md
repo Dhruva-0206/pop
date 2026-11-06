@@ -10,7 +10,7 @@ Two versions: the 4-minute live finalist flow and the 2 to 4 minute video. Writt
    - **Seller window**: `/dashboard`, paste the demo seller test key, sign in. Off camera.
    - **Courier window**: `/courier`, sign in with the team passcode. Off camera.
    - **Arbiter window**: `/arbiter`, import the arbiter test key and sign in as staff. Off camera.
-4. Seed the scenes **3 to 5 minutes before each segment that needs them**, because the windows are real time: `NETWORK_MODE=testnet ALLOW_DEMO_SEED=yes npx tsx scripts/seed-demo.ts`. It prints order numbers. It sends about 15 test transactions the first time (not run on testnet yet). Scenes: an order near ship-by expiry, a Delivered order with the problem window open, a Disputed order, a banned seller with an open order, and a look-alike seller that is not registered.
+4. Seed the scenes **3 to 5 minutes before each segment that needs them**, because the windows are real time: `NETWORK_MODE=testnet ALLOW_DEMO_SEED=yes npx tsx scripts/seed-demo.ts` (export NETWORK_MODE after anything that sources `.env`). By default it runs only the **persistent** scenes, 4 and 5, which stay valid until someone acts on them: a banned seller (@bad.bazaar) with one open order, and a look-alike seller that is not registered (@meera.jewels.official). **Both were seeded on testnet on Fri 6 Nov** (open order #20; `/verify/bad.bazaar` banned, `/p/demo-fake-meera` Pay disabled), so there is nothing to seed for them again unless the order #20 refund has been used. The **timed** scenes need `--scenes=1,2,3` (or `--scenes=all`) and real seconds: an order near ship-by expiry, a Delivered order with the problem window open, a Disputed order. Seed those 3 to 5 minutes before the segment that needs them; they were not run on testnet.
 5. World simulator: open https://simulator.worldcoin.org in a second tab, staging. Have the order #1 review step ready (`docs/OVERNIGHT.md`, ready-to-click checklist).
 6. Close every tab you do not need. Hide bookmarks.
 
@@ -65,13 +65,16 @@ Run by an agent over HTTP and the chain, **not through a browser and not through
 | Pay button, whole progress list (funds, allow, pay, save) | about 15 s | 9.5 to 15.7 s over four orders; funds 5.6 to 7.9 s, allow about 3.2 s, pay 3.1 to 6.8 s, save 1.5 to 3.0 s |
 | Seller ships | about 5 s | 3.3 s, but 16.3 s once (chain latency varies) |
 | Courier delivers with the six words | about 5 s | 2.5 s, but 8.5 s once |
-| Problem window for @meera.jewels | not stated | **120 s**; after delivery you have 2 minutes to press Report a problem |
+| Problem window for a seller below the trusted minimum (@meera.jewels) | not stated | **120 s**; after delivery you have 2 minutes to press Report a problem |
+| Problem window for a trusted seller (@kurta.co, 3 or more completed orders) | not stated | **30 s**; from the shipping click to the seller withdrawing (ship, delivery, 30 s window, finalize, withdraw) takes **about 45 s**; payment to release is longer because it includes the time until someone ships |
 | Report a problem (tx plus text) | a few seconds | 6.5 s tx plus 1.3 s for the text |
 | Arbiter Split | a few seconds | 5.9 s |
 | Never-shipped order, Settle now | ship-by about 3 minutes after the order | 2.3 s and 3.2 s once the deadline passed; ship-by is exactly 180 s after pay |
 | Release path, ship to seller withdrawn | not stated | 135.6 s, of which 123.6 s is the problem window |
 | Kurta "Pay with PoP" to PoP checkout | about 5 s ("Opening the checkout, about 5 seconds") | about 12 s in the browser on Fri 6 Nov (order #11) |
 
-**Not run:** the World review and simulator (no new proofs allowed), the two scenes that need `scripts/seed-demo.ts` on testnet (`/p/demo-fake-meera` and `/verify/bad.bazaar` return 404 on the live site, so the look-alike and banned-seller steps cannot be shown until the seed is run), the seller, courier and arbiter pages (key entry), and the Kurta store beyond order #11.
+**Not run in this dry run:** the World review and simulator (reviews were done by a person the same evening: see `docs/evidence.md`), the seller, courier and arbiter pages (key entry), and the Kurta store beyond order #11. The two seed scenes were not available then; they were seeded afterwards (see Setup step 4).
+
+**Timings to say out loud (measured Fri 6 Nov):** Pay about 10 to 15 s; Kurta "Pay with PoP" to the PoP checkout about 12 s, not 5 s; `/proof` loads in about 3 s (the slowest page); from shipping to the seller withdrawing a trusted seller's order takes about 45 s (30 s problem window) and a new seller's about 2.3 minutes (120 s window; 135.6 s measured).
 
 **What to change in this script:** say "about 15 seconds" for Pay as written (it holds); budget 10 to 20 s per ship or delivery step instead of 5 s; tell the presenter the window is 120 s; and note the faucet wallet had 4 test USDT left after this dry run (each fresh browser wallet takes 2), so top it up before judging.

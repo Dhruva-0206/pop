@@ -12,7 +12,7 @@
 |---|---|
 | Event | ETHGlobal Mumbai 2026, **Building from Scratch** track |
 | Hard deadline | **Sat 7 Nov 2026, 9:00 AM IST**, no late entries. **Target submit: 7:00 AM.** |
-| Feature freeze | **Fri 6 Nov, 8:00 PM IST** |
+| Deadlines | **Code changes stop at Sat 03:00 IST; submit by Sat 07:00 IST; hard deadline Sat 09:00 IST** |
 | Repo | https://github.com/Dhruva-0206/pop (branch `main`) |
 | Product | **PoP: Proof of Purchase** |
 | Partner prizes (max 3) | **Whitechain** (Operate: Stablecoin Payments for Business), **Arkiv** (Build on Arkiv, from scratch), **World** (Best Use of IDKit). No others. |
@@ -86,7 +86,7 @@ A protected checkout that makes **paying upfront as safe as COD**:
 | Ethereum developer tools | **Foundry, OpenZeppelin SDK** (not scaffold-eth, Hardhat, ethers.js, web3.js, Privy, Self, Anon Aadhaar…) |
 | Web frameworks | **Next.js, React.js** |
 | Databases | **PostgreSQL, Supabase** |
-| Judging route | **Finalist + Partner Prizes** (switch to partner-only if the end-to-end flow isn't working by Fri 8 PM) |
+| Judging route | **Finalist + Partner Prizes** (switch to partner-only if the end-to-end flow isn't working by Sat 03:00 IST) |
 
 Arkiv, World, viem aren't in any dropdown, so describe them in "How it's made".
 
@@ -275,7 +275,7 @@ Readers trust only rows whose `$creator` is our attestor and, for reviews, only 
 9. Arbiter page (can be plain)
 10. Test everything on a real phone; deploy both apps to Vercel
 
-### Paperwork (after 8 PM freeze)
+### Paperwork (any time before Sat 03:00 IST; code changes stop then)
 - README: problem, why on-chain stablecoin settlement, architecture, live links, contract + tx links, Arkiv writer wallet + runnable query, setup, limitations, prior art
 - `/arkiv/` five files (their whole score comes from these four criteria)
 - `WHITECHAIN_FEEDBACK.md`, `docs/WORLD_DEBRIEF.md`, complete `AI_USAGE.md`
@@ -295,9 +295,9 @@ Readers trust only rows whose `$creator` is our attestor and, for reviews, only 
 | Fri 10:00 to 14:00 | Review flow → /verify → full loop on a phone |
 | Fri 14:00 to 17:00 | Kurta Co. store + failure paths |
 | Fri 17:00 to 20:00 | /onboard, /proof, arbiter page, Vercel, hardening |
-| **Fri 20:00** | **FEATURE FREEZE** |
-| Fri 20:00 to 00:00 | README + sponsor files |
+| Fri 20:00 to 00:00 | README + sponsor files (code changes continue in small, smoke-tested steps) |
 | Sat 00:00 to 03:00 | Seed demo orders, rehearse 5×, record video + backup run |
+| **Sat 03:00** | **Code changes stop** |
 | **Sat by 07:00** | **SUBMIT** (hard deadline 09:00) |
 
 ---
