@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { decodeEventLog, erc20Abi, type Hex } from "viem";
 import { checkoutAbi, deliveryCodeHash, termsHash, type Terms } from "@pop/shared";
 import { publicClientOf, useConfig } from "@/lib/client/config";
-import { getTestAccount, saveCode, walletOf } from "@/lib/client/wallet";
+import { forgetTestKey, getTestAccount, saveCode, walletOf } from "@/lib/client/wallet";
 import { newDeliveryCode } from "@/lib/client/code";
 import { inr, short, usdt, when } from "@/lib/client/format";
 import { TestModeBanner } from "@/components/Banners";
@@ -171,6 +171,7 @@ export default function Checkout() {
       router.push(`/o/${orderId}?new=1`);
     } catch (e) {
       setStep(friendlyPayError(e));
+      refreshBalance().catch(() => {}); // so we can tell whether this test wallet is the problem
     } finally {
       setBusy(false);
     }
@@ -190,6 +191,13 @@ export default function Checkout() {
   const delH = Math.round(l.terms.deliverWithinSec / 60);
   const recomputed = termsHash(l.terms);
   const priceUsdt = usdt(l.priceUnits, cfg.tokenDecimals);
+  // After a failed payment: show "Use a new test wallet" when the stored wallet is the problem (not enough test USDT, or it is the
+  // seller's own wallet). Faucet-wide problems (cap reached, faucet low) are not fixed by a new wallet, so they do not show it.
+  const walletStuck =
+    !busy &&
+    !!step &&
+    !/low on funds|cap reached|too many test wallets/i.test(step) &&
+    ((bal !== null && bal.usdt < BigInt(l.priceUnits)) || /seller's own wallet/i.test(step));
   const done = Number(s.completed);
   const lost = Number(s.lostDisputes);
   const stage = !busy ? -1 : step.startsWith("Adding") ? 0 : step.startsWith("Step 1") ? 1 : step.startsWith("Step 2") ? 2 : 3;
@@ -315,6 +323,24 @@ export default function Checkout() {
               <Checklist label="Payment progress" current={stage} steps={["Add test funds if needed", "Allow this exact amount", "Pay the seller's offer", "Save your order"]} />
             ) : (
               step && <ErrorBox what="Your payment did not go through." why={step} next="Nothing was taken unless you see an order page. Check your details and press Pay again." />
+            )}
+
+            {walletStuck && (
+              <div className="stack-sm">
+                <p className="text-sm">
+                  This test wallet cannot pay: it holds less than the price in test USDT, or it is the seller&apos;s own wallet, and the test faucet only tops up each wallet once.
+                </p>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    forgetTestKey(cfg, "buyer");
+                    window.location.reload();
+                  }}
+                >
+                  Use a new test wallet
+                </button>
+              </div>
             )}
 
             <p className="text-sm text-muted">Paying takes up to four steps of about 5 seconds each. Keep this page open.</p>

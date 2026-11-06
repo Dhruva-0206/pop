@@ -83,6 +83,13 @@ async function Live() {
             {row(`Treasury (fee ${facts.feeBps / 100}%)`, link("address", facts.treasury, facts.treasury))}
             {row("Windows", `${facts.shortWindow} s trusted sellers · ${facts.longWindow} s others · arbiter decides within ${facts.arbiterTimeout} s · trusted after ${facts.trustedMin} completed orders`)}
             {row("Held right now", `${Number(formatUnits(BigInt(facts.totalLocked), facts.tokenDecimals)).toFixed(2)} locked in open orders · ${Number(formatUnits(BigInt(facts.totalCredit), facts.tokenDecimals)).toFixed(2)} waiting to be withdrawn`)}
+            {facts.faucet &&
+              row(
+                "Test faucet, left",
+                <>
+                  {link("address", facts.faucet.address, facts.faucet.address)} · {Number(formatUnits(BigInt(facts.faucet.usdt), facts.tokenDecimals)).toFixed(2)} test USDT · {Number(formatUnits(BigInt(facts.faucet.gas), 18)).toFixed(3)} test WBT. Each new test wallet takes 2 test USDT.
+                </>,
+              )}
             {row("Deployed at block", facts.deployBlock)}
         </dl>
       </section>

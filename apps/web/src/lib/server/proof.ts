@@ -1,7 +1,8 @@
 import "server-only";
 import { checkoutAbi, chunkedLogs, ORDER_STATES } from "@pop/shared";
 import { listAttestorEntities, RABDI_CHAIN_ID, type ArkivEntityLine } from "@pop/shared/server/arkiv";
-import { deployment, mode, net, pub, store } from "./chain";
+import { erc20Abi } from "viem";
+import { deployment, mode, net, pub, serverWallet, store } from "./chain";
 import { readOrder } from "./orders";
 import { arkivAccessKey, attestorAddress } from "./reviews";
 
@@ -21,7 +22,21 @@ export async function contractFacts() {
     read<string>("treasury"), read<number>("feeBps"), read<number>("shortWindow"), read<number>("longWindow"),
     read<number>("trustedMinCompleted"), read<number>("arbiterTimeout"), read<bigint>("totalLocked"), read<bigint>("totalCredit"),
   ]);
+  // What the test faucet has left (public address and balances only), so a person can see why a new test wallet might not get funds.
+  const faucet = await (async () => {
+    try {
+      const address = serverWallet("FAUCET_PK").account.address;
+      const [usdt, gas] = await Promise.all([
+        pub.readContract({ address: d.token, abi: erc20Abi, functionName: "balanceOf", args: [address] }),
+        pub.getBalance({ address }),
+      ]);
+      return { address, usdt: usdt.toString(), gas: gas.toString() };
+    } catch {
+      return null;
+    }
+  })();
   return {
+    faucet,
     mode, chainId: net.chain.id, isLocalFork: net.isLocalFork, explorer: net.isLocalFork ? null : "https://explorer.testnet.whitechain.io",
     checkout: d.checkout, registry: d.registry, token: d.token, tokenDecimals: d.tokenDecimals, deployBlock: d.deployBlock,
     treasury, feeBps: Number(feeBps), shortWindow: Number(shortWindow), longWindow: Number(longWindow), trustedMin: Number(trustedMin),

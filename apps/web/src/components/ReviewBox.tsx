@@ -49,7 +49,7 @@ export function ReviewBox({ cfg, orderId, sellerHandle }: { cfg: AppConfig; orde
 
   function report(j: { ok?: boolean; status?: string; error?: string; retry?: boolean }, status = 0) {
     setRefusal(null);
-    if (j.ok && j.status === "synced") setMsg("Thanks. Your review is published.");
+    if (j.ok && j.status === "synced") setMsg("");
     else if (j.ok) setMsg("Your review was saved but publishing didn't finish. Press Try again.");
     else setRefusal(reviewRefusal(status, j.error));
     refresh();
@@ -138,7 +138,7 @@ export function ReviewBox({ cfg, orderId, sellerHandle }: { cfg: AppConfig; orde
             <span className="block">{refusal.next}</span>
           </Notice>
         )}
-        {msg && (
+        {msg && existing.status !== "synced" && (
           <p role="status" className="text-sm text-ink-2">
             {msg}
           </p>
