@@ -138,9 +138,9 @@ export function BadgeKit({ handle, payLink, qr, level = 2 }: { handle: string; p
             </button>
           ))}
         </div>
-        <div className={`flex min-h-24 items-center justify-center overflow-x-auto rounded-card border p-4 ${theme === "dark" ? "bg-ink" : "bg-bg"}`}>
+        <div className={`flex min-h-24 items-center justify-center rounded-card border p-3 sm:p-4 ${theme === "dark" ? "bg-ink" : "bg-bg"}`}>
           {/* eslint-disable-next-line @next/next/no-img-element -- a live SVG from our own route, the same file sellers embed */}
-          <img key={badgeSrc} src={badgeSrc} alt={`Badge preview, ${theme}: Protected by PoP, @${handle}'s order record`} height={60} className="h-[60px] w-auto max-w-none" />
+          <img key={badgeSrc} src={badgeSrc} alt={`Badge preview, ${theme}: Protected by PoP, @${handle}'s order record`} height={60} className="h-auto max-h-[60px] w-auto max-w-full" />
         </div>
       </div>
 
@@ -177,7 +177,7 @@ export function BadgeKit({ handle, payLink, qr, level = 2 }: { handle: string; p
         {tab === "instagram" && (
           <div role="tabpanel" id="badge-panel-instagram" aria-labelledby="badge-tab-instagram" className="stack pt-2">
             <p className="text-sm text-ink-2">Instagram cannot show pictures in a bio. Put the record line in your bio, and the payment QR in a story highlight.</p>
-            <CopyField id="badge-bio" label="Line for your bio" value={bio} copyLabel="Copy bio line" what="Bio line" rows={2} onCopied={announce} />
+            <CopyField id="badge-bio" label="Line for your bio" value={bio} copyLabel="Copy bio line" what="Bio line" rows={3} onCopied={announce} />
             {payLink && <CopyField id="badge-paylink" label="Your payment link" value={payLink} copyLabel="Copy payment link" what="Payment link" onCopied={announce} />}
             {/* eslint-disable-next-line @next/next/no-img-element -- a data URL made in the browser */}
             {qr && <img src={qr} alt="QR code for your payment link" width={160} height={160} />}
