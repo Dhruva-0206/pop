@@ -50,3 +50,29 @@ Order #1 on 1874 is Released, belongs to @meera.jewels and to the test buyer wal
 - `scripts/seed-demo.ts`: five scenes (order near ship-by expiry, Delivered with the window open, Disputed, banned seller with an open order, look-alike unregistered seller). Idempotent: a second run skipped every scene (verified on the fork). Testnet needs `ALLOW_DEMO_SEED=yes` and sends about 15 test transactions plus 0.02 WBT to a derived demo-seller wallet. **I did not run it on testnet.** The scenes use short real windows, so run it 3 to 5 minutes before the segment.
 - Verified on the fork through the app: `/verify/bad.bazaar` is the red banned page, `/verify/meera.jewels.official` is the red unknown page, the fake listing's seller standing is inactive (Pay disabled), the arbiter list shows the Disputed order, and the banned seller has one open order to force-refund.
 - `docs/demo-script.md`: 4-minute live flow and the 2 to 4 minute video flow with exact clicks, failure cases and fallbacks. Not rehearsed by a human.
+
+## Step 5: final verification (fresh local fork, after all changes)
+| Check | Result |
+|---|---|
+| `forge test` | 58 passed, 0 failed (invariant suite 64 runs x 32, 6 invariants) |
+| `scripts/e2e-fork.ts` | PASS, 65 checks |
+| `scripts/e2e-merchant.ts` | PASS, 48 checks |
+| `next build` with `VERCEL=1` and an empty environment, both apps | compiled, no errors |
+| eslint | 0 errors; 2 warnings in `apps/web` (an `<img>` for the QR code and the badge, both intentional) |
+| tsc (web, store, scripts) | clean |
+| Banned classes, dashes, emoji in UI source and docs | none found |
+| Lighthouse accessibility, nine pages | 100 each (best practices 96 to 100; the 96s are the expected 401s on the team tools when signed out) |
+| 375 px render audit | no horizontal scroll, every input named, no touch target under 44 px |
+
+Testnet activity tonight: none. After you handed over the plan I sent no transaction to 1874, wrote nothing to Arkiv and changed nothing in the `public` database schema. The only network calls were reads (the World verify host with fake proofs, Arkiv queries, the Blockscout and RPC reads). All local servers and the fork are stopped.
+
+## What failed or was skipped
+- Nothing failed twice. Tooling notes for the friction log: the browser tool cannot resize its viewport (so 375 px views use an iframe of exact width), and pages in the Next dev server do not hydrate inside that browser tab (production builds do). Both are about my tooling, not the apps.
+- Skipped on purpose: the real World proof (needs a human), the testnet run of `seed-demo.ts` (the plan said do not run it yet), anything on Vercel, any contract change.
+- Not verified: real phones, Safari, screen readers with a person, the unattended-written Baymard lines in `docs/ux-rules.md`, the faucet amount in `WHITECHAIN_FEEDBACK.md`, `/onboard` and `/arbiter` buttons clicked by a human, the timings in `docs/demo-script.md`.
+
+## What I need from you when you wake (in this order)
+1. **World smoke D click-through** (5 minutes): the READY-TO-CLICK checklist under Step 1 above. It is the only gate-4 step left.
+2. **Read this file and the commits** (`git log --oneline`, about 12 commits since `677803f`). Anything you disagree with in the redesign is easy to change in one place: the tokens in `apps/web/src/app/globals.css` (and the store's copy).
+3. **Decide**: gate 5 mentor answer; go or no-go for the two Vercel projects (`docs/deployment.md`); whether to run `seed-demo.ts` on testnet (about 15 test transactions, 0.02 WBT, run it 3 to 5 minutes before each demo segment).
+4. **Things you may not expect**: the whole UI is now light only (the old dark theme had unreadable text); the nav only shows "Sell with PoP" and "Proof" and the team tools moved to the landing page footer section; page titles are now sentence case; the Kurta store has its own terracotta accent, deliberately different from PoP's green; the README now says the deployer wallet holds an admin role that can grant and revoke roles.
