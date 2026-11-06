@@ -197,6 +197,7 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 ## 3. Active claims
 | Agent or human | Task | Files claimed | Claimed at (IST) |
 |---|---|---|---|
+| agent 1 (Dhruva's agent) | readable pay errors on checkout | `apps/web/src/lib/client/errors.ts` (new), `apps/web/src/app/p/[listingId]/Checkout.tsx` | Fri 18:55 |
 
 ## 4. Locks
 | Lock | Holder | Since | Note |
