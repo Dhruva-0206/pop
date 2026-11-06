@@ -1,0 +1,8 @@
+landing-375                  fits · h1 x1 · 3701px tall
+merchants-375                fits · h1 x1 · 2070px tall
+checkout-375                 fits · h1 x1 · 1799px tall
+store-375                    fits · h1 x1 · 1587px tall
+landing-1280                 fits · h1 x1 · 2483px tall
+merchants-1280               fits · h1 x1 · 1708px tall
+checkout-1280                fits · h1 x1 · 1203px tall
+store-1280                   fits · h1 x1 · 1136px tall
