@@ -2,15 +2,18 @@ import { connection } from "next/server";
 import { zeroAddress, type Address } from "viem";
 import { checkoutAbi, chunkedLogs, handleHash, registryAbi } from "@pop/shared";
 import { deployment, pub } from "@/lib/server/chain";
+import { POP_MARK_64 } from "@/lib/brand-mark";
 
 const HANDLE_RE = /^[a-z0-9._]{1,30}$/;
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
-function svg(bg: string, line1: string, line2: string) {
+function svg(bg: string, line1: string, line2: string, mark = false) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="280" height="62" role="img" aria-label="${esc(line1)}: ${esc(line2)}">
 <rect width="280" height="62" rx="10" fill="${bg}"/>
 <text x="14" y="25" fill="#ffffff" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="700">${esc(line1)}</text>
-<text x="14" y="46" fill="#e8f5ee" font-family="Arial,Helvetica,sans-serif" font-size="12">${esc(line2)}</text>
+<text x="14" y="46" fill="#e8f5ee" font-family="Arial,Helvetica,sans-serif" font-size="12">${esc(line2)}</text>${
+    mark ? `\n<rect x="238" y="7" width="32" height="32" rx="9" fill="#ffffff"/>\n<image x="240" y="9" width="28" height="28" href="${POP_MARK_64}"/>` : ""
+  }
 </svg>`;
 }
 const reply = (body: string, status = 200) =>
@@ -34,7 +37,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ handle: string
     const funded = await chunkedLogs(BigInt(d.deployBlock), tip, (fromBlock, toBlock) =>
       pub.getContractEvents({ address: d.checkout, abi: checkoutAbi, eventName: "OrderFunded", args: { seller: owner }, fromBlock, toBlock }),
     );
-    return reply(svg("#0b6b3a", "Protected by PoP", `@${handle} · ${completed.toString()} of ${funded.length} protected orders completed`));
+    return reply(svg("#0b6b3a", "Protected by PoP", `@${handle} · ${completed.toString()} of ${funded.length} protected orders completed`, true));
   } catch {
     return reply(svg("#52525b", "PoP", "badge temporarily unavailable"), 503);
   }

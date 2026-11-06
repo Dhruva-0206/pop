@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Figtree, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
@@ -7,9 +8,20 @@ import { APP_NAME, APP_TAGLINE } from "@pop/shared";
 const figtree = Figtree({ variable: "--font-figtree", subsets: ["latin"] });
 const plexMono = IBM_Plex_Mono({ variable: "--font-plex-mono", subsets: ["latin"], weight: ["400", "500"] });
 
+// Absolute base for the share image and icon URLs (WhatsApp and Instagram need absolute links).
+const SITE =
+  process.env.NEXT_PUBLIC_BASE_URL?.trim() ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : process.env.VERCEL ? "https://pop-web-six.vercel.app" : "http://localhost:3000");
+const TITLE = `${APP_NAME}: ${APP_TAGLINE}`;
+const DESCRIPTION = "Pay an Instagram seller with a protected checkout: if it is not shipped in time, the money comes back automatically. Test network.";
+
+// The icons (icon.png, apple-icon.png, favicon.ico) and the share image (opengraph-image.png, twitter-image.png) are picked up from this folder.
 export const metadata: Metadata = {
-  title: { default: `${APP_NAME}: ${APP_TAGLINE}`, template: `%s · ${APP_NAME}` },
-  description: "A drop-in USDT checkout for online stores, with refund rules built into every payment. Test network.",
+  metadataBase: new URL(SITE),
+  title: { default: TITLE, template: `%s · ${APP_NAME}` },
+  description: DESCRIPTION,
+  openGraph: { type: "website", siteName: APP_NAME, title: TITLE, description: DESCRIPTION },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 
@@ -22,9 +34,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </a>
         <header className="border-b">
           <div className="mx-auto flex max-w-wide items-center justify-between px-4 py-1 md:px-6">
-            <Link href="/" className="flex min-h-11 items-center gap-2 font-bold text-ink no-underline">
-              <span className="mark" aria-hidden="true" />
-              {APP_NAME}
+            <Link href="/" aria-label={APP_NAME} className="flex min-h-11 items-center no-underline">
+              <Image src="/brand/pop-logo-256.png" alt={APP_NAME} width={36} height={36} priority />
             </Link>
             <nav aria-label="Main" className="flex items-center">
               <Link href="/onboard" className="inline-flex min-h-11 items-center px-3 text-ink-2 no-underline hover:text-ink">

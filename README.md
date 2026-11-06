@@ -1,3 +1,5 @@
+<p align="center"><img src="apps/web/public/brand/pop-logo-256.png" alt="PoP logo" width="120"></p>
+
 # PoP: Proof of Purchase
 
 **Pay an Instagram seller without trusting them.** The money waits in a contract. It comes back to the buyer automatically if the parcel is late, and it is paid out only when the buyer's own code is entered at the door.
