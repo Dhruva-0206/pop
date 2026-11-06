@@ -198,6 +198,7 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 | Agent or human | Task | Files claimed | Claimed at (IST) |
 |---|---|---|---|
 | agent 2 (second machine) | UI/UX pass (presentation only, deadline 19:30 IST) | `apps/web/src/app/{page.tsx,layout.tsx,globals.css}`, `apps/web/src/app/p/[listingId]/Checkout.tsx`, `apps/web/src/app/o/[orderId]/OrderView.tsx`, `apps/web/src/app/verify/[handle]/Verify.tsx`, `apps/web/src/app/proof/page.tsx`, `apps/web/src/app/onboard/Onboard.tsx`, `apps/web/src/app/dashboard/Dashboard.tsx`, `apps/web/src/app/courier/Courier.tsx`, `apps/web/src/app/arbiter/Arbiter.tsx`, `apps/web/src/components/*`, `apps/web/src/lib/client/format.ts`, `apps/demo-store/src/app/{page.tsx,layout.tsx,globals.css,PayButton.tsx,orders/Orders.tsx}`, `apps/demo-store/src/components/ui.tsx`, `docs/design-direction.md`, `docs/design-tokens.md`, `docs/screens/after2/`, `docs/screens/README.md` | Fri 11:05 |
+| agent 1 (first machine) | Vercel Pro cron, deploy block fix, maxDuration (no deploy, no transactions) | `apps/web/vercel.json`, `deployments/testnet.json`, `docs/evidence.md`, `docs/deployment.md`, `CLAUDE.md`, `.env.example`, `apps/web/src/lib/proof-data.ts`, `WHITECHAIN_FEEDBACK.md`, `apps/web/src/lib/server/webhooks.ts`, route files `apps/web/src/app/api/{webhooks/dispatch,orders/confirm,orders/[id],world/verify-review,reviews/retry}/route.ts`, `apps/demo-store/src/app/api/pop/webhook/route.ts` | Fri 11:40 |
 
 ## 4. Locks
 | Lock | Holder | Since | Note |
