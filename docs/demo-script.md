@@ -1,0 +1,57 @@
+# Demo script
+
+Two versions: the 4-minute live finalist flow and the 2 to 4 minute video. Written against the redesigned UI. **Not rehearsed by a human yet.** The steps were checked by e2e runs and by looking at the pages, but nobody has timed a full run with the real World simulator. Rehearse before relying on the timings. Where a step depends on something we could not verify, it says so.
+
+## Setup (30 minutes before, once)
+1. Servers: PoP web and the Kurta store on testnet (see `docs/OVERNIGHT.md` for the start command), `npm run webhooks` in a third terminal. Open `/proof` and check the contract addresses match `docs/evidence.md`.
+2. Wallets and balances (addresses only, never keys on screen): the test buyer needs about 6 test USDT and a little WBT; the seller wallet and courier need a little WBT. Check on `/proof` or the explorer.
+3. Browsers. Use a laptop, a clean window, 125 percent zoom, notifications off.
+   - **Buyer window**: in the console, `localStorage.setItem("pop:testwallet:testnet:1874:buyer", "<TEST_BUYER_PK>")`, then reload. Do this off camera.
+   - **Seller window**: `/dashboard`, paste the demo seller test key, sign in. Off camera.
+   - **Courier window**: `/courier`, sign in with the team passcode. Off camera.
+   - **Arbiter window**: `/arbiter`, import the arbiter test key and sign in as staff. Off camera.
+4. Seed the scenes **3 to 5 minutes before each segment that needs them**, because the windows are real time: `NETWORK_MODE=testnet ALLOW_DEMO_SEED=yes npx tsx scripts/seed-demo.ts`. It prints order numbers. It sends about 15 test transactions the first time (not run on testnet yet). Scenes: an order near ship-by expiry, a Delivered order with the problem window open, a Disputed order, a banned seller with an open order, and a look-alike seller that is not registered.
+5. World simulator: open https://simulator.worldcoin.org in a second tab, staging. Have the order #1 review step ready (`docs/OVERNIGHT.md`, ready-to-click checklist).
+6. Close every tab you do not need. Hide bookmarks.
+
+## 4-minute live flow (finalist judging)
+| Time | Say | Do (exact clicks) |
+|---|---|---|
+| 0:00 | "A buyer who pays an Instagram seller first has no protection. PoP gives them a refund rule they can verify." | Show `/`. Point at the headline and the five steps. |
+| 0:25 | "This is a normal checkout. Before I pay I see the seller's record and the refund deadline." | Open `/p/jhumka-01` in the buyer window. Point at "Before you pay": orders completed, the two refund deadlines. Fill name, phone, address. |
+| 0:50 | "I pay with test USDT. Nothing goes to the seller yet." | Press **Pay**. Read the progress list as it moves (add funds, allow, pay, save). About 15 seconds. |
+| 1:10 | "My browser made a six-word code. Only its hash is on the chain." | The order page opens. Point at the countdown and the code grid. Take a screenshot as the page says. |
+| 1:25 | "The seller ships, the courier asks for my code." | Seller window: press **Mark shipped** on the order. Courier window: type the six words, press **Delivered: submit code**. Buyer window updates to "Delivered. The problem window is open." |
+| 1:50 | "If something is wrong I can report it, and the arbiter decides." | Use the prepared Delivered order from scene 2: open `/o/<order>` in the buyer window, press **Report a problem**, type a sentence, **Send report**. Switch to `/arbiter`: the dispute is listed with the buyer's words. Press **Refund buyer** or **Split**. |
+| 2:20 | "If the seller never ships, nobody has to be trusted." | Open the scene 1 order (ship-by passes about 3 minutes after seeding). Show the countdown reach zero, then **Settle now**. The page says "Refunded to you". Then **Move ... test USDT back to my wallet**. |
+| 2:50 | "A look-alike seller and a banned seller." | Open `/p/demo-fake-meera`: red warning, Pay disabled. Open `/verify/bad.bazaar`: red "Not a registered seller". In `/arbiter` look up `@bad.bazaar` and press **Force refund** on its open order. |
+| 3:10 | "Reviews come only from paid orders, one per person per seller." | Open order #1 in the buyer window, leave a review, approve in the World simulator. Then `/verify/meera.jewels` shows it and `/proof` lists the Arkiv entity. If World is slow, say so and show `/proof` instead. |
+| 3:35 | "A second shop reads the same data with its own keys." | Open the Kurta store: "Our record" card, then **Pay with PoP**, which lands on the same checkout. Open the store's **My orders** to show statuses that arrived by signed webhook and were rechecked on the chain. |
+| 3:50 | "Everything is on one page you can check." | Show `/proof` for two seconds. Close with the three promises. |
+
+Time risks: the Pay step (15 s), the shipping and delivery transactions (about 5 s each) and World (unknown). If you are behind at 2:50, drop the Kurta store and keep the review.
+
+## Video flow (2 to 4 minutes, 720p or better, recorded on a laptop, real voice, not sped up, no AI voice)
+Same order as the live flow, with these changes:
+- Record each blockchain wait in real time. Do not cut inside a wait shorter than 20 seconds; narrate what the progress list says instead.
+- Cut the dispute segment to the arbiter screen: the buyer's words, then **Split** with 50 percent.
+- Show the failing paths on purpose, as separate short clips: (1) wrong code at the courier (the courier page says "That code doesn't match this order."), (2) Settle disabled before the deadline and enabled after, (3) the look-alike seller, (4) cancelling the World request ("Nothing was published").
+- End on `/proof`: contracts, a transaction link opened in Blockscout, the Arkiv entity table, the test count line.
+- Voice script, about 330 words for 2:40: problem (20 s), checkout and trust cues (25 s), pay and code (25 s), ship and deliver (20 s), report and decide (25 s), automatic refund (25 s), fake and banned seller (15 s), review and Arkiv (25 s), the second store (15 s), proof and limits (30 s). Say the limits out loud: the courier is simulated, one arbiter key decides disputes, test USDT only.
+
+## Failure cases to show, and what to say
+| Case | How to show it | What it proves |
+|---|---|---|
+| Seller never ships | scene 1, **Settle now** after the countdown | The refund needs nobody's permission |
+| Wrong delivery code | courier page, type a wrong word | The contract checks the code, not the courier |
+| Buyer reports a problem | scene 2 | The buyer is heard inside the window |
+| Courier says the buyer refused | scene 3 on `/arbiter` | The courier can only open a dispute, never move money |
+| Banned seller | scene 4 | Open orders of a banned seller are refunded in full |
+| Look-alike seller | scene 5 | A handle that is not registered is flagged red |
+| Webhook replay or edit | not shown live; mention `scripts/e2e-merchant.ts` | The store rechecks the chain and ignores forged events |
+
+## If something breaks
+- A transaction is slow: say "Whitechain is confirming, about five seconds" and wait. Do not click twice.
+- The page shows an error: read it aloud (it says what happened and what to do) and follow it.
+- World fails: show the `/proof` World log row, say the simulator step is staging only, and move on.
+- A scene was not seeded in time: seed again, it is idempotent, and continue with another segment first.
