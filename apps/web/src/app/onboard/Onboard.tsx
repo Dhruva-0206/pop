@@ -13,6 +13,7 @@ import { DEMO_NOTE, ONE_PERSON_NOTE, vendorRefusal, vendorWidgetRefusal } from "
 import type { Refusal } from "@/lib/client/review-errors";
 import { Notice } from "@/components/ui";
 import { TestModeBanner, TxLink } from "@/components/Banners";
+import { BadgeKit, CopyField } from "@/components/BadgeKit";
 
 type Status = {
   status: "none" | "pending" | "approved" | "rejected";
@@ -31,7 +32,7 @@ const DEMO_INR_PER_USDT = 90;
 
 /**
  * Vendor onboarding. Steps: (1) Instagram handle, (2) World ID check, so one person can open one shop, (3) bio code and
- * "I added it to my bio", (4) payment link, QR and badge.
+ * "I added it to my bio", (4) payment link, QR and the badge kit.
  * With staff approval (the default) a team member checks the bio at /arbiter, then the vendor registers and signs a product.
  * With the demo flag (ONBOARD_DEMO_AUTOAPPROVE=yes, testnet only) the staff check is skipped and step 3 does everything in one click.
  */
@@ -246,7 +247,6 @@ export default function Onboard() {
   }
 
   if (!cfg) return <div className="page stack">Loading…</div>;
-  const embed = st.handle && typeof window !== "undefined" ? `<a href="${link}"><img src="${window.location.origin}/api/badge/${st.handle}" alt="Protected by PoP"></a>` : "";
   const payout = (
     <div className="rounded-control bg-surface p-3 text-sm stack-sm">
       <div className="font-semibold">Payout wallet</div>
@@ -392,34 +392,26 @@ export default function Onboard() {
       )}
 
       {st.listing && (
-        <div className="card stack-sm border-2 border-accent">
-          <h2>You&apos;re live: {st.listing.title}</h2>
-          <div className="break-all rounded-control bg-surface p-2 text-sm">
-            <a className="underline" href={link}>
-              {link}
-            </a>
+        <div className="card stack border-2 border-accent">
+          <div className="stack-sm">
+            <h2>Your shop is ready</h2>
+            <p className="text-ink-2">
+              {st.listing.title} is live. Share the payment link or the QR code; every order through it is protected.
+            </p>
           </div>
-          {qr && <img src={qr} alt="QR code for your payment link" width={200} height={200} className="mx-auto" />}
-          <div className="text-xs text-muted">Put this link or QR in your Instagram bio, stories or WhatsApp.</div>
-          <a className="btn btn-secondary btn-block" href="/dashboard">
-            Manage your orders
-          </a>
-          <div className="text-xs text-muted">Open it in this same browser: your payout wallet and its key live here, and shipping an order is signed with that key.</div>
+          <CopyField id="pay-link" label="Your payment link" value={link} copyLabel="Copy payment link" what="Payment link" />
+          {qr && <img src={qr} alt="QR code for your payment link" width={200} height={200} />}
+          <p className="text-sm text-muted">Put this link or QR in your Instagram bio, stories or WhatsApp.</p>
+          {st.handle && <BadgeKit handle={st.handle} payLink={link} qr={qr} level={3} />}
+          {payout}
           {regTx && <TxLink cfg={cfg} hash={regTx} label="registration" />}
           {auto && <div className="text-xs text-muted">{DEMO_NOTE} PoP&apos;s test faucet wallet paid the network fee for your registration.</div>}
-          {payout}
-          {st.handle && (
-            <>
-              <img src={`/api/badge/${st.handle}`} alt="Protected by PoP badge" width={280} height={62} />
-              <label className="text-xs text-muted" htmlFor="embed">
-                Badge for your website
-              </label>
-              <textarea id="embed" readOnly className="field mono" rows={3} value={embed} />
-              <a className="text-sm underline" href={`/verify/${st.handle}`}>
-                See your public record
-              </a>
-            </>
-          )}
+          <div className="stack-sm">
+            <a className="btn btn-secondary btn-block" href="/dashboard">
+              Manage your orders
+            </a>
+            <p className="text-xs text-muted">Open it in this same browser: your payout wallet and its key live here, and shipping an order is signed with that key.</p>
+          </div>
         </div>
       )}
       {msg && <div className="text-sm text-danger">{msg}</div>}
