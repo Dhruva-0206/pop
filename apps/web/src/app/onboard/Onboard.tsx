@@ -26,6 +26,8 @@ type WorldCfg = { app_id: `app_${string}`; action: string; environment: "staging
 const errText = (e: unknown) => (e instanceof Error ? e.message.split("\n")[0] : "Something went wrong");
 const HANDLE_FORMAT = /^[a-z0-9._]{1,30}$/;
 const cleanHandle = (s: string) => s.trim().toLowerCase().replace(/^@/, "");
+/** The address shown in the vendor's payment link, QR and badge snippet: the public site URL when NEXT_PUBLIC_BASE_URL is set, otherwise the page's own origin. */
+const publicOrigin = () => process.env.NEXT_PUBLIC_BASE_URL?.trim().replace(/\/$/, "") || window.location.origin;
 /** Demo exchange rate used only to show buyers a rupee price next to the test USDT price. */
 const DEMO_INR_PER_USDT = 90;
 
@@ -76,7 +78,7 @@ export default function Onboard() {
     return () => clearInterval(t);
   }, [refresh]);
 
-  const link = st.listing && typeof window !== "undefined" ? `${window.location.origin}/p/${st.listing.id}` : "";
+  const link = st.listing && typeof window !== "undefined" ? `${publicOrigin()}/p/${st.listing.id}` : "";
   useEffect(() => {
     if (link) QRCode.toDataURL(link, { margin: 1, width: 200 }).then(setQr);
   }, [link]);
@@ -246,7 +248,7 @@ export default function Onboard() {
   }
 
   if (!cfg) return <div className="page stack">Loading…</div>;
-  const embed = st.handle && typeof window !== "undefined" ? `<a href="${link}"><img src="${window.location.origin}/api/badge/${st.handle}" alt="Protected by PoP"></a>` : "";
+  const embed = st.handle && typeof window !== "undefined" ? `<a href="${link}"><img src="${publicOrigin()}/api/badge/${st.handle}" alt="Protected by PoP"></a>` : "";
   const payout = (
     <div className="rounded-control bg-surface p-3 text-sm stack-sm">
       <div className="font-semibold">Payout wallet</div>
