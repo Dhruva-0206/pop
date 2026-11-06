@@ -23,7 +23,7 @@ Planned and NOT implemented (no code writes them): `pop_seller_v1` (a public sel
 ## Trust rules for readers
 A reader keeps an entity only if: `$creator` is our attestor, it is readonly, and its `pay_tx` is a real order for that seller on this contract. Everything else is counted as "ignored" and shown as such. Ownership is the buyer's wallet after the transfer, but ownership does not change what a reader trusts: the creator and the readonly flag do.
 
-## Facts confirmed by running code (Fri 6 Nov)
+## Facts confirmed by running code
 - Types: `addr`, `u256`, `u64`, `str` come back as `{ type, value }`; `bytes` values are hex.
 - The query has no `ne` or `not` in SDK 1.0.1, although the docs site lists them.
 - `$expiresAt` is a block number, not a time. Block 309018 for the smoke entity, which was created at about block 265818, so about 43,200 blocks, matching 24 hours at about two seconds per block (our reading, not a stated figure).

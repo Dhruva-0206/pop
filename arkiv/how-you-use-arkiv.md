@@ -18,7 +18,7 @@ Code: `packages/shared/src/server/arkiv.ts` (`publishReview`, `readSellerReviews
 - **Indexed columns.** `seller` and `order_id` for lookups.
 - **Two apps, two keys.** PoP's `/verify/[handle]` and the Kurta Co. store both read these entities, each with its own access key.
 
-## The query (run on Fri 6 Nov, output in `reach.md`)
+## The query (its output is in `reach.md`)
 ```
 npx tsx scripts/arkiv-query.ts                           # with PoP's key
 npx tsx scripts/arkiv-query.ts KURTA_ARKIV_ACCESS_KEY    # with the store's own key
