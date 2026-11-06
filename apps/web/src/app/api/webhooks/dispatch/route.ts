@@ -24,3 +24,6 @@ async function run() {
     return NextResponse.json({ error: "dispatch failed" }, { status: 500 });
   }
 }
+
+// Vercel max duration (seconds): one pass scans chain events and delivers for up to 40 s (DELIVERY_BUDGET_MS in webhooks.ts).
+export const maxDuration = 60;

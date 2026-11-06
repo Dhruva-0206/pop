@@ -71,3 +71,6 @@ export async function POST(req: Request) {
   }
   return NextResponse.json({ error: "no OrderFunded event in transaction" }, { status: 400 });
 }
+
+// Vercel max duration (seconds): after() runs a webhook pass that can take up to 40 s, and the function must stay alive for it.
+export const maxDuration = 60;

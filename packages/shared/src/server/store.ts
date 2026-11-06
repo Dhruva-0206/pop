@@ -626,10 +626,35 @@ export function createStore(mode: NetworkMode) {
         payload: x.payload, attempts: Number(x.attempts), status: x.status,
       }));
     },
+    /**
+     * Atomically takes ONE due delivery (so a cron pass and an order-page pass in different serverless instances never send the
+     * same row at once). The row moves to status 'sending'; if the claimer dies, the row becomes due again after `leaseSec`.
+     * Due = pending, or failed with attempts left past the backoff, or 'sending' past its lease.
+     */
+    async claimWebhook(maxAttempts: number, backoffSec: number, leaseSec: number): Promise<WebhookDelivery | undefined> {
+      const r = await one(
+        `update ${T("webhook_deliveries")} set status = 'sending', updated_at = now()
+         where id = (
+           select id from ${T("webhook_deliveries")}
+           where merchant_id is not null and (
+             status = 'pending'
+             or (status = 'failed' and attempts < $1 and updated_at < now() - make_interval(secs => $2))
+             or (status = 'sending' and updated_at < now() - make_interval(secs => $3))
+           )
+           order by id limit 1 for update skip locked
+         )
+         returning *`,
+        [maxAttempts, backoffSec, leaseSec],
+      );
+      const x = r.rows[0];
+      return x
+        ? { id: Number(x.id), merchantId: Number(x.merchant_id), orderId: String(x.order_id), event: x.event, payload: x.payload, attempts: Number(x.attempts), status: x.status }
+        : undefined;
+    },
     async markWebhook(id: number, ok: boolean, error?: string) {
       await one(
         `update ${T("webhook_deliveries")} set attempts = attempts + 1, status = $2, last_error = $3, updated_at = now(),
-           delivered_at = case when $2 = 'delivered' then now() else delivered_at end where id = $1`,
+           delivered_at = case when $2 = 'delivered' then now() else delivered_at end where id = $1 and status <> 'delivered'`,
         [id, ok ? "delivered" : "failed", ok ? null : (error ?? "failed").slice(0, 300)],
       );
     },

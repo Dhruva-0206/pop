@@ -28,7 +28,7 @@ Nothing has been deployed to Vercel yet. This is the list a person needs when th
 | `NETWORK_MODE` | `testnet` |
 | `WHITECHAIN_RPC_URL` | `https://rpc.testnet.whitechain.io` |
 | `CHECKOUT_ADDRESS`, `REGISTRY_ADDRESS` | the deployed addresses (see `docs/evidence.md`) |
-| `DEPLOY_BLOCK` | `12330534` (the block before the deploy; event scans start here) |
+| `DEPLOY_BLOCK` | `12330545` (the block both contracts were created in, read from the chain; event scans start here) |
 | `USDT_ADDRESS` | `0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7` (optional, this is the default) |
 | `WORLD_APP_ID`, `WORLD_RP_ID`, `WORLD_ENVIRONMENT` | from the World portal. `staging` while using the Simulator. |
 | `NEXT_PUBLIC_BASE_URL` | the public URL of the PoP project. Optional. The only variable with a public prefix, and it holds no secret. |
@@ -41,7 +41,7 @@ Nothing has been deployed to Vercel yet. This is the list a person needs when th
 - Any private key that is not listed above (deployer and arbiter keys stay off the server; the arbiter signs from the browser of the person holding the key).
 
 ### Other setup
-- Webhooks: there is no queue. Something has to call `GET /api/webhooks/dispatch` (or `POST`). Order pages and order registration trigger a pass, and `apps/web/vercel.json` declares a cron on it. See "Webhook dispatch on Vercel" below for what the cron can and cannot do on each plan.
+- Webhooks: there is no queue. Something has to call `GET /api/webhooks/dispatch` (or `POST`). Order pages and order registration trigger a pass, and `apps/web/vercel.json` runs it every minute (Vercel Pro). See "Webhook dispatch on Vercel" below.
 - The Kurta Co. merchant row stores the store's webhook URL and allowed return origin. After the store has a public URL, run `KURTA_ORIGIN=https://<store> KURTA_WEBHOOK_URL=https://<store>/api/pop/webhook npm run seed:merchant` from a laptop (it also checks the merchant wallet has gas).
 
 ## Project 2: Kurta Co. (`apps/demo-store`)
@@ -80,17 +80,35 @@ Checked Fri 6 Nov: `VERCEL=1 npm run build:web` and `VERCEL=1 npm run build:stor
 | Build command | `npm run build` (this is `next build` inside the app) | same |
 | Output directory | default (`.next`) | default |
 | Node.js version | UNVERIFIED: local development uses Node 26.13. Pick the newest version Vercel offers that satisfies Next 16.4.5 and check the first build log. | same |
-| `vercel.json` | `apps/web/vercel.json` (cron only) | none |
+| `vercel.json` | `apps/web/vercel.json` (cron every minute, Pro only) | none |
 
 ## Webhook dispatch on Vercel
-There is no queue. A pass is one call to `/api/webhooks/dispatch` (GET or POST, no auth; it only reports facts already on chain). Passes also run, best effort, after `POST /api/orders/confirm` and on every `GET /api/orders/[id]`, which the order page polls. So a merchant hears about `order.funded` at once, but later events (`shipped`, `delivered`, `released`, `refunded`) are sent only when someone has the order page open, when a cron fires, or when a loop is running.
+There is no queue. A pass is one call to `/api/webhooks/dispatch` (GET or POST, no auth; it only reports facts already on chain). The team is on **Vercel Pro**, so `apps/web/vercel.json` runs that route **every minute** (`* * * * *`). The cron is now the primary trigger. Two more triggers still run, best effort: after `POST /api/orders/confirm`, and on every `GET /api/orders/[id]`, which the order page polls. So `order.funded` usually goes out at once, and every later event (`shipped`, `delivered`, `released`, `refunded`) goes out within about a minute even when nobody has an order page open.
 
-**Vercel cron limits** (https://vercel.com/docs/cron-jobs/usage-and-pricing, read Fri 6 Nov): Hobby allows cron jobs that run **once per day** at most, with timing precision of an hour (a job set for 01:00 may run any time from 01:00 to 01:59). A faster expression fails the deployment on Hobby. Pro and Enterprise allow once per minute with per-minute precision. Which plan the team has is **UNVERIFIED**.
+**Cron limits** (https://vercel.com/docs/cron-jobs/usage-and-pricing, read Fri 6 Nov): Pro and Enterprise allow once per minute with per-minute precision. Hobby allows once per day only, and a faster schedule would fail the deploy there. The team confirmed Pro; the plan itself was not checked from the dashboard. If the project is ever moved to Hobby, change `schedule` back to `0 0 * * *` or the deploy fails.
 
-`apps/web/vercel.json` therefore ships with the only schedule that deploys on every plan: `0 0 * * *` (daily). That is a safety net, not a real-time path. Choices:
-1. **Hobby (default, free).** Keep the daily cron. Real-time behaviour comes from the order pages, order registration and a loop script run by a person. Run the loop on a laptop against the deployed URL and leave it running during judging: `POP_URL=https://<pop-project>.vercel.app npm run webhooks` (it POSTs to `/api/webhooks/dispatch` every 5 seconds; `scripts/webhooks-loop.ts`, no keys needed). If the laptop sleeps, delivery pauses and resumes on the next pass. Nothing is lost, because the dispatcher rescans chain events and retries (8 attempts).
-2. **Pro.** Change `schedule` in `apps/web/vercel.json` to `* * * * *` (every minute) and redeploy. The loop script is then optional.
-3. **Any plan.** An external pinger (a free uptime monitor hitting the GET URL every minute) also works, but it is a third party calling your API: use it only if the team agrees.
+**Backup, optional.** `POP_URL=https://<pop-project>.vercel.app npm run webhooks` on a laptop calls the same route every 5 seconds (`scripts/webhooks-loop.ts`, no keys). Use it only if the cron looks late during judging. It adds nothing else, and overlapping passes are safe (below).
+
+**Overlapping passes are safe.** A cron pass and an order-page pass can run at the same moment in different serverless instances (the in-memory single-flight guard in `webhooks.ts` only covers one instance). Checked in the code, Fri 6 Nov:
+- Enqueue is idempotent: a unique index on `(merchant_id, order_id, event)` with `on conflict do nothing`.
+- The scan cursor only moves forward (`greatest(...)`), so two passes scanning the same blocks do duplicate reads, not duplicate rows.
+- Delivery was **not** safe before: `dueWebhooks` was a plain `select`, so two instances could pick the same pending row and both POST it, and a late failure could overwrite a `delivered` status. Fixed: `store.claimWebhook` (`packages/shared/src/server/store.ts`) takes one row at a time with `update ... where id = (select ... for update skip locked) returning *` and sets it to `sending`. A row whose claimer died becomes due again after a 90 second lease. `markWebhook` no longer touches a row that is already `delivered`. No migration is needed (the status column has no check constraint). The loop stops starting new deliveries after 40 seconds, inside the route's 60 second `maxDuration`.
+- Delivery is still at least once: if a receiver answers after PoP's 15 second timeout, PoP retries. The Kurta receiver is idempotent (`orders.apply` only moves a status forward and locks the row), and every event carries a stable id (`pop-event-id`, `evt_<order>_<type>`). A third-party receiver must dedupe on that id.
+- Not run against a database in this check: the new SQL was planned with `EXPLAIN` (no execution) and the apps build; no concurrent run was staged.
+
+## Function duration (Vercel Pro)
+Vercel docs (https://vercel.com/docs/functions/configuring-functions/duration, read Fri 6 Nov): with Fluid compute, which is on by default, the default maximum is 300 seconds on Hobby and Pro, and Pro can set up to 800 seconds. Whether Fluid compute is on for these two projects was not checked (dashboard), so every route that can run long sets `maxDuration` itself:
+
+| Route | `maxDuration` | Why |
+|---|---|---|
+| `GET/POST /api/webhooks/dispatch` (PoP) | 60 s | one pass scans events and delivers for at most 40 s |
+| `POST /api/orders/confirm` (PoP) | 60 s | `after()` runs a webhook pass and the function has to stay alive for it |
+| `GET /api/orders/[id]` (PoP) | 60 s | same `after()` pass on every poll |
+| `POST /api/world/verify-review` (PoP) | 60 s | World verify, then two Arkiv transactions (create, change owner) that each wait for a receipt |
+| `POST /api/reviews/retry` (PoP) | 60 s | the same two Arkiv transactions |
+| `POST /api/pop/webhook` (Kurta store) | 30 s | the chain recheck plus a database write took over 5 s on testnet; PoP gives up after 15 s and retries, so 30 s lets a slow call finish and stay idempotent |
+
+If a project sets a default maximum duration in the dashboard, the per-route value in code is what applies to these routes.
 
 ## Paste-ready environment lists
 Each name was checked against the code on Fri 6 Nov (`process.env` reads in `apps/web/src`, `packages/shared/src`, `apps/demo-store/src`). "copy from pop/.env" means the value is in the repo-root `.env` on the first machine. Never paste a value into chat or git. `POP_DEV_SKIP_WORLD` is not in either list and must never be added to either project.
@@ -114,7 +132,7 @@ NETWORK_MODE            testnet
 WHITECHAIN_RPC_URL      https://rpc.testnet.whitechain.io
 CHECKOUT_ADDRESS        0xB6A894bE070951a7331DebFf615e11F7a076794c   (deployments/testnet.json)
 REGISTRY_ADDRESS        0x6D61cD77239dd61e43e943a4Aac006d8A6C285E5   (deployments/testnet.json)
-DEPLOY_BLOCK            12330534   (deployments/testnet.json; see the block note below)
+DEPLOY_BLOCK            12330545   (deployments/testnet.json; see the block note below)
 WORLD_APP_ID            copy from pop/.env
 WORLD_RP_ID             copy from pop/.env
 WORLD_ENVIRONMENT       copy from pop/.env (staging while using the Simulator)
@@ -142,7 +160,7 @@ CHAIN_ID                1874
 RPC_URL                 https://rpc.testnet.whitechain.io
 CHECKOUT_ADDRESS        0xB6A894bE070951a7331DebFf615e11F7a076794c
 REGISTRY_ADDRESS        0x6D61cD77239dd61e43e943a4Aac006d8A6C285E5
-DEPLOY_BLOCK            12330534
+DEPLOY_BLOCK            12330545
 ```
 The five chain pin names work together: `apps/demo-store/src/lib/pop.ts` only trusts them when all five are set, and otherwise asks PoP which contract is real. Set all five.
 
@@ -153,7 +171,7 @@ The five chain pin names work together: `apps/demo-store/src/lib/pop.ts` only tr
 None for the two apps: every name read in `apps/web`, `packages/shared` and `apps/demo-store` is listed above or under "Optional". These names are read only by local scripts, so they are not project settings: `ALLOW_TESTNET_DEPLOY`, `ALLOW_TESTNET_ORDER`, `ALLOW_DEMO_SEED`, `WEB_URL`, `POP_URL`, `KURTA_URL`, `KURTA_WEBHOOK_URL`, `FORK_RPC_URL`, `DEPLOYER_PK`, `ARBITER_PK`, `TEST_BUYER_PK`, `SELLER_PK`.
 
 ### Block note
-`DEPLOY_BLOCK` is 12330534 in `deployments/testnet.json` and here. `docs/evidence.md` and `CLAUDE.md` say the deploy was at block 12330545. The app only uses it as the start of event scans, so the lower number is safe. The mismatch is item 3 in `parallel.md` section 7, for a human to settle from the chain.
+`DEPLOY_BLOCK` is **12330545** everywhere (`deployments/testnet.json`, this file, `.env.example`, `docs/evidence.md`, `CLAUDE.md`, the `/proof` page). Verified from the chain on Fri 6 Nov: both deploy transactions in `docs/evidence.md` are in block 12330545, each receipt's `contractAddress` equals the deployed address, and `getCode` at the previous block returns nothing at both addresses. The earlier value 12330534 was the block the deploy script read before sending (about 11 seconds earlier), not the creation block. Event scans only need a value at or below the creation block, so the old value was safe, just not exact. Re-run the check: `cast receipt <deploy tx> --rpc-url https://rpc.testnet.whitechain.io` and read `blockNumber`.
 
 ## Post-deploy smoke check
 After both projects are live, with the two URLs (no keys needed, only GET requests):

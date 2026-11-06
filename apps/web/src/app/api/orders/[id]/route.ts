@@ -32,3 +32,6 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       : null,
   });
 }
+
+// Vercel max duration (seconds): after() runs a webhook pass that can take up to 40 s, and the function must stay alive for it.
+export const maxDuration = 60;

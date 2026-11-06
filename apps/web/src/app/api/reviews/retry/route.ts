@@ -37,3 +37,6 @@ export async function POST(req: Request) {
   const out = await publishReviewRow(orderId);
   return NextResponse.json({ ok: out.status === "synced", status: out.status, arkivKey: out.arkivKey, retry: out.status === "failed", error: out.error });
 }
+
+// Vercel max duration (seconds): same two Arkiv transactions as the review route.
+export const maxDuration = 60;

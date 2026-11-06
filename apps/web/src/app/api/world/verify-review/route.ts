@@ -137,3 +137,6 @@ export async function POST(req: Request) {
     devSkippedWorld: skipWorld,
   });
 }
+
+// Vercel max duration (seconds): World verify, then two Arkiv transactions (create, change owner) that each wait for a receipt.
+export const maxDuration = 60;

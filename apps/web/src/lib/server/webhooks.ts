@@ -24,6 +24,8 @@ const CHUNK = BigInt(9_000); // the Whitechain RPC rejects eth_getLogs over 10,0
 const MAX_ATTEMPTS = 8;
 const BACKOFF_SEC = 20;
 const MIN_INTERVAL_MS = 1500;
+const LEASE_SEC = 90; // longer than one delivery's 15 s timeout plus the receiver's work
+const DELIVERY_BUDGET_MS = 40_000; // stop starting deliveries after this; dispatch route maxDuration is 60 s
 
 type Summary = { scannedTo: number; enqueued: number; delivered: number; failed: number };
 const g = globalThis as unknown as { __popWh?: { running?: Promise<Summary>; last?: { at: number; s: Summary } } };
@@ -119,9 +121,19 @@ async function run(): Promise<Summary> {
 
   // ---- 2) deliver what is due
   const secretOf = new Map<number, string>();
-  for (const x of await store.dueWebhooks(MAX_ATTEMPTS, BACKOFF_SEC)) {
+  // Each row is CLAIMED atomically before it is sent, so two passes in different serverless instances (the cron and an order page)
+  // never deliver the same row at once. A row whose claimer died becomes due again after LEASE_SEC. The loop stops starting new
+  // deliveries after DELIVERY_BUDGET_MS so the function ends before its maxDuration (60 s on the dispatch route).
+  const started = Date.now();
+  for (;;) {
+    if (Date.now() - started > DELIVERY_BUDGET_MS) break;
+    const x = await store.claimWebhook(MAX_ATTEMPTS, BACKOFF_SEC, LEASE_SEC);
+    if (!x) break;
     const m = merchants.find((y) => y.id === x.merchantId);
-    if (!m) continue;
+    if (!m) {
+      await store.markWebhook(x.id, false, "merchant has no webhook configured"); // counts an attempt; not retried forever
+      continue;
+    }
     if (!secretOf.has(m.id)) secretOf.set(m.id, decryptPII(m.webhookSecretEnc!, encKey()));
     const body = JSON.stringify(x.payload);
     const t = Math.floor(Date.now() / 1000);

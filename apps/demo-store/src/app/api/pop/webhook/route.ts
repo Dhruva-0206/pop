@@ -26,3 +26,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "on-chain recheck failed" }, { status: 422 });
   }
 }
+
+// Vercel max duration (seconds): the chain recheck plus a database write took over 5 s on testnet. PoP gives up after 15 s and retries, so this only needs to be long enough to finish and stay idempotent.
+export const maxDuration = 30;
