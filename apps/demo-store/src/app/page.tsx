@@ -35,7 +35,7 @@ export default function Home() {
             <dl className="stack-sm text-ink-2">
               <div>
                 <dt className="inline font-semibold text-ink">When we are paid: </dt>
-                <dd className="inline">we&apos;re paid when your parcel arrives.</dd>
+                <dd className="inline">when your parcel arrives.</dd>
               </div>
               <div>
                 <dt className="inline font-semibold text-ink">If we are late: </dt>

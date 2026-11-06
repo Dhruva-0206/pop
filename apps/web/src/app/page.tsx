@@ -106,12 +106,12 @@ export default function Home() {
         <h2 id="cod" className="text-xl">
           Better than cash on delivery, for both sides
         </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[34rem] border-collapse text-left text-sm md:text-base">
+        <div>
+          <table className="w-full table-fixed border-collapse text-left text-sm md:text-base">
             <thead>
               <tr className="border-b">
-                <td className="py-2 pr-4" />
-                <th scope="col" className="py-2 pr-4 font-semibold">
+                <td className="w-[34%] py-2 pr-2 md:pr-4" />
+                <th scope="col" className="py-2 pr-2 font-semibold md:pr-4">
                   Cash on delivery
                 </th>
                 <th scope="col" className="py-2 font-semibold">
@@ -122,10 +122,10 @@ export default function Home() {
             <tbody>
               {COMPARE.map((c) => (
                 <tr key={c.row} className="border-b align-top">
-                  <th scope="row" className="py-3 pr-4 font-semibold text-ink">
+                  <th scope="row" className="py-3 pr-2 font-semibold text-ink md:pr-4">
                     {c.row}
                   </th>
-                  <td className="py-3 pr-4 text-ink-2">{c.cod}</td>
+                  <td className="py-3 pr-2 text-ink-2 md:pr-4">{c.cod}</td>
                   <td className="py-3 text-ink">{c.pop}</td>
                 </tr>
               ))}
