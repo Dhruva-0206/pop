@@ -13,8 +13,9 @@
  * Needs the web app running on WEB_URL (default http://localhost:3000) in the same NETWORK_MODE, and the demo seller already
  * seeded (`npm run seed` / `npm run fork:up`). On testnet it sends a handful of real test transactions (about 0.02 WBT) and
  * refuses to run unless you pass  ALLOW_DEMO_SEED=yes.
- * Usage:  npx tsx scripts/seed-demo.ts            (fork)
- *         NETWORK_MODE=testnet ALLOW_DEMO_SEED=yes npx tsx scripts/seed-demo.ts
+ * Usage:  npx tsx scripts/seed-demo.ts --scenes=all   (fork: every scene)
+ *         NETWORK_MODE=testnet ALLOW_DEMO_SEED=yes npx tsx scripts/seed-demo.ts   (default --scenes=persistent: scenes 4 and 5 only)
+ *         --scenes=1,2,3 runs the timed scenes; do that only minutes before the segment that needs them.
  */
 import { createWalletClient, decodeEventLog, erc20Abi, getAddress, http, keccak256, parseEther, toHex, zeroHash, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -55,6 +56,12 @@ const wait = (hash: Hex) => pub.waitForTransactionReceipt({ hash });
 const getOrder = (id: bigint) => pub.readContract({ address: dep.checkout, abi: checkoutAbi, functionName: "getOrder", args: [id] });
 const words = () => Array.from(crypto.getRandomValues(new Uint16Array(6)), (n) => wordlist[n % 2048]).join(" ");
 const out: string[] = [];
+// --scenes=persistent (default: 4 and 5, which stay valid until someone acts on them), --scenes=all, or a list such as --scenes=1,3.
+// Scenes 1 to 3 are TIMED (ship-by, problem window and arbiter timeout are real seconds), so they never run unless asked for.
+const scenesArg = process.argv.find((a) => a.startsWith("--scenes="))?.split("=")[1] ?? "persistent";
+const wanted = new Set<number>(scenesArg === "all" ? [1, 2, 3, 4, 5] : scenesArg === "persistent" ? [4, 5] : scenesArg.split(",").map(Number));
+const want = (n: number) => wanted.has(n);
+console.log(`scenes to seed: ${[...wanted].sort().join(", ")} (${scenesArg})`);
 const walletFromKey = (pk: Hex) => createWalletClient({ chain: net.chain, transport: http(net.rpcUrl), account: privateKeyToAccount(pk) });
 
 async function fundGas(to: Hex) {
@@ -157,7 +164,7 @@ async function existing(slug: string, fits: (o: Awaited<ReturnType<typeof getOrd
 }
 
 // ---------------------------------------------------------------- scene 1: expiring
-{
+if (want(1)) {
   const slug = "demo-expiring";
   await ensureListing(slug, "meera.jewels", seller, "Silver jhumkas, ship-by demo", 899);
   const id = await existing(slug, (o) => ORDER_STATES[o.state] === "Funded" && Number(o.shipBy) > now() + 30);
@@ -170,7 +177,7 @@ async function existing(slug: string, fits: (o: Awaited<ReturnType<typeof getOrd
 }
 
 // ---------------------------------------------------------------- scene 2: delivered, window open
-{
+if (want(2)) {
   const slug = "demo-delivered";
   await ensureListing(slug, "meera.jewels", seller, "Silver jhumkas, problem-window demo", 899);
   const id = await existing(slug, (o) => ORDER_STATES[o.state] === "Delivered" && Number(o.deliveredAt) + Number(o.disputeWindow) > now() + 20);
@@ -185,7 +192,7 @@ async function existing(slug: string, fits: (o: Awaited<ReturnType<typeof getOrd
 }
 
 // ---------------------------------------------------------------- scene 3: disputed (courier refused handover)
-{
+if (want(3)) {
   const slug = "demo-disputed";
   await ensureListing(slug, "meera.jewels", seller, "Silver jhumkas, dispute demo", 899);
   const arbiterTimeout = Number(await pub.readContract({ address: dep.checkout, abi: checkoutAbi, functionName: "arbiterTimeout" }));
@@ -201,7 +208,7 @@ async function existing(slug: string, fits: (o: Awaited<ReturnType<typeof getOrd
 
 // ---------------------------------------------------------------- scene 4: banned seller with an open order
 const badKey = keccak256(toHex(`pop-demo-bad-seller:${net.chain.id}:${need("SELLER_PK")}`));
-{
+if (want(4)) {
   const slug = "demo-bad-bazaar";
   const handle = "bad.bazaar";
   const bad = walletFromKey(badKey);
@@ -233,7 +240,7 @@ const badKey = keccak256(toHex(`pop-demo-bad-seller:${net.chain.id}:${need("SELL
 }
 
 // ---------------------------------------------------------------- scene 5: a handle that is not registered
-{
+if (want(5)) {
   const slug = "demo-fake-meera";
   const handle = "meera.jewels.official";
   const fake = walletFromKey(keccak256(toHex(`pop-demo-fake-seller:${net.chain.id}:${need("SELLER_PK")}`)));
