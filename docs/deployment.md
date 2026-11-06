@@ -33,6 +33,8 @@ Nothing has been deployed to Vercel yet. This is the list a person needs when th
 | `WORLD_APP_ID`, `WORLD_RP_ID`, `WORLD_ENVIRONMENT` | from the World portal. `staging` while using the Simulator. |
 | `NEXT_PUBLIC_BASE_URL` | the public URL of the PoP project. Optional. The only variable with a public prefix, and it holds no secret. |
 | `WORLD_REVIEW_ACTIONS` | optional JSON override of the seller-to-action map |
+| `VENDOR_WORLD_ACTION` | the ONE World portal action for vendor onboarding (one human, one shop). Default `vendor-onboard`; use `vendor-rehearsal` for rehearsals. **The action must exist in the World Developer Portal (staging) before the check can work.** Not secret. |
+| `ONBOARD_DEMO_AUTOAPPROVE` | `yes` only for the demo. Skips the staff check of the bio at `/onboard` and is honored **only when `NETWORK_MODE=testnet`**. Leave it unset otherwise. The code is in `apps/web/src/app/api/onboard/auto/route.ts`. **Not set on the live site by the agent; the team sets it.** |
 | `POP_ATTESTOR_ADDRESS`, `FAUCET_DAILY_CAP`, `USDT_DECIMALS`, `WORLD_VERIFY_BASE` | optional |
 
 ### Must never be set on Vercel
@@ -64,6 +66,9 @@ Nothing has been deployed to Vercel yet. This is the list a person needs when th
 
 ### Must never be set
 `POP_DEV_SKIP_WORLD` (the store does not use it), and nothing with a `NEXT_PUBLIC_` prefix is needed.
+
+## Before deploying the vendor onboarding change
+Run `NETWORK_MODE=testnet npm run db:migrate` first. It creates the table `vendor_verifications` in schema `public` (idempotent). It was applied on Fri 6 Nov. Without the table the `/api/onboard/request` route fails, so apply it before the deploy that contains the change.
 
 ## Before the first deploy
 1. Team says go. 2. `npm run db:migrate` against `public` (already applied on Fri 6 Nov). 3. Create both projects, paste the names above. 4. Redeploy PoP once the store's URL is known. 5. Re-seed the merchant row with the real URLs. 6. Open `/proof` on the PoP deployment and check the addresses match `docs/evidence.md`. 7. Never redeploy the contracts: it resets every seller's review history.
@@ -137,7 +142,10 @@ WORLD_APP_ID            copy from pop/.env
 WORLD_RP_ID             copy from pop/.env
 WORLD_ENVIRONMENT       copy from pop/.env (staging while using the Simulator)
 POP_ATTESTOR_ADDRESS    0xeF0CC7f7f280083e425A741957B920c7eF39A21c   (public)
+VENDOR_WORLD_ACTION     vendor-onboard   (or vendor-rehearsal for rehearsals; the action must exist in the World portal)
 ```
+Demo only (set it yourself, then redeploy; remove it after the demo): `ONBOARD_DEMO_AUTOAPPROVE=yes`. In demo mode PoP's test faucet wallet (`FAUCET_PK`, already set) pays the network fee for each vendor registration, so keep a little test WBT on it.
+
 Optional (defaults are in code, skip unless needed): `USDT_ADDRESS` (default is the deployed test USDT), `USDT_DECIMALS` (default 6), `FAUCET_DAILY_CAP`, `WORLD_VERIFY_BASE`, `WORLD_REVIEW_ACTIONS` (default map is in `packages/shared/src/config.ts`), `NEXT_PUBLIC_BASE_URL` (public prefix, holds no secret).
 
 Do not set on Vercel: `FORK_RPC_URL`, `DEPLOYER_PK`, `ARBITER_PK`, `TEST_BUYER_PK`, `SELLER_PK`, `MERCHANT_PK`, `POP_API_KEY`, `POP_WEBHOOK_SECRET`.

@@ -275,6 +275,10 @@ The frontend uses `IDKitRequestWidget` with signed RP context. The backend check
 
 A transaction claims `UNIQUE(nullifier_hash, seller_wallet)` plus a unique review per order. Publication failures retry the accepted row without another claim. The policy is **one review per human per seller**, with one review per order. Refunded/Split orders cannot review. Each configured seller has a pre-created World action; arbitrary onboarding does not automatically provision one.
 
+### Vendor onboarding check
+
+`/onboard` asks each vendor for a World ID proof (one action, `VENDOR_WORLD_ACTION`, signal bound to the handle) before giving a bio code. The same person cannot open a second shop ("This person already has a PoP shop."), and a banned person cannot open a new one ("This person was banned from selling on PoP."). The second rule is enforced by PoP's database, not on-chain. Unit tested in `scripts/test-vendor-verification.ts`; the real-proof run for this action is still to be done with the Simulator (see [WORLD_DEBRIEF.md](docs/WORLD_DEBRIEF.md)).
+
 ### Verification status and failure paths
 
 - RP signing and invalid-proof rejection probes are recorded.
@@ -300,6 +304,8 @@ The [debrief](docs/WORLD_DEBRIEF.md) records integration timing, friction, actio
 | Attestor | Authorize registration and publish reviews; can withhold publication |
 | Anyone | Trigger eligible finalize/withdrawFor, not redirect recipients |
 
+- Vendor onboarding checks World ID so one person opens one shop (`vendor_verifications`). **The block on a banned person opening a new shop is a PoP database rule, not an on-chain rule**: the contracts ban wallets and handles and know nothing about World nullifiers. It proves a unique person, not who they are, and does not stop someone with another World identity.
+- Demo onboarding (`ONBOARD_DEMO_AUTOAPPROVE=yes`, testnet only) skips the staff check of the Instagram bio. Such shops are registered at handle tier 0 ("not checked"), and PoP's test faucet wallet pays the registration fee. The payout wallet is a browser-created test wallet; pasting your own payout address is not supported, because the contract pays whoever signed the offer.
 - Contracts are not externally audited. The team arbiter/admin remain substantial trust assumptions.
 - Delivery code is not an independent logistics oracle.
 - No autonomous settlement service: browser auto-settle needs an active page. Webhook cron only reports events.

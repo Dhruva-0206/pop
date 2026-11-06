@@ -55,3 +55,21 @@ _Draft._ Let an RP create and name actions through a documented API, or accept a
 - **Denied path done with a real proof: same-person replay.** On order #17 of @meera.jewels the person who had reviewed order #1 tried again at 19:04 and 19:05 IST. Our server refused (`replay`, "nullifier already used for this seller, or order already reviewed"), nothing was written, and the nullifier hint was the same as the first review (`f2d508a533b2`). World itself did not refuse: the refusal came from our `UNIQUE(nullifier_hash, seller_wallet)` check, so the proof had been accepted by World before our server said no.
 - **Second success, different seller:** @kurta.co order #18, 19:12 IST, hint `595fe89d6634` (a different hint from the first review, because each seller has its own action). Review entity `0x5f509ea8843c62d9c4b8c10de5a219710de819d62cdf0a43eea3301d6065f42b`.
 - Still open: a cancelled request in the Simulator (expected message: "You cancelled in World App. Nothing was published."), see `parallel.md` section 7.
+
+## Vendor World ID check: one human, one shop (built Fri 6 Nov evening, staging only)
+**What it is.** The first real step of `/onboard` after the Instagram handle. The vendor proves with World ID that they are one unique person; only then do they get a bio code. It uses ONE portal action for all vendors, read from `VENDOR_WORLD_ACTION` (default `vendor-onboard`, `vendor-rehearsal` for rehearsals), the same staging environment and the same server-side verify call as the review flow. The signal is bound to the handle (`keccak256("pop-vendor:" + handle)`), so a proof made for one handle does not verify for another.
+
+**What it stores.** Table `vendor_verifications`: `nullifier_hash` (the full sha256, UNIQUE, used for uniqueness), `nullifier_hint` (its first 12 hex characters, for display), `handle`, `created_at`, `banned`. The raw nullifier is never stored. Every outcome writes a row to the World verification log on `/proof`, with the handle as the seller and the detail "vendor onboarding".
+
+**Outcomes** (unit tested in `scripts/test-vendor-verification.ts`, 11 checks including the real UNIQUE constraint on the fork database):
+- verified: first proof for a person; the handle is claimed for them. The same person and the same handle again, before the shop is registered, is accepted as a resume (a page reload is not a second shop).
+- replay: the same person with another handle, or the same handle once its shop exists. Refused with "This person already has a PoP shop." and logged as `replay`.
+- banned: a person whose shop was banned. Refused with "This person was banned from selling on PoP." and logged as `rejected`.
+
+**The ban block is NOT on-chain.** It is a PoP database rule. The contracts ban wallets and handles (`SellerRegistry.ban`); they know nothing about World nullifiers. We learn about a ban by reading the registry (`bannedHandle`, `bannedWallet`) when the vendor tries again, and when the arbiter looks a seller up (`/api/arbiter/seller`), and then mirror it into `vendor_verifications.banned`. A banned person could still use another World identity, another phone number or someone else's help; nothing here stops that.
+
+**One human, one shop is as strong as World ID, no stronger.** It proves a unique person, not who they are. The vendor is told so on the page: "This proves you are one unique person. It does not prove who you are."
+
+**Widget friction, vendor flow.** Same as the review flow: when our server refuses a proof the widget shows "Verification declined" and calls `onError("failed_by_host_app")` with no reason, so `apps/web/src/lib/client/vendor-errors.ts` keeps the server's reason on the page.
+
+**Honest status.** Built, unit tested, and the rest of the flow rehearsed on testnet with a throwaway handle. **No real World proof has been run for the vendor action yet**: that needs the `vendor-rehearsal` (or `vendor-onboard`) action to exist in the World portal and one person with the Simulator. The testnet rehearsal used the local dev World skip, so its log row reads `dev-skipped`.
