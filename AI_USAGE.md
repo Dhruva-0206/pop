@@ -33,13 +33,13 @@ The planning documents in `specs/` were written with AI assistance and are inclu
 - It did not choose the product, the prize targets or the contract rules. Those are in the team's specs and in the decisions logged in `CLAUDE.md` section 8, each with who decided.
 - It did not hold or print private keys. Keys live in `.env`; scripts read them by name and print addresses only.
 - It did not deploy to Vercel, redeploy the contracts, or regenerate wallets. It deployed to the testnet once, after an explicit go.
-- It did not run a real World ID proof. That needs a person with the Simulator (checklist in `docs/OVERNIGHT.md`).
+- It did not run the real World ID proof. A person ran it with the World Simulator (staging) on Fri 6 Nov at 16:43 IST, following the checklist in `docs/OVERNIGHT.md`; the agent prepared the checklist and read the result back.
 
 ## How the work was tested
 - `forge test`: 58 tests (unit, fuzz, and an invariant suite with 6 invariants, 64 runs of 32 calls). Mutation checks: removing the self-purchase check or the banned-seller check makes tests fail.
 - `scripts/e2e-fork.ts` (65 checks) and `scripts/e2e-merchant.ts` (48 checks on a local fork, 47 on the real testnet with real time) drive the apps through their HTTP API and the contracts, including the refusal cases (bad signatures, replayed or altered webhooks, wrong amounts).
 - Accessibility: Lighthouse (axe-core rules) 100 on nine pages; a rendered-DOM check at 375 px for overflow, input names and touch targets (`docs/screens/README.md`).
-- Every claim in `docs/evidence.md` has a transaction or a query behind it. Where we could not run something (a real World proof, a screen reader), the docs say so.
+- Every claim in `docs/evidence.md` has a transaction or a query behind it. Where we could not run something (a screen reader with a person, Safari, a real phone), the docs say so.
 
 The prompt given to the agent is saved in `specs/prompts/`.
 

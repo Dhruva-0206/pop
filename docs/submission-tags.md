@@ -9,6 +9,6 @@
 | Web frameworks | Next.js | `apps/web`, `apps/demo-store` (Next 16.4.5, App Router) |
 | Web frameworks | React.js | React 19 in both apps |
 | Databases | PostgreSQL | `supabase/migrations/0001_init.sql` |
-| Databases | Supabase | Hosted Postgres for private data (pending project creation) |
+| Databases | Supabase | Hosted Postgres for private data: the project exists, `0001_init.sql` is applied to schemas `public` (testnet) and `pop_fork` (local fork); used by `packages/shared/src/server/store.ts` |
 
-Not in a dropdown (README "Tools used"): viem, @arkiv-network/sdk 1.0.1, @worldcoin/idkit 4.x, Tailwind, qrcode, html5-qrcode, @scure/bip39, zod, Vercel.
+Not in a dropdown (README "Tools used"): viem, @arkiv-network/sdk 1.0.1, @worldcoin/idkit 4.x, Tailwind, qrcode, html5-qrcode, @scure/bip39, zod, Vercel (two live projects).

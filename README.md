@@ -42,8 +42,10 @@ How each promise is enforced:
 - `packages/checkout-sdk/`: server and browser halves of "Pay with PoP".
 
 ## Live links
-- Live app: not deployed yet (the Vercel projects are planned; see `docs/deployment.md`).
-- The proof page of a running copy lists every address, transaction and Arkiv entity: `/proof`.
+- PoP: https://pop-web-six.vercel.app
+- Kurta Co. demo store: https://kurta-store.vercel.app
+- Proof page (every address, transaction, Arkiv entity and the World verification log): https://pop-web-six.vercel.app/proof
+- Deployment checks and when they ran: `docs/evidence.md`.
 
 ## Contracts and transactions (Whitechain Sepolia, chain 1874, both verified on Blockscout)
 | Contract | Address |
@@ -71,6 +73,9 @@ const page = await client
 // keep rows where $creator is the attestor AND $creationFlags.readonly is true
 ```
 Or run `npx tsx scripts/arkiv-query.ts`. Output from a real run, schema, expiry and what stays off Arkiv: `arkiv/`.
+
+## World ID
+A real World ID proof was verified on the server on Fri 6 Nov 2026 at 16:43 IST, with the World Simulator in the staging environment ("Unique Human", World ID 4.0, the `proofOfHuman` preset). It was for order #1 of @meera.jewels. The review was published as Arkiv entity `0xa444fb932ea107e2814e191d8adc878e5936fd70c64ea4bd90c936e508c03508` (created by the attestor, owned by the test buyer, read-only). The World log on `/proof` shows the verified row (id `f2d508a533b2`). Details and limits: `docs/WORLD_DEBRIEF.md`.
 
 ## Pay with PoP (for merchants)
 The store keeps its own seller key and signs its own offers; PoP never holds it. Server side:
@@ -106,7 +111,7 @@ The main ones: the courier is simulated, one team key decides disputes, a seller
 We did not survey these products in depth; this section states the idea, not a market study.
 
 ## Tools used
-Foundry, OpenZeppelin Contracts, Solidity, Next.js, React, viem, `@arkiv-network/sdk`, World IDKit, Supabase Postgres (`pg`), Tailwind CSS, zod, qrcode, html5-qrcode, @scure/bip39, the Figtree and IBM Plex Mono fonts. Vercel is planned for deployment and is not configured yet.
+Foundry, OpenZeppelin Contracts, Solidity, Next.js, React, viem, `@arkiv-network/sdk`, World IDKit, Supabase Postgres (`pg`), Tailwind CSS, zod, qrcode, html5-qrcode, @scure/bip39, the Figtree and IBM Plex Mono fonts (and Fraunces for the Kurta Co. store), Vercel (two projects, links above).
 
 ## AI usage
 See `AI_USAGE.md`. Design and writing rules we followed: `docs/ux-rules.md` and `docs/design-tokens.md`.
