@@ -6,7 +6,7 @@ BASE=${1:-http://localhost:3200}
 OUT=${2:-/tmp/lh}
 mkdir -p "$OUT"
 export CHROME_PATH="${CHROME_PATH:-C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe}"
-for page in "/" "/p/jhumka-01" "/o/1" "/verify/meera.jewels" "/dashboard" "/courier" "/arbiter" "/onboard" "/proof"; do
+for page in "/" "/p/jhumka-01" "/o/1" "/verify/meera.jewels" "/dashboard" "/courier" "/arbiter" "/onboard" "/proof" "/merchants"; do
   name=$(echo "$page" | tr '/.' '__')
   (cd "$OUT" && timeout 150 npx --yes lighthouse@12 "$BASE$page" --only-categories=accessibility,best-practices --chrome-flags="--headless=new --no-sandbox" --output=json --output-path="$OUT/lh$name.json" --quiet >/dev/null 2>&1)
   node -e '
