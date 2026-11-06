@@ -5,8 +5,11 @@ Contract addresses, tx links, Arkiv entity keys and runnable queries. Newest fir
 | What | Value | Link |
 |---|---|---|
 | Specified test USDT | `0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7`: name "Tether USD", symbol USDT, **decimals 6**, totalSupply ~1,945,273 (read Fri 6 Nov 00:05 IST, block 12306918) | https://explorer.testnet.whitechain.io/address/0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7 |
-| PoPCheckout | not deployed yet | |
-| SellerRegistry | not deployed yet | |
+| Test USDT acquisition | WBT swapped to USDT on YetiTrade: tx `0x382599b2…d54d` (short form as given; full hash in the team wallet history), block 12327812. The Whitechain flyer confirms this token and says it supports permit + EIP-3009 | https://explorer.testnet.whitechain.io/address/0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7 |
+| Faucet wallet balances (read on-chain Fri 6 Nov) | `0x012f9baaDbCF059Fc70DAFcD7eB109404e703A43`: **25 USDT** (25000000 raw) + **0.5 WBT** | https://explorer.testnet.whitechain.io/address/0x012f9baaDbCF059Fc70DAFcD7eB109404e703A43 |
+| Deployer balance (read on-chain) | `0xB7C637cb5a37abbA288ca51f1d2Fd0c6776ABb2c`: 2 WBT | |
+| PoPCheckout | not deployed yet. Dry run predicts `0xB6A894bE070951a7331DebFf615e11F7a076794c` (simulation only, nothing broadcast) | |
+| SellerRegistry | not deployed yet. Dry run predicts `0x6D61cD77239dd61e43e943a4Aac006d8A6C285E5` (simulation only) | |
 
 Re-run: `npx tsx scripts/smoke-whitechain.ts`
 
