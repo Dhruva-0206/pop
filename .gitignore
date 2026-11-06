@@ -44,3 +44,6 @@ contracts/broadcast-local/
 # Local fork deployments and dev data
 deployments/fork.json
 .data/
+
+# Local project memory (kept on disk, not published)
+CLAUDE.md
