@@ -9,7 +9,7 @@ import { publicClientOf, useConfig } from "@/lib/client/config";
 import { getTestAccount, walletOf } from "@/lib/client/wallet";
 import { onboardRequestMessage } from "@/lib/messages";
 import { vendorSignal } from "@/lib/vendor-rules";
-import { DEMO_NOTE, ONE_PERSON_NOTE, vendorRefusal, vendorWidgetRefusal } from "@/lib/client/vendor-errors";
+import { DEMO_NOTE, vendorRefusal, vendorWidgetRefusal } from "@/lib/client/vendor-errors";
 import type { Refusal } from "@/lib/client/review-errors";
 import { Notice } from "@/components/ui";
 import { TestModeBanner, TxLink } from "@/components/Banners";
@@ -271,11 +271,11 @@ export default function Onboard() {
   return (
     <div className="page stack">
       <TestModeBanner cfg={cfg} />
-      <h1 className="text-xl font-semibold">Open your protected shop</h1>
+      <h1 className="text-xl font-semibold">Open your shop on PoP</h1>
       <p className="text-sm text-muted">
         {auto
-          ? "Four steps: your Instagram handle, a World ID check, your bio code, then your payment link and QR."
-          : "Steps: your Instagram handle, a World ID check, a bio code that the team checks, registration, one signed product, then your payment link."}
+          ? "For sellers on Instagram, WhatsApp, Facebook or their own website. You sign up with your Instagram handle. A World ID check, a code in your Instagram bio, one product, then your payment link."
+          : "For sellers on Instagram, WhatsApp, Facebook or their own website. You sign up with your Instagram handle. A World ID check, a code in your Instagram bio that the team checks, registration, one product, then your payment link."}
       </p>
       {auto && <Notice tone="warn" title="Demo mode">{DEMO_NOTE}</Notice>}
 
@@ -323,7 +323,7 @@ export default function Onboard() {
             </div>
           )}
           <h2 className="text-base">2. World ID check</h2>
-          <p className="text-sm">{ONE_PERSON_NOTE} One person can open one shop.</p>
+          <p className="text-sm">One person, one shop. World ID checks you&apos;re a unique person, so one person cannot easily open shop after shop under new names. PoP never learns who you are.</p>
           <button disabled={busy || !canStart} onClick={startWorld} className="btn btn-primary btn-block">
             {busy ? "Working…" : "Verify with World ID"}
           </button>
@@ -338,7 +338,7 @@ export default function Onboard() {
 
       {st.status === "pending" && (
         <div className="card stack-sm">
-          <h2>3. Put this code in your Instagram bio</h2>
+          <h2>3. Put this code where buyers find you: your Instagram bio</h2>
           <div className="rounded-control bg-surface p-3 text-center font-mono text-xl">{st.bioCode}</div>
           {auto ? (
             <>
@@ -398,7 +398,7 @@ export default function Onboard() {
           <div className="stack-sm">
             <h2>Your shop is ready</h2>
             <p className="text-ink-2">
-              {st.listing.title} is live. Share the payment link or the QR code; every order through it is protected.
+              Share this link anywhere you sell.
             </p>
           </div>
           <CopyField id="pay-link" label="Your payment link" value={link} copyLabel="Copy payment link" what="Payment link" />
