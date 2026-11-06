@@ -9,7 +9,7 @@ const plexMono = IBM_Plex_Mono({ variable: "--font-plex-mono", subsets: ["latin"
 
 export const metadata: Metadata = {
   title: { default: `${APP_NAME}: ${APP_TAGLINE}`, template: `%s · ${APP_NAME}` },
-  description: "Pay an Instagram or WhatsApp seller. If your order doesn't arrive, you get your money back automatically.",
+  description: "A drop-in USDT checkout for online stores, with refund rules built into every payment. Test network.",
 };
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 
