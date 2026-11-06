@@ -1,49 +1,63 @@
-# AI usage disclosure
+# How we used AI
 
-ETHGlobal allows AI-assisted development if it is disclosed. This file lists every AI tool, what it did, which files it touched, and what humans reviewed.
+We are Dhruva Somen Chakrabarty, Shantanu Somwanshi and Tanishqa Chopade. We used AI tools heavily on this project, and this page says where, so nobody has to guess. Short version: **we set the product, the trust rules and the contract design, and AI tools wrote a large share of the code, the tests and the documents under our direction.** We did not write most of the application code by hand.
 
-## Planning (before code; written after hacking began at 9 PM Thu)
-The planning documents in `specs/` were written with AI assistance and are included unchanged, as the spec-driven rule requires:
-- `specs/Bharosa_Build_Spec_v3.md`, `specs/PoP_Technical_Architecture.md`, `specs/Bharaso_ETHGlobal_Mumbai_Winning_Plan.md`, `specs/ETHGlobal_Mumbai_2026_Context.md`, `specs/ETHGlobal_Mumbai_2026_Rules_Guidelines_Bharaso.md`
-- Organizer confirmation that these may be included: _pending (gate 7)_.
+## Tools
 
-## Build log
-| When (IST) | Tool | Purpose | Files | Human review |
-|---|---|---|---|---|
-| Thu 5 Nov 23:45 → | Claude Code (Claude Opus 5.5) | Lead-engineer agent following the team's written prompt: repo setup, Foundry install, docs lookup, scaffolding | `.gitignore`, `README.md`, `CLAUDE.md`, `AI_USAGE.md`, `.env.example` | Team chose the tool options (Foundry via Git Bash, kept LICENSE); reviews each commit |
-| Thu 23:50 | Claude Code (web-fetch sub-agents) | Read current docs for Whitechain, Arkiv SDK 1.0.x (official skills repo), World IDKit 4.x; findings logged in CLAUDE.md and docs/friction-log.md | (research only) | Team reviews the logged decisions |
-| Fri 00:00 | Claude Code | Scaffold: npm workspaces, Foundry + OZ, two Next apps (create-next-app), shared package, Supabase migration, doc stubs | `package.json`, `packages/shared/*`, `apps/*` (generated boilerplate), `supabase/migrations/0001_init.sql`, `docs/*`, `arkiv/*` | Team to review the SQL schema and shared EIP-712 types |
-| Fri 00:05 | Claude Code | Wallet generator (keys written only to .env, never shown) and Whitechain read smoke test | `scripts/gen-wallets.ts`, `scripts/env.ts`, `scripts/smoke-whitechain.ts` | Team funds the printed addresses |
-| Fri 00:08 | Claude Code | Contracts drafted from the team's spec (Spec v3 §6, Architecture §5.3) and 34 Foundry tests | `contracts/src/*`, `contracts/test/*`, `contracts/script/Deploy.s.sol` | **Must be reviewed by the team before any testnet deploy** (state machine, courier limit, withdrawFor) |
-| Fri 01:00 | Claude Code | Arbiter-timeout refund + stateful invariant suite (team decision: 300 s demo / 14 days prod) | `contracts/src/PoPCheckout.sol`, `contracts/test/ArbiterTimeout.t.sol`, `contracts/test/invariant/*` | Team specified the rule; review before testnet deploy |
-| Fri 01:05 | Claude Code | World ID 4.0 docs check → one review action per seller | `packages/shared/src/config.ts`, `apps/web/src/lib/server/world.ts`, `docs/WORLD_DEBRIEF.md` | Team creates the portal actions |
-| Fri 01:20 | Claude Code | Network mode (local fork vs testnet), fork funding, deploy + seed scripts | `packages/shared/src/network.ts`, `scripts/fork*.ts`, `scripts/deploy.ts`, `scripts/seed-seller.ts` | Team approved fork-first; testnet deploy waits for GO |
-| Fri 01:45 | Claude Code | Phase 2 pages + API: checkout, order, dashboard, simulated courier, settle button; fork e2e script | `apps/web/src/app/**`, `apps/web/src/lib/**`, `packages/shared/src/server/*`, `scripts/e2e-fork.ts` | Team to click through on a laptop + phone |
-| Fri 00:20 | Claude Code | Arkiv, Supabase and World smoke-test code | `scripts/smoke-arkiv.ts`, `scripts/smoke-db.ts`, `apps/web/src/lib/server/world.ts`, `apps/web/src/app/api/world/*`, `apps/web/src/app/dev/world/*` | Pending live runs with team-provided keys |
-| Fri 6 Nov (2nd machine) | Claude Code | App security fixes (buyer-signed order registration, login nonce, faucet guards, World review gating), doc drift, Foundry install, contract fixes (`forceRefundBanned`, self-purchase check) with 16 tests, fork e2e | `apps/web/src/app/api/**`, `apps/web/src/lib/**`, `packages/shared/src/server/store.ts`, `contracts/src/PoPCheckout.sol`, `contracts/test/*`, `scripts/e2e-fork.ts`, docs | **Team must review the two contract changes before any testnet deploy** |
-| Fri 6 Nov (2nd machine) | Claude Code | `forceRefundBanned` narrowed per team decision; review pipeline (rating/text, buyer-signed, Arkiv readonly entity + transfer, retry), DEV skip-World flag, `/verify/[handle]`, extended fork e2e | `contracts/src/PoPCheckout.sol`, `contracts/test/*`, `packages/shared/src/server/{arkiv,store}.ts`, `apps/web/src/app/{api/world,api/reviews,api/verify,verify}/**`, `apps/web/src/components/ReviewBox.tsx`, `scripts/e2e-fork.ts` | Team to review the DEV flag guard and the attestor key now living in the web server env |
-| Fri 6 Nov (2nd machine) | Claude Code | Replaced the JSON file store with Supabase Postgres (async store, schema per network mode, atomic review claim), aligned/upgraded `0001_init.sql`, db scripts, buyer-history bucket, `@arkiv-network/sdk` dependency, fixed the Arkiv order-id collision found by the e2e | `packages/shared/src/server/{store,arkiv}.ts`, `supabase/migrations/0001_init.sql`, `scripts/db*.ts`, `apps/web/src/app/api/**`, `apps/web/package.json`, `package-lock.json` | Team to review the SQL and the SSL setting (`rejectUnauthorized: false`) |
-| Fri 6 Nov (testnet) | Claude Code (Sonnet 5.5) | Testnet deploy after the team's GO (dry run first, one broadcast), Blockscout verification check, role and config read-back, one real test-USDT order walked end to end (#1) and one late-ship refund (#2) | `scripts/testnet-order.ts`, `scripts/testnet-refund.ts`, `docs/evidence.md`, `CLAUDE.md`, `HANDOFF.md` | Team approved the addresses and settings in the dry run and said go; the agent did not retry or redeploy |
-| Fri 6 Nov | Claude Code | Contract hardening tests: invariant that `forceRefundBanned` never hits a healthy seller, exact accounting delta test; mutation checks (remove a check, see a test fail) | `contracts/test/**` | Team reviewed the mutation results |
-| Fri 6 Nov | Claude Code | "Pay with PoP": `packages/checkout-sdk`, merchant API keys and sessions, HMAC webhooks with on-chain recheck, per-merchant rate limit, Kurta Co. store with its own Arkiv key and Postgres order book, seller CSV export, chunked event reads | `packages/checkout-sdk/**`, `apps/demo-store/**`, `apps/web/src/app/api/v1/**`, `apps/web/src/lib/server/{merchants,webhooks,offers}.ts`, `scripts/e2e-merchant.ts`, `scripts/seed-merchant.ts` | Team read the design decisions in `CLAUDE.md` section 8; the e2e scripts are the test |
-| Fri 6 Nov | Claude Code | `/onboard`, `/proof`, arbiter page, buyer "report a problem", seller badge, World verification log, buyer dispute reason hash check | `apps/web/src/app/{onboard,proof,arbiter}/**`, `apps/web/src/components/DisputeBox.tsx`, `apps/web/src/app/api/{onboard,staff,arbiter,badge}/**` | Not yet reviewed line by line by a human |
-| Sat 7 Nov (overnight, unattended) | Claude Code | World smoke D preparation (probe script, checklist), UI/UX redesign of both apps on one token set, UX and AI-tells checklist, accessibility audit, paperwork drafts (Arkiv files, Whitechain feedback, limitations, deployment, README), demo seeding script and demo script | `apps/*/src/**` (visual layer), `docs/*`, `arkiv/*`, `README.md`, `WHITECHAIN_FEEDBACK.md`, `scripts/{world-probe,arkiv-query,a11y-audit,contrast,seed-demo}.*` | Pending: the team reads `docs/OVERNIGHT.md` after waking. Facts in the drafts come from logs and runs in this repository; anything unverified is marked |
+| Tool | What we used it for |
+|---|---|
+| Claude | Planning. The documents in [`specs/`](specs) (build spec, architecture, event rules, sponsor requirements, the winning plan) were written with it from our direction and are included unchanged. |
+| Claude Code | Implementation, tests and documents, working in this repository from our written prompt ([`specs/prompts/`](specs/prompts)) and from decisions we recorded in [`CLAUDE.md`](CLAUDE.md). We ran it on two machines. It wrote the contracts and their tests, both apps, the SDK, the scripts, the end-to-end tests and most of the docs, and it ran the testnet deploy and the test orders after we said go. We do not name a model version here because the repository does not record one. |
+| ChatGPT and Figma | The logo and the cover image. ChatGPT gave us concepts and we finished them by hand in Figma. The original logo file is [`docs/brand/pop-logo-original.png`](docs/brand/pop-logo-original.png). |
 
-## What the AI did not do
-- It did not choose the product, the prize targets or the contract rules. Those are in the team's specs and in the decisions logged in `CLAUDE.md` section 8, each with who decided.
-- It did not hold or print private keys. Keys live in `.env`; scripts read them by name and print addresses only.
-- It did not deploy to Vercel, redeploy the contracts, or regenerate wallets. It deployed to the testnet once, after an explicit go.
-- It did not run the real World ID proof. A person ran it with the World Simulator (staging) on Fri 6 Nov at 16:43 IST, following the checklist in `docs/OVERNIGHT.md`; the agent prepared the checklist and read the result back.
+## What we decided and did ourselves
 
-## How the work was tested
-- `forge test`: 58 tests (unit, fuzz, and an invariant suite with 6 invariants, 64 runs of 32 calls). Mutation checks: removing the self-purchase check or the banned-seller check makes tests fail.
-- `scripts/e2e-fork.ts` (65 checks) and `scripts/e2e-merchant.ts` (48 checks on a local fork, 47 on the real testnet with real time) drive the apps through their HTTP API and the contracts, including the refusal cases (bad signatures, replayed or altered webhooks, wrong amounts).
-- Accessibility: Lighthouse (axe-core rules) 100 on nine pages; a rendered-DOM check at 375 px for overflow, input names and touch targets (`docs/screens/README.md`).
-- Every claim in `docs/evidence.md` has a transaction or a query behind it. Where we could not run something (a screen reader with a person, Safari, a real phone), the docs say so.
+- The product: a protected checkout for small sellers on social platforms and websites, paid in USDT, with a refund nobody can stop and a release only by the buyer's code.
+- The trust rules: the refund after a missed deadline, the courier that can only report a refused handover, one review per person per seller, one shop per person, and the ban rules. [`CLAUDE.md`](CLAUDE.md) section 8 records each decision and who made it.
+- The contract design: the states, the roles, the 1% fee, the windows (30 and 120 seconds, a 300 second arbiter timeout), the arbiter timeout refund, and `forceRefundBanned` for banned sellers. We decided to narrow `forceRefundBanned` after reading the first draft, and Claude Code made the change.
+- The prize targets (Whitechain, Arkiv, World) and the choice to leave other tracks out.
+- Every go decision on money and accounts: the testnet deploy (one broadcast, after a dry run), the test USDT purchase on YetiTrade, the Vercel projects, and what runs on the live sites.
+- The World ID portal setup (the app, the relying party and the actions) and every real World proof. We ran the Simulator ourselves.
+- The logo and cover, the brand colours, and the wording of the landing page, checkout and onboarding. A teammate also ran the UI and copy passes with Claude Code on the second machine.
+- The demo and the video.
 
-The prompt given to the agent is saved in `specs/prompts/`.
+## What AI tools did, by area
 
-## Rules we follow
-- Humans make the product and sponsor decisions; the agent proposes and implements.
-- Every contract change gets tests; the team reviews the contract before any testnet deploy.
-- No secrets are shown to or logged by the AI tool; private keys live only in the local `.env`.
+| Area | What was written with AI |
+|---|---|
+| Contracts | `PoPCheckout`, `SellerRegistry`, the deploy script and the Foundry tests, including the invariant suite and the mutation checks (remove a check and watch a test fail). |
+| Apps | PoP's pages and API (checkout, order, onboarding, dashboard, simulated courier, arbiter, `/proof`, `/verify`, badge) and the Kurta Co. store. |
+| Merchant SDK | `@pop/checkout-sdk`: offer signing, sessions, HMAC webhooks and the on-chain recheck. |
+| Reviews and World | The review pipeline (World proof, claim in Postgres, Arkiv entity, ownership transfer, retry), the readable refusal messages, and the vendor World ID check. |
+| Vendor onboarding | The flow from handle to payment link and QR, the demo mode that skips the bio check on testnet, and the `/dashboard` shipping fixes. |
+| Data | The Supabase schema and the store layer. |
+| Tooling | Fork, deploy, seed and demo scripts, the live smoke script and the demo driver. |
+| Docs | The README, the Arkiv judging files, the Whitechain and World feedback, limitations and evidence, written from logs and runs in this repository. |
+| Brand and screenshots | We applied the finished logo across the apps and took the submission screenshots with browser automation. |
+
+## How we checked the work
+
+These are the numbers we measured, not estimates:
+
+- **Contracts:** `forge test` passes 58 of 58, including an invariant suite with 6 invariants. The mutation checks confirmed that removing the self-purchase check or the banned-seller check makes tests fail.
+- **End to end:** `scripts/e2e-fork.ts` passes 66 checks on a local fork. `scripts/e2e-merchant.ts` passes 48 checks on a fork, and an earlier real-time run passed 47 checks on Whitechain Sepolia. `scripts/test-vendor-verification.ts` passes 11 checks.
+- **Live:** `scripts/vercel-smoke.ts` passes 11 of 11 checks against both live sites.
+- **By hand:** a person paid orders 18 and 19 through the live Kurta store, order 19 from a real phone over mobile data, and ran the World Simulator for two reviews. Orders 11 and 25 were paid through the same checkout by Claude Code driving a browser, so they show the flow works but are not hand tests. We list what has only been tested by script in [README.md](README.md) under "Honest limits"; that list includes `/onboard`, the `/arbiter` buttons and `/dashboard` shipping.
+- **Accessibility:** Lighthouse accessibility scored 100 on nine pages on 6 Nov, before the later copy and logo changes (details in [`docs/screens/README.md`](docs/screens/README.md)). We did not test with a screen reader or in Safari.
+- **Every claim in [`docs/evidence.md`](docs/evidence.md)** has a transaction or a query behind it.
+
+## What AI tools did not do
+
+- They did not choose the product, the prize targets or the contract rules.
+- They did not hold or print our private keys. Keys live in `.env`; scripts read them by name and print addresses only.
+- They did not run a World proof. A person did, with the Simulator, and the log on `/proof` shows the result.
+- They did not redeploy the contracts or regenerate wallets, and they deployed to testnet once, after our go.
+
+## Our rules
+
+- Humans make the product and sponsor decisions; AI proposes and implements.
+- Every contract change gets tests, and we review the contract before any testnet deploy.
+- We keep secrets out of prompts and logs.
+- We say in the README what we have not proven yet, instead of hiding it.
+
+Organizer confirmation that the planning documents in `specs/` may be included is still pending.
