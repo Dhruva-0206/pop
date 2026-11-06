@@ -45,11 +45,17 @@ export default function OrderView() {
   const [credit, setCredit] = useState<bigint>(BigInt(0));
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [autoFin, setAutoFin] = useState(false);
+  const [fetchedAt, setFetchedAt] = useState(0);
+  const [chainNow, setChainNow] = useState(0); // on-chain time, advanced locally between polls (display only)
 
   const load = useCallback(async () => {
     const r = await fetch(`/api/orders/${orderId}`, { cache: "no-store" });
     if (!r.ok) return setErr("Order not found.");
-    setD(await r.json());
+    const j: Resp = await r.json();
+    setD(j);
+    setFetchedAt(Date.now());
+    setChainNow(j.order.now);
     if (cfg) {
       const acct = getTestAccount(cfg, "buyer", false);
       if (acct) {
@@ -70,6 +76,13 @@ export default function OrderView() {
     const t = setInterval(load, 3000);
     return () => clearInterval(t);
   }, [load]);
+
+  // Smooth countdown between 3 s polls. Only the DISPLAY uses this; whether Settle is enabled comes from the contract (canFinalize).
+  useEffect(() => {
+    if (!d) return;
+    const t = setInterval(() => setChainNow(d.order.now + Math.floor((Date.now() - fetchedAt) / 1000)), 1000);
+    return () => clearInterval(t);
+  }, [d, fetchedAt]);
 
   useEffect(() => {
     if (!cfg) return;
@@ -103,6 +116,17 @@ export default function OrderView() {
   if (!d || !cfg) return <main className="mx-auto max-w-md p-6 text-neutral-500">Loading…</main>;
   const o = d.order;
   const isBuyer = me && me.toLowerCase() === o.buyer.toLowerCase();
+  // The next deadline for the current state, straight from the contract's order fields.
+  const next =
+    o.state === "Funded"
+      ? { label: "Seller must ship within", target: o.shipBy, help: "If it isn't shipped in time, you're refunded automatically." }
+      : o.state === "Shipped"
+        ? { label: "Must arrive within", target: o.deliverBy, help: "If it doesn't arrive in time, you're refunded automatically." }
+        : o.state === "Delivered"
+          ? { label: "Time left to report a problem", target: o.releaseAt, help: "Something wrong? Report it before this ends; afterwards the seller is paid." }
+          : o.state === "Disputed"
+            ? { label: "PoP is reviewing this order. Decision due within", target: o.arbiterDeadline, help: "If there's no decision in time, you're refunded automatically." }
+            : null;
   const steps = [
     { label: "Paid", at: o.fundedAt, done: true },
     { label: "Shipped", at: o.shippedAt, done: o.shippedAt > 0 },
@@ -131,10 +155,13 @@ export default function OrderView() {
         {d.meta?.trackingNo && <li className="text-xs text-neutral-500">Tracking: {d.meta.trackingNo}</li>}
       </ol>
 
-      {o.state === "Funded" && <div className="text-sm">Seller must ship within {countdown(o.shipBy, o.now)}, or you&apos;re refunded automatically.</div>}
-      {o.state === "Shipped" && <div className="text-sm">Must arrive within {countdown(o.deliverBy, o.now)}, or you&apos;re refunded automatically.</div>}
-      {o.state === "Delivered" && <div className="text-sm">Something wrong? You have {countdown(o.releaseAt, o.now)} to report it.</div>}
-      {o.state === "Disputed" && <div className="text-sm">PoP is reviewing this order. If there&apos;s no decision in {countdown(o.arbiterDeadline, o.now)}, you&apos;re refunded automatically.</div>}
+      {next && (
+        <div className="rounded-xl border p-4 text-sm" aria-live="off">
+          <div className="text-xs text-neutral-500">{next.label}</div>
+          <div className="font-mono text-2xl">{next.target > chainNow ? countdown(next.target, chainNow) : o.canFinalize ? "Time is up" : "Time is up, confirming on-chain…"}</div>
+          <div className="mt-1 text-neutral-600">{next.help}</div>
+        </div>
+      )}
 
       {code && ["Funded", "Shipped"].includes(o.state) && (
         <div className="space-y-2 rounded-xl border-2 border-emerald-500 p-4 text-center">
@@ -155,7 +182,17 @@ export default function OrderView() {
 
       {isBuyer && o.state === "Released" && d.listing && <ReviewBox cfg={cfg} orderId={o.orderId} sellerHandle={d.listing.sellerHandle} />}
 
-      {o.canFinalize && <FinalizeButton cfg={cfg} orderId={o.orderId} onDone={load} />}
+      {next && (
+        <div className="space-y-2">
+          <FinalizeButton cfg={cfg} orderId={o.orderId} onDone={load} enabled={o.canFinalize} auto={autoFin && !!isBuyer} />
+          {isBuyer && (
+            <label className="flex items-center gap-2 text-xs text-neutral-600">
+              <input type="checkbox" checked={autoFin} onChange={(e) => setAutoFin(e.target.checked)} />
+              Settle automatically when the timer ends (sends one transaction, only when the contract allows it)
+            </label>
+          )}
+        </div>
+      )}
 
       {isBuyer && credit > BigInt(0) && (
         <button disabled={busy} onClick={() => send("withdraw")} className="w-full rounded-xl bg-emerald-600 py-2 font-semibold text-white">
