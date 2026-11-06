@@ -1,6 +1,6 @@
 # Deployment (Vercel, two projects)
 
-Nothing has been deployed to Vercel yet. This is the list a person needs when the team says go. Names were taken from the code (`process.env` reads) on Fri 6 Nov, and a local run with only these variables, `VERCEL=1`, no `.env` and no `deployments/` folder served every page and API route of both apps (see CLAUDE.md section 9, Fri 6 Nov, and `docs/OVERNIGHT.md`).
+Both apps run on Vercel Pro as two projects: PoP at https://pop-web-six.vercel.app and Kurta Co. at https://kurta-store.vercel.app. This page lists what each project needs and why. We took the names from the code (`process.env` reads) and checked that a local run with only these variables, `VERCEL=1`, no `.env` and no `deployments/` folder serves every page and API route of both apps.
 
 ## Both projects
 - Framework: Next.js 16 (Cache Components on). Install command `npm install` at the repository root (npm workspaces). Enable "Include source files outside of the Root Directory" because both apps import `packages/shared` and the store imports `packages/checkout-sdk`.
@@ -70,8 +70,8 @@ Nothing has been deployed to Vercel yet. This is the list a person needs when th
 ## Before deploying the vendor onboarding change
 Run `NETWORK_MODE=testnet npm run db:migrate` first. It creates the table `vendor_verifications` in schema `public` (idempotent). It was applied on Fri 6 Nov. Without the table the `/api/onboard/request` route fails, so apply it before the deploy that contains the change.
 
-## Before the first deploy
-1. Team says go. 2. `npm run db:migrate` against `public` (already applied on Fri 6 Nov). 3. Create both projects, paste the names above. 4. Redeploy PoP once the store's URL is known. 5. Re-seed the merchant row with the real URLs. 6. Open `/proof` on the PoP deployment and check the addresses match `docs/evidence.md`. 7. Never redeploy the contracts: it resets every seller's review history.
+## Before deploying a new copy
+1. Agree it as a team. 2. `npm run db:migrate` against `public` (already applied for the live deployment). 3. Create both projects, paste the names above. 4. Redeploy PoP once the store's URL is known. 5. Re-seed the merchant row with the real URLs. 6. Open `/proof` on the PoP deployment and check the addresses match `docs/evidence.md`. 7. Never redeploy the contracts: it resets every seller's review history.
 
 ## Build settings (both projects)
 Checked Fri 6 Nov: `VERCEL=1 npm run build:web` and `VERCEL=1 npm run build:store` both exit 0 from the repo root with no `.env` loaded (the shell had none of the app variables set). Not checked: the Vercel dashboard itself, since nothing was deployed.
@@ -84,7 +84,7 @@ Checked Fri 6 Nov: `VERCEL=1 npm run build:web` and `VERCEL=1 npm run build:stor
 | Install command | `npm install` (runs at the repo root through the workspaces; leave the default if Vercel detects npm from `package-lock.json`) | same |
 | Build command | `npm run build` (this is `next build` inside the app) | same |
 | Output directory | default (`.next`) | default |
-| Node.js version | UNVERIFIED: local development uses Node 26.13. Pick the newest version Vercel offers that satisfies Next 16.4.5 and check the first build log. | same |
+| Node.js version | Not checked in the Vercel dashboard. We develop on Node 26.13; pick the newest version Vercel offers that satisfies Next 16.4.5 and read the first build log. | same |
 | `vercel.json` | `apps/web/vercel.json` (cron every minute, Pro only) | none |
 
 ## Webhook dispatch on Vercel
@@ -173,7 +173,7 @@ DEPLOY_BLOCK            12330545
 The five chain pin names work together: `apps/demo-store/src/lib/pop.ts` only trusts them when all five are set, and otherwise asks PoP which contract is real. Set all five.
 
 ### Names in `.env.example` or `.env` that no app code reads (do not add to Vercel)
-`WHITECHAIN_CHAIN_ID`, `ARKIV_CHAIN_ID`, `NEXT_PUBLIC_WORLD_APP_ID`, `RECLAIM_APP_ID`, `RECLAIM_APP_SECRET`, `RECLAIM_INSTAGRAM_PROVIDER_ID`. A script may read `WHITECHAIN_CHAIN_ID` or `ARKIV_CHAIN_ID` (UNVERIFIED); the others have no read in `apps/` or `packages/`.
+`WHITECHAIN_CHAIN_ID`, `ARKIV_CHAIN_ID`, `NEXT_PUBLIC_WORLD_APP_ID`, `RECLAIM_APP_ID`, `RECLAIM_APP_SECRET`, `RECLAIM_INSTAGRAM_PROVIDER_ID`. A script may read `WHITECHAIN_CHAIN_ID` or `ARKIV_CHAIN_ID` (we did not check); the others have no read in `apps/` or `packages/`.
 
 ### Names the code reads that were missing from this file before
 None for the two apps: every name read in `apps/web`, `packages/shared` and `apps/demo-store` is listed above or under "Optional". These names are read only by local scripts, so they are not project settings: `ALLOW_TESTNET_DEPLOY`, `ALLOW_TESTNET_ORDER`, `ALLOW_DEMO_SEED`, `WEB_URL`, `POP_URL`, `KURTA_URL`, `KURTA_WEBHOOK_URL`, `FORK_RPC_URL`, `DEPLOYER_PK`, `ARBITER_PK`, `TEST_BUYER_PK`, `SELLER_PK`.

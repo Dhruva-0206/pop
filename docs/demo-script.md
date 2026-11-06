@@ -1,6 +1,6 @@
 # Demo script
 
-Two versions: the 4-minute live finalist flow and the 2 to 4 minute video. Written against the redesigned UI. **Not rehearsed by a human yet.** The steps were checked by e2e runs and by looking at the pages, but nobody has timed a full run with the real World simulator. Rehearse before relying on the timings. Where a step depends on something we could not verify, it says so.
+Two versions: the 4-minute live finalist flow and the 2 to 4 minute video. Written against the current UI. **We have not rehearsed it end to end by hand yet.** We checked the steps with end-to-end runs and by looking at the pages, but nobody has timed a full run with the real World Simulator, so rehearse before relying on the timings. Where a step depends on something we could not verify, it says so.
 
 ## Setup (30 minutes before, once)
 1. Servers: PoP web and the Kurta store on testnet (see `docs/OVERNIGHT.md` for the start command), `npm run webhooks` in a third terminal. Open `/proof` and check the contract addresses match `docs/evidence.md`.
@@ -57,7 +57,7 @@ Same order as the live flow, with these changes:
 - A scene was not seeded in time: seed again, it is idempotent, and continue with another segment first.
 
 ## Dry run on the live sites (Fri 6 Nov 2026, about 18:30 to 18:55 IST)
-Run by an agent over HTTP and the chain, **not through a browser and not through the team pages** (the agent cannot type the seller, courier or arbiter keys into a page). Buyer, seller, courier and arbiter steps used the same contract calls and the same PoP API routes the pages use. Orders #13 to #16, test USDT only. Tool: `scripts/demo-driver.ts` (ship, courier code, window, finalize, withdraw, with timings).
+We ran this from a script over HTTP and the chain, **not through a browser and not through the team pages** (a script cannot type the seller, courier or arbiter keys into a page). Buyer, seller, courier and arbiter steps used the same contract calls and the same PoP API routes the pages use. Orders #13 to #16, test USDT only. Tool: `scripts/demo-driver.ts` (ship, courier code, window, finalize, withdraw, with timings).
 
 | Demo step | Script says | Measured |
 |---|---|---|

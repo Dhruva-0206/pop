@@ -1,6 +1,6 @@
 # Limitations
 
-What PoP does not do or cannot promise today. Written from what the repository does, not from what we hope.
+What PoP does not do or cannot promise today. We wrote this from what the code does, not from what we hope it will do. Each item says what is not proven yet and why.
 
 ## Delivery and disputes
 - **The courier is simulated.** A person on the team plays the courier page. Release depends on the buyer's delivery code, not on courier data, and the courier key cannot release or refund money. But "handover refused" is reported by that same simulated courier, so the only real-world delivery signal in the demo is the buyer's code.
@@ -12,8 +12,9 @@ What PoP does not do or cannot promise today. Written from what the repository d
 
 ## Sellers and reputation
 - **A seller can buy from a second wallet they control.** The contract blocks `msg.sender == seller`, not a second wallet, so someone can still raise their own "orders completed" count with their own money. The cost is the 1% fee and gas, which is cheap on a test network.
-- **Handle proof is a staff check of a bio code (tier 1).** A person on the team looks at the Instagram bio. It proves control of the handle at that moment, not who the seller is or that they will deliver.
-- **World ID proves "a unique person", not "a good person".** The proof is verified on the Simulator (staging) only; a real phone needs a production action. One review per person per seller depends on one World action per seller, created by hand in the portal.
+- **Handle proof is a staff check of a bio code (tier 1).** A person on the team looks at the Instagram bio. It proves control of the handle at that moment, not who the seller is or that they will deliver. In demo mode on testnet the staff check is skipped and the shop is recorded as "handle not checked" (tier 0).
+- **One person, one shop is a database rule.** The vendor World check stores the hash of the nullifier, and a banned person is refused a new shop because we mirror the on-chain ban into our own table. The contracts know wallets and handles, not World identities, so someone with another World identity is not stopped.
+- **World ID proves "a unique person", not "a good person".** The proof is verified on the Simulator (staging) only; a real phone needs a production action. One review per person per seller depends on one World action per seller, created by hand in the portal. Only three sellers have one today, so a newly onboarded shop cannot yet collect World-verified reviews.
 - **Reviews can be refused, not edited.** Our writer wallet creates the Arkiv entity. A buyer's review is signed by the buyer, so we cannot change it, but we can fail to publish it. A retry path exists. Reviews expire after about 180 days by design.
 - **A checkout redeploy resets every seller's visible history,** because readers count only payments on the current contract. We will not redeploy.
 
@@ -30,7 +31,7 @@ What PoP does not do or cannot promise today. Written from what the repository d
 
 ## Software
 - **The dev-only flag `POP_DEV_SKIP_WORLD`** skips the World proof for local testing. It refuses to run on any deployed build, and entries it writes are labelled DEV and expire in 24 hours. It must stay unset on Vercel.
-- **Rate limits are simple.** Session creation is limited per merchant in Postgres and is not atomic under heavy parallel load. The faucet has a daily cap per address and a global cap.
-- **Webhooks have no queue.** A dispatcher scans the checkout's events and retries failed deliveries up to 8 times. It runs when order pages are opened, from a script, or from a cron that is not configured yet.
+- **Rate limits are simple.** Session creation is limited per merchant in Postgres and is not atomic under heavy parallel load. The test faucet allows 5 new wallets per network address in a rolling 24 hours and a global daily cap.
+- **Webhooks have no queue.** A dispatcher scans the checkout's events and retries failed deliveries up to 8 times. It runs when order pages are opened, from a script, and from a Vercel cron every minute. We have not seen that cron fire on its own in Vercel's log, because the 5 second loop we ran hides it.
 - **Only five webhook events** are sent (funded, shipped, delivered, released, refunded). Disputes and splits are not.
-- **Not tested:** screen readers with a person, real phones, Safari, more than a few concurrent users, two simultaneous review claims racing.
+- **Not tested:** screen readers with a person, Safari, more than a few concurrent users, two simultaneous review claims racing. A real phone has paid one order (order 19) but nobody has gone through the whole flow on one.
