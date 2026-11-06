@@ -24,6 +24,7 @@ export default function Home() {
             <h1 className="display text-2xl md:text-3xl">{PRODUCT.title}</h1>
             <p>
               <span className="block text-2xl font-semibold text-ink">{inr(PRODUCT.priceInr)}</span>
+              <span className="sr-only">, </span>
               <span className="mono text-sm text-ink-2">{PRODUCT.priceUsdt} test USDT at the demo rate</span>
             </p>
             <p className="prose-width text-ink-2">A demo product from Kurta Co., made up for this hackathon. There is no real kurta and nothing will be shipped.</p>
@@ -83,7 +84,7 @@ async function Record() {
       <p>
         <span className="mono block text-3xl font-medium text-ink">
           {rep.completed} of {rep.totalOrders}
-        </span>
+        </span>{" "}
         <span className="text-ink-2">
           protected orders completed, {rep.lostDisputes} {Number(rep.lostDisputes) === 1 ? "dispute" : "disputes"} lost
         </span>

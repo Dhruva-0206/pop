@@ -318,24 +318,12 @@ export default function Checkout() {
 
             <p className="text-sm text-muted">Paying takes up to four steps of about 5 seconds each. Keep this page open.</p>
             <div className="paybar">
-              <div className="min-w-0 md:hidden">
+              <div className="min-w-0">
                 <span className="block text-xs text-ink-2">Total</span>
                 <Money inr={inr(l.priceInr)} usdt={priceUsdt} size="md" />
               </div>
               <button type="submit" disabled={busy || !s.active} className="btn btn-primary flex-1">
-                {busy ? (
-                    <>
-                      <span className="md:hidden">Paying</span>
-                      <span className="hidden md:inline">Working on your payment</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="md:hidden">Pay {inr(l.priceInr)}</span>
-                      <span className="hidden md:inline">
-                        Pay {inr(l.priceInr)} · {priceUsdt} test USDT
-                      </span>
-                    </>
-                  )}
+                {busy ? "Paying" : `Pay ${inr(l.priceInr)}`}
               </button>
             </div>
             <div className="paybar-space" aria-hidden="true" />

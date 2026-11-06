@@ -9,7 +9,7 @@
  *               "storage": { "pop:testwallet:fork:31337:buyer": "$TEST_BUYER_PK" }, "steps": [...], "fold": true }]
  * `$NAME` values in `storage` are read from pop/.env and never printed. A "profile" keeps its localStorage between jobs.
  * Steps: { "type": [selector, text] } | { "click": selector } | { "clickText": exact button text } | { "waitUrl": "substring" } | { "wait": ms }.
- * "fold": also save the first screen only (name-fold.png), to check sticky bars.
+ * "fold": also save the first screen only (name-fold.png), to check sticky bars. "probe": a JS expression evaluated in the page; its JSON result is printed.
  */
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -18,7 +18,7 @@ import { join, resolve } from "node:path";
 import { opt } from "./env";
 
 type Step = { type?: [string, string]; click?: string; clickText?: string; waitUrl?: string; wait?: number };
-type Job = { settle?: number; name: string; url: string; width: number; profile?: string; storage?: Record<string, string>; steps?: Step[]; fold?: boolean; height?: number };
+type Job = { probe?: string; settle?: number; name: string; url: string; width: number; profile?: string; storage?: Record<string, string>; steps?: Step[]; fold?: boolean; height?: number };
 
 const [jobsFile, outDir] = process.argv.slice(2);
 if (!jobsFile || !outDir) throw new Error("usage: npx tsx scripts/screens.ts <jobs.json> <outDir>");
@@ -132,6 +132,7 @@ for (const job of jobs) {
   const shot = await cdp.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true, clip: { x: 0, y: 0, width: job.width, height: Math.min(m.sh, 12000), scale: 1 } });
   writeFileSync(join(outDir, `${job.name}.png`), Buffer.from(shot.data, "base64"));
   const line = `${job.name.padEnd(28)} ${m.sw > m.iw ? `OVERFLOW ${m.sw}px in ${m.iw}px` : "fits"} · h1 x${m.h1} · ${m.sh}px tall`;
+  if (job.probe) console.log(`  probe ${job.name}: ${JSON.stringify(await evaluate(cdp, job.probe))}`);
   report.push(line);
   console.log(line);
 }

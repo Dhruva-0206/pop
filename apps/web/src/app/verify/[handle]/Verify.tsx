@@ -107,7 +107,7 @@ export default function Verify() {
             <p>
               <span className="mono block text-3xl font-medium text-ink md:text-[3rem] md:leading-[3.5rem]">
                 {completed} of {total}
-              </span>
+              </span>{" "}
               <span className="text-lg text-ink">protected {plural(total, "order", "orders")} completed</span>
             </p>
             <p className="text-sm text-muted">Read from the PoP contract, not from the seller.</p>

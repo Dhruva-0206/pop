@@ -17,7 +17,13 @@ export function Money({ inr, usdt, size = "lg" }: { inr: string; usdt?: string; 
   return (
     <span className="money">
       <span className={size === "lg" ? "money-inr text-2xl" : "money-inr text-lg"}>{inr}</span>
-      {usdt && <span className="money-usdt">{usdt} test USDT</span>}
+      {usdt && (
+        <>
+          {/* visually hidden: keeps "₹899" and "1.00 test USDT" apart in page text and for screen readers */}
+          <span className="sr-only">, </span>
+          <span className="money-usdt">{usdt} test USDT</span>
+        </>
+      )}
     </span>
   );
 }
