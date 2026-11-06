@@ -1,6 +1,7 @@
-import { NextResponse, connection } from "next/server";
+import { NextResponse, after, connection } from "next/server";
 import { readOrder } from "@/lib/server/orders";
 import { store } from "@/lib/server/chain";
+import { dispatchWebhooks } from "@/lib/server/webhooks";
 
 /** Live order state from the contract + non-private metadata. Never returns delivery details. */
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -11,13 +12,23 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   if (!live) return NextResponse.json({ error: "not found" }, { status: 404 });
   const meta = await store.order(id);
   const listing = meta?.listingId ? await store.listing(meta.listingId) : undefined;
+  const session = listing ? await store.sessionByListing(listing.id) : undefined;
+  // Order pages are polled, so they also drive merchant webhooks (best effort, idempotent, shared pass).
+  after(() => dispatchWebhooks().catch(() => undefined));
   return NextResponse.json({
     order: live,
     meta: meta
       ? { listingId: meta.listingId, fundTx: meta.fundTx, trackingNo: meta.trackingNo, courierStatus: meta.courierStatus }
       : null,
     listing: listing
-      ? { id: listing.id, title: listing.title, priceInr: listing.priceInr, sellerHandle: listing.sellerHandle }
+      ? {
+          id: listing.id,
+          title: listing.title,
+          priceInr: listing.priceInr,
+          sellerHandle: listing.sellerHandle,
+          merchantName: session?.merchantName,
+          returnUrl: session?.returnUrl,
+        }
       : null,
   });
 }

@@ -1,0 +1,13 @@
+{
+  "name": "@pop/checkout-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pay with PoP: server half (sessions, webhook verification, on-chain recheck) and browser half (button).",
+  "exports": {
+    "./server": "./src/server.ts",
+    "./browser": "./src/browser.ts"
+  },
+  "dependencies": { "@pop/shared": "^0.1.0" },
+  "peerDependencies": { "viem": "^2.0.0" }
+}

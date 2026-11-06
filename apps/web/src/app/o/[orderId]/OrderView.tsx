@@ -31,7 +31,7 @@ type Live = {
 type Resp = {
   order: Live;
   meta: { fundTx?: string; trackingNo?: string; courierStatus?: string } | null;
-  listing: { title: string; priceInr: number; sellerHandle: string } | null;
+  listing: { title: string; priceInr: number; sellerHandle: string; merchantName?: string; returnUrl?: string } | null;
 };
 
 export default function OrderView() {
@@ -200,6 +200,11 @@ export default function OrderView() {
         </button>
       )}
       {msg && <div className="text-sm text-neutral-700">{msg}</div>}
+      {d.listing?.returnUrl && (
+        <a href={d.listing.returnUrl} className="block text-center text-sm underline">
+          Back to {d.listing.merchantName ?? "the store"}
+        </a>
+      )}
     </main>
   );
 }

@@ -193,3 +193,39 @@ create table if not exists login_nonces (
   created_at  timestamptz not null default now()
 );
 create index if not exists login_nonces_addr_idx on login_nonces (address);
+
+-- ---------------------------------------------------------------------------------------------------------------------
+-- "Pay with PoP" merchants: API-key authenticated checkout sessions + HMAC-signed webhooks (packages/checkout-sdk).
+-- The API key itself is never stored (sha256 only); the webhook secret is AES-256-GCM encrypted (it must be recoverable to sign).
+-- A merchant sells AS one registered seller wallet: the seller signs every Offer itself, PoP never holds that key.
+-- ---------------------------------------------------------------------------------------------------------------------
+create table if not exists merchants (
+  id                    bigserial primary key,
+  name                  text not null,
+  seller_wallet         text not null,                -- lowercase; must be an active registered seller
+  api_key_hash          text not null,                -- sha256 hex of the API key
+  webhook_url           text,
+  webhook_secret_enc    text,
+  allowed_return_origin text,                         -- a session's returnUrl must start with this origin
+  created_at            timestamptz not null default now()
+);
+create unique index if not exists merchants_api_key_uq on merchants (api_key_hash);
+create unique index if not exists merchants_wallet_uq on merchants (seller_wallet);
+
+-- checkout_sessions was planned/unused: now one row per merchant session; the hosted checkout is the listing with the same id.
+alter table checkout_sessions add column if not exists merchant_id bigint references merchants(id);
+alter table checkout_sessions add column if not exists listing_id text references listings(id);
+create index if not exists checkout_sessions_listing_idx on checkout_sessions (listing_id);
+
+-- webhook_deliveries was planned/unused: one row per (merchant, order, event); the unique index makes enqueueing idempotent.
+alter table webhook_deliveries add column if not exists merchant_id bigint references merchants(id);
+alter table webhook_deliveries add column if not exists order_id numeric(78,0);
+alter table webhook_deliveries add column if not exists payload jsonb;
+alter table webhook_deliveries add column if not exists delivered_at timestamptz;
+create unique index if not exists webhook_deliveries_uq on webhook_deliveries (merchant_id, order_id, event);
+
+-- Where the webhook dispatcher stopped scanning chain events (per key).
+create table if not exists webhook_cursor (
+  key    text primary key,
+  block  bigint not null
+);

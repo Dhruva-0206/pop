@@ -65,6 +65,25 @@ export type ReviewRow = {
   createdAt: string;
   updatedAt: string;
 };
+export type MerchantRow = {
+  id: number;
+  name: string;
+  sellerWallet: string;
+  apiKeyHash: string;
+  webhookUrl?: string;
+  webhookSecretEnc?: string;
+  allowedReturnOrigin?: string;
+};
+export type SessionRow = { id: string; merchantId: number; listingId: string; merchantRef: string; returnUrl?: string; expiresAt: string };
+export type WebhookDelivery = {
+  id: number;
+  merchantId: number;
+  orderId: string;
+  event: string;
+  payload: unknown;
+  attempts: number;
+  status: "pending" | "delivered" | "failed";
+};
 export type FaucetGrant = { address: string; ipHash: string; gasTx?: string; usdtTx?: string; createdAt: string };
 
 /** Postgres schema for a network mode. */
@@ -135,6 +154,15 @@ export function createStore(mode: NetworkMode) {
     }
   }
 
+  const merchantOf = (r: pg.QueryResultRow): MerchantRow => ({
+    id: Number(r.id),
+    name: r.name,
+    sellerWallet: ck(r.seller_wallet),
+    apiKeyHash: r.api_key_hash,
+    webhookUrl: opt(r.webhook_url),
+    webhookSecretEnc: opt(r.webhook_secret_enc),
+    allowedReturnOrigin: opt(r.allowed_return_origin),
+  });
   const sellerOf = (r: pg.QueryResultRow): SellerRow => ({
     wallet: ck(r.wallet),
     handle: r.handle,
@@ -418,6 +446,109 @@ export function createStore(mode: NetworkMode) {
         2,
       );
       await one(`update ${T("reviews")} set ${[...sets, "updated_at = now()"].join(", ")} where order_id = $1::numeric`, [orderId, ...vals]);
+    },
+    // ------------------------------------------------------------ merchants (Pay with PoP)
+    async upsertMerchant(m: Omit<MerchantRow, "id">): Promise<number> {
+      const r = await one(
+        `insert into ${T("merchants")} (name, seller_wallet, api_key_hash, webhook_url, webhook_secret_enc, allowed_return_origin)
+         values ($1, lower($2), $3, $4, $5, $6)
+         on conflict (seller_wallet) do update set name = excluded.name, api_key_hash = excluded.api_key_hash,
+           webhook_url = excluded.webhook_url, webhook_secret_enc = excluded.webhook_secret_enc,
+           allowed_return_origin = excluded.allowed_return_origin
+         returning id`,
+        [m.name, m.sellerWallet, m.apiKeyHash, m.webhookUrl ?? null, m.webhookSecretEnc ?? null, m.allowedReturnOrigin ?? null],
+      );
+      return Number(r.rows[0].id);
+    },
+    async merchantByKeyHash(h: string): Promise<MerchantRow | undefined> {
+      const r = await one(`select * from ${T("merchants")} where api_key_hash = $1`, [h]);
+      return r.rows[0] ? merchantOf(r.rows[0]) : undefined;
+    },
+    async merchantByWallet(w: string): Promise<MerchantRow | undefined> {
+      const r = await one(`select * from ${T("merchants")} where seller_wallet = lower($1)`, [w]);
+      return r.rows[0] ? merchantOf(r.rows[0]) : undefined;
+    },
+    async merchants(): Promise<MerchantRow[]> {
+      return (await one(`select * from ${T("merchants")} order by id`)).rows.map(merchantOf);
+    },
+    /** Session = listing (same id, holds the signed Offer) + a checkout_sessions row. One transaction; false if the id is taken. */
+    async createSession(l: ListingRow, x: { merchantId: number; merchantRef: string; returnUrl?: string; expiresAt: string }): Promise<boolean> {
+      return tx(async (c) => {
+        const seller = await q(c, `select id from ${T("sellers")} where wallet = lower($1)`, [l.sellerWallet]);
+        if (!seller.rows[0]) throw new Error("createSession: seller is not in the database");
+        const ins = await q(
+          c,
+          `insert into ${T("listings")} (id, seller_id, title, image_url, price_units, price_inr, terms_json, terms_hash, offer_json, offer_sig, listing_id_hash, active, created_at)
+           values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,true,$12) on conflict (id) do nothing`,
+          [l.id, seller.rows[0].id, l.title, l.imageUrl ?? null, l.priceUnits, l.priceInr, JSON.stringify(l.terms), l.termsHash,
+            JSON.stringify(l.offer), l.offerSig, listingIdHash(l.id).toLowerCase(), l.createdAt],
+        );
+        if (ins.rowCount === 0) return false;
+        await q(
+          c,
+          `insert into ${T("checkout_sessions")} (id, seller_id, external_order_id, offer_json, offer_sig, return_url, expires_at, merchant_id, listing_id)
+           values ($1,$2,$3,$4,$5,$6,$7,$8,$1)`,
+          [l.id, seller.rows[0].id, x.merchantRef, JSON.stringify(l.offer), l.offerSig, x.returnUrl ?? null, x.expiresAt, x.merchantId],
+        );
+        return true;
+      });
+    },
+    async sessionByListing(listingId: string): Promise<(SessionRow & { merchantName: string }) | undefined> {
+      const r = await one(
+        `select cs.*, m.name as merchant_name from ${T("checkout_sessions")} cs join ${T("merchants")} m on m.id = cs.merchant_id where cs.listing_id = $1`,
+        [listingId],
+      );
+      const x = r.rows[0];
+      return x
+        ? { id: x.id, merchantId: Number(x.merchant_id), listingId: x.listing_id, merchantRef: x.external_order_id, returnUrl: opt(x.return_url), expiresAt: iso(x.expires_at), merchantName: x.merchant_name }
+        : undefined;
+    },
+    // ------------------------------------------------------------ webhooks
+    async webhookCursor(key: string): Promise<number | undefined> {
+      const r = await one(`select block from ${T("webhook_cursor")} where key = $1`, [key]);
+      return r.rows[0] ? Number(r.rows[0].block) : undefined;
+    },
+    async setWebhookCursor(key: string, block: number) {
+      await one(
+        `insert into ${T("webhook_cursor")} (key, block) values ($1, $2) on conflict (key) do update set block = greatest(${T("webhook_cursor")}.block, excluded.block)`,
+        [key, block],
+      );
+    },
+    /** Enqueue once per (merchant, order, event). Returns false if it was already enqueued. */
+    async enqueueWebhook(merchantId: number, orderId: string, event: string, payload: unknown): Promise<boolean> {
+      const r = await one(
+        `insert into ${T("webhook_deliveries")} (merchant_id, order_id, event, payload) values ($1, $2::numeric, $3, $4)
+         on conflict (merchant_id, order_id, event) do nothing`,
+        [merchantId, orderId, event, JSON.stringify(payload)],
+      );
+      return (r.rowCount ?? 0) > 0;
+    },
+    /** Pending, or failed with attempts left and last tried more than backoffSec ago. Oldest first. */
+    async dueWebhooks(maxAttempts: number, backoffSec: number): Promise<WebhookDelivery[]> {
+      const r = await one(
+        `select * from ${T("webhook_deliveries")}
+         where merchant_id is not null and (status = 'pending' or (status = 'failed' and attempts < $1 and updated_at < now() - make_interval(secs => $2)))
+         order by id limit 50`,
+        [maxAttempts, backoffSec],
+      );
+      return r.rows.map((x) => ({
+        id: Number(x.id), merchantId: Number(x.merchant_id), orderId: String(x.order_id), event: x.event,
+        payload: x.payload, attempts: Number(x.attempts), status: x.status,
+      }));
+    },
+    async markWebhook(id: number, ok: boolean, error?: string) {
+      await one(
+        `update ${T("webhook_deliveries")} set attempts = attempts + 1, status = $2, last_error = $3, updated_at = now(),
+           delivered_at = case when $2 = 'delivered' then now() else delivered_at end where id = $1`,
+        [id, ok ? "delivered" : "failed", ok ? null : (error ?? "failed").slice(0, 300)],
+      );
+    },
+    async webhookDeliveries(merchantId: number): Promise<WebhookDelivery[]> {
+      const r = await one(`select * from ${T("webhook_deliveries")} where merchant_id = $1 order by id`, [merchantId]);
+      return r.rows.map((x) => ({
+        id: Number(x.id), merchantId: Number(x.merchant_id), orderId: String(x.order_id), event: x.event,
+        payload: x.payload, attempts: Number(x.attempts), status: x.status,
+      }));
     },
     /** Test helper (e2e): number of rows in review_nullifiers. */
     async reviewClaimCount() {

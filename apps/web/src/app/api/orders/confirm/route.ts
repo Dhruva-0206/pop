@@ -1,10 +1,11 @@
-import { NextResponse, connection } from "next/server";
+import { NextResponse, after, connection } from "next/server";
 import { decodeEventLog, getAddress, isHash, isHex } from "viem";
 import { z } from "zod";
 import { checkoutAbi } from "@pop/shared";
 import { encryptPII } from "@pop/shared/server/crypto";
 import { deployment, encKey, net, pub, store } from "@/lib/server/chain";
 import { orderRegisterMessage } from "@/lib/messages";
+import { dispatchWebhooks } from "@/lib/server/webhooks";
 
 const Body = z.object({
   txHash: z.string().refine((h) => isHash(h)),
@@ -65,6 +66,7 @@ export async function POST(req: Request) {
       fundTx: txHash,
       updatedAt: new Date().toISOString(),
     });
+    after(() => dispatchWebhooks().catch(() => undefined)); // tell merchants about order.funded (best effort, idempotent)
     return NextResponse.json({ ok: true, orderId, fresh });
   }
   return NextResponse.json({ error: "no OrderFunded event in transaction" }, { status: 400 });

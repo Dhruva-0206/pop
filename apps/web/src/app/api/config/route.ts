@@ -14,6 +14,7 @@ export async function GET() {
     rpcUrl: net.rpcUrl,
     checkout: d.checkout,
     registry: d.registry,
+    deployBlock: d.deployBlock,
     token: d.token,
     tokenDecimals: d.tokenDecimals,
     explorer: net.isLocalFork ? null : "https://explorer.testnet.whitechain.io",
