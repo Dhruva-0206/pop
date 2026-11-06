@@ -24,6 +24,7 @@ _TODO_ (see `specs/PoP_Technical_Architecture.md`).
 | `apps/web/` | PoP Next.js app (pages + API routes) |
 | `apps/demo-store/` | "Kurta Co." demo merchant, a separate app |
 | `packages/shared/` | Name constant, chain definitions, EIP-712 types, ABIs |
+| `packages/checkout-sdk/` | "Pay with PoP" SDK: server half (sessions, webhook verification, on-chain recheck) and browser half (button) |
 | `scripts/` | Smoke tests, seed, fork e2e, wallet setup |
 | `supabase/` | Postgres migrations (private data only) |
 | `arkiv/` | Arkiv judging docs |
@@ -39,6 +40,17 @@ Whitechain Sepolia (chain 1874), both **verified on Blockscout**. Test USDT only
 | Specified test USDT | [`0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7`](https://explorer.testnet.whitechain.io/address/0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7) |
 
 A full protected order (pay, ship, deliver with the buyer's code, finalize, withdraw) was run with the specified USDT: pay [`0xa59f9067…aa5da3`](https://explorer.testnet.whitechain.io/tx/0xa59f9067bf1d58c716809efe520a0666e4aacbca2dfea4a52b0ad8a79caa5da3), deliver [`0x2df7522a…a8c3de`](https://explorer.testnet.whitechain.io/tx/0x2df7522a98d718c38bf7771f48447eb13d2e6fe3e5ba8fb076afbf8968a8c3de), finalize [`0x38708e79…c51290`](https://explorer.testnet.whitechain.io/tx/0x38708e796235108faede33d124e92e9777478041de13bec3a1322393e8c51290), withdraw [`0xee21a184…b5306a`](https://explorer.testnet.whitechain.io/tx/0xee21a18433c0a018c24d749faddc6f19f7c58322b55a3c987fe52bddc9b5306a). Every tx link is in `docs/evidence.md`.
+
+## Pay with PoP (for merchants)
+`apps/demo-store` (Kurta Co.) is a separate app that sells through the SDK. Server side (the merchant keeps its own seller key and signs its Offers):
+```ts
+const pop = new PoP({ baseUrl, apiKey, webhookSecret, merchantPk });
+const { url } = await pop.createSession({ title: "Hand-block cotton kurta", priceInr: 1299, priceUsdt: "1.50", merchantRef: cartId, returnUrl });
+// webhook route: signature first, then the chain
+const ev = pop.verifyWebhook(await req.text(), req.headers.get("pop-signature"));
+await pop.confirmOnChain(ev); // order is ours, buyer/amount match, state fits, funding tx carries our merchantRef
+```
+Browser side: `startPayWithPoP("/api/checkout")` sends the buyer to the hosted checkout. Webhooks: `order.funded`, `order.shipped`, `order.delivered`, `order.released`, `order.refunded`, signed `PoP-Signature: t=<unix>,v1=<hmac-sha256 of "t.body">`. Run `npm run seed:merchant`, then `npm run dev -w @pop/demo-store` (port 3001) and `npm run webhooks`.
 
 ## Arkiv
 _TODO_: writer wallet + runnable query.

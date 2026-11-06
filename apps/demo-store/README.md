@@ -1,36 +1,17 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kurta Co. (demo merchant for "Pay with PoP")
 
-## Getting Started
+A separate Next.js app that sells one product through PoP's protected checkout using `@pop/checkout-sdk`. Test mode only: test USDT has no value.
 
-First, run the development server:
+What it shows
+- **Pay with PoP** button (`src/app/PayButton.tsx`, browser half of the SDK) -> `POST /api/checkout` (server half: signs the Offer with the store's own seller key, creates a single-use session with its API key) -> PoP's hosted checkout.
+- **Webhook receiver** `POST /api/pop/webhook`: verifies the HMAC signature over the raw body, then rechecks the order ON-CHAIN (`confirmOnChain`: order is ours, buyer/amount match, state fits the event, funding tx carries our `merchantRef`) before it changes its order book (`/orders`).
+- **Its own record**: the product page reads the seller's counters from the contracts and reviews from Arkiv with this store's OWN access key (`KURTA_ARKIV_ACCESS_KEY`), counting only entities created by PoP's attestor, readonly, and tied to a real payment.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Setup (local)
+1. From `pop/`: `npm run seed:merchant` (registers @kurta.co, creates the API key + webhook secret, writes `apps/demo-store/.env.local`; values are never printed).
+2. Add `KURTA_ARKIV_ACCESS_KEY=` (its own key) to `apps/demo-store/.env.local`.
+3. `npm run dev -w @pop/demo-store` (port 3001) with the PoP web app on port 3000 and `npm run webhooks` running.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Env names (`.env.local` or the Vercel project): `POP_BASE_URL`, `POP_API_KEY`, `POP_WEBHOOK_SECRET`, `MERCHANT_PK`, `POP_ATTESTOR_ADDRESS`, `KURTA_ARKIV_ACCESS_KEY`, optional `KURTA_ORIGIN`, and the optional chain pin `CHAIN_ID`, `RPC_URL`, `CHECKOUT_ADDRESS`, `REGISTRY_ADDRESS`, `DEPLOY_BLOCK`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Limits (demo): the order book is in memory (a restart forgets it; every status in it was chain-confirmed so it can be rebuilt), and only five events are sent (funded, shipped, delivered, released, refunded).

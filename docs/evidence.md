@@ -41,6 +41,21 @@ The seller never shipped; real time passed the ship-by deadline (180 s); a third
 
 Result: buyer credit 0 → 1,000,000, then the buyer's USDT balance went back to 4.000000; `totalLocked` = 0. The seller was paid nothing and `completed(seller)` stays 1. Script: `scripts/testnet-refund.ts` (testnet-only, guarded, run once).
 
+### Pay with PoP + Kurta Co. demo store on 1874 (Fri 6 Nov, `scripts/e2e-merchant.ts` TESTNET PASS, 41 checks)
+Merchant @kurta.co (wallet `0xB6a8fA0698Fdf0a8CD1b94e9101dCE39E63358Cf`, tier 1) sells through `@pop/checkout-sdk`: the store's own server signs each Offer with its own seller key and creates a single-use checkout session with its API key; the buyer pays on PoP's hosted checkout; PoP sends HMAC-signed webhooks; the store verifies the signature AND rechecks the order on-chain before changing its order book. Test USDT only (1.50 per order).
+| Step | Tx |
+|---|---|
+| Fund merchant wallet gas (0.02 WBT from deployer) | [`0xc86b5e40…0dbdc4`](https://explorer.testnet.whitechain.io/tx/0xc86b5e40896f36e1e64f399c31156c13914d8c160e99b2329baa50fdbc0dbdc4) |
+| `registerSeller` @kurta.co (attestor-signed) | [`0xc1094b7e…63c399`](https://explorer.testnet.whitechain.io/tx/0xc1094b7eee5bc018754b261fe4cbbc9a010dee23b7bc537e6e7d971e8463c399) |
+| Order #3 (session A) `pay` (block 12333158) | [`0x7bdbd73f…f40120`](https://explorer.testnet.whitechain.io/tx/0x7bdbd73f594d9bbf0a54f1bf9312e0473fa3622a87deb27c6c0f317e7ef40120) |
+| Order #3 `markShipped` (block 12333190) | [`0x2498e500…4d2316`](https://explorer.testnet.whitechain.io/tx/0x2498e50030094ac4a14fbf073eb49c364459067a7198bb98763740e5234d2316) |
+| Order #3 courier `confirmDelivery` (block 12333198) | [`0x0862f718…dabc20`](https://explorer.testnet.whitechain.io/tx/0x0862f7183450a4ecfa6c790269b2efa022e9bbef8e509cc7152e38c82edabc20) |
+| Order #3 `finalize` → OrderReleased (block 12333323) | [`0xe924962b…3163d0`](https://explorer.testnet.whitechain.io/tx/0xe924962b6eb53b871b60867d9f81f2c056cdc04606eb27744688db12ac3163d0) |
+| Order #4 (session B, never shipped) `pay` (block 12333174) | [`0x840d363c…02917e`](https://explorer.testnet.whitechain.io/tx/0x840d363c7da00e546c7524c26067c906622def0047490bcea41176191f02917e) |
+| Order #4 `finalize` → OrderRefunded (block 12333361) | [`0xdfc9bb74…84157b`](https://explorer.testnet.whitechain.io/tx/0xdfc9bb74441678acd4a5e73c8edb8b5f09c136eb8fa72c8ba7196acd9b84157b) |
+
+Webhooks for these orders (table `webhook_deliveries`, schema `public`): 6 rows (order #3: funded, shipped, delivered, released; order #4: funded, refunded), all `delivered` on the first attempt. The store's order book showed funded → shipped → delivered → released for #3 and funded → refunded for #4, each status set only after the signature check and the on-chain recheck. The same script also proves the refusals: no/wrong signature, a replayed (old) signature, a body changed after signing, a signed "refunded" for an order that is not refunded, a wrong amount, a mismatched merchantRef, a non-existent order id (all rejected, order book unchanged). The store reads its record directly (contract counters + Arkiv with its own key): 1 of 2 completed at that point. Order #4's 1.50 USDT refund is credited to the test buyer in the checkout (`withdraw` not called, kept for the next test).
+
 Re-run: `npx tsx scripts/smoke-whitechain.ts`
 
 ## Arkiv Rabdi (7794095)
