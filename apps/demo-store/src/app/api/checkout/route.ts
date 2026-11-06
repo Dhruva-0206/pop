@@ -5,11 +5,11 @@ import { PRODUCT } from "@/lib/product";
 
 /** "Pay with PoP", server side: create a checkout session (we sign the Offer with our own seller key) and hand back the hosted URL. */
 export async function POST(req: Request) {
-  const ref = orders.create(); // our own cart id; PoP echoes it in every webhook
+  const ref = await orders.create(); // our own cart id; PoP echoes it in every webhook
   const origin = process.env.KURTA_ORIGIN?.trim() || new URL(req.url).origin;
   try {
     const s = await getPop().createSession({ title: PRODUCT.title, priceInr: PRODUCT.priceInr, priceUsdt: PRODUCT.priceUsdt, merchantRef: ref, returnUrl: `${origin}/orders` });
-    orders.attach(ref, s.sessionId);
+    await orders.attach(ref, s.sessionId);
     return NextResponse.json({ url: s.url, ref });
   } catch (e) {
     console.error("[checkout]", e instanceof Error ? e.message : e);

@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   }
   try {
     const { state, amount } = await pop.confirmOnChain(ev);
-    const r = orders.apply(ev, state, formatUnits(amount, 6));
+    const r = await orders.apply(ev, state, formatUnits(amount, 6));
     return NextResponse.json({ ok: true, result: r, onChainState: state });
   } catch (e) {
     // Signed but the chain disagrees (or RPC trouble): do NOT update anything. 422 makes PoP retry a few times.

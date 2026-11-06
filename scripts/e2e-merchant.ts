@@ -8,6 +8,7 @@
  * Usage: npx tsx scripts/e2e-merchant.ts
  */
 import { createHmac } from "node:crypto";
+import pg from "pg";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parse } from "dotenv";
@@ -242,6 +243,34 @@ const db = createStore(mode);
 const merchant = (await db.merchants()).find((m) => m.sellerWallet.toLowerCase() === sellerWallet.account.address.toLowerCase())!;
 const rows = (await db.webhookDeliveries(merchant.id)).filter((r) => [A.id, B.id].map(String).includes(r.orderId));
 ok(rows.length === 6 && rows.every((r) => r.status === "delivered"), `webhook_deliveries: 6 rows (4 for A, 2 for B), all delivered (attempts ${rows.map((r) => r.attempts).join(",")})`);
+// per-merchant rate limit on session creation (counted in Postgres)
+await db.setMerchantRateLimit(merchant.id, 1);
+const rl = await http_(POP, "/api/v1/checkout-sessions", { body: {}, headers: { authorization: `Bearer ${API_KEY}` } });
+ok(rl.status === 429 && rl.headers.get("retry-after") === "60", "session creation over the merchant's per-minute limit is rejected (429, Retry-After)");
+const otherKey = await http_(POP, "/api/v1/checkout-sessions", { body: {}, headers: { authorization: "Bearer pop_test_wrongwrongwrongwrongwrong" } });
+ok(otherKey.status === 401, "the limit does not leak: a wrong key still gets 401, not 429");
+await db.setMerchantRateLimit(merchant.id, 30);
+const rl2 = await http_(POP, "/api/v1/checkout-sessions", { body: {}, headers: { authorization: `Bearer ${API_KEY}` } });
+ok(rl2.status === 400, "after restoring the limit the same call reaches validation again (400)");
+
+// the store's order book lives in Postgres and can be REBUILT from the chain: wipe A and B, age them, let reconcile heal them
+const kc = new pg.Client({ connectionString: need("DATABASE_URL"), ssl: { rejectUnauthorized: false } });
+await kc.connect();
+const KS = `kurta_${net.chain.id}`;
+const persisted = await kc.query(`select status, order_id from "${KS}".orders where ref = $1`, [A.ref]);
+ok(persisted.rows[0]?.status === "released" && String(persisted.rows[0].order_id) === A.id.toString(), "the store's order book is in Postgres (not memory): order A is stored as released");
+for (const r of [A.ref, B.ref]) {
+  await kc.query(`delete from "${KS}".order_events where ref = $1`, [r]);
+  await kc.query(`update "${KS}".orders set status = 'created', order_id = null, buyer = null, amount_usdt = null, updated_at = now() - interval '5 minutes' where ref = $1`, [r]);
+}
+await sleep(9000); // reconcile is throttled to once per 8 s
+const healed = await kurtaStatus(A.ref);
+const healedB = await kurtaStatus(B.ref);
+ok(healed?.status === "released" && healedB?.status === "refunded", "wiped order book rebuilt from chain events alone: A released, B refunded");
+const row = await kc.query(`select order_id from "${KS}".orders where ref = $1`, [A.ref]);
+ok(String(row.rows[0].order_id) === A.id.toString(), "rebuild found order A by keccak(ref) in OrderFunded.externalRef");
+await kc.end();
+
 const again = (await dispatch()).j;
 ok(again.enqueued === 0, "running the dispatcher again enqueues nothing new (idempotent)");
 

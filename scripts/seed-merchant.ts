@@ -49,8 +49,9 @@ setVar(STORE_ENV, "POP_BASE_URL", baseUrl);
 setVar(STORE_ENV, "POP_API_KEY", apiKey);
 setVar(STORE_ENV, "POP_WEBHOOK_SECRET", secret);
 setVar(STORE_ENV, "MERCHANT_PK", need("MERCHANT_PK"));
+setVar(STORE_ENV, "DATABASE_URL", need("DATABASE_URL")); // the store may use the same Supabase project (its own schema kurta_<chainId>)
 setVar(STORE_ENV, "POP_ATTESTOR_ADDRESS", opt("POP_ATTESTOR_ADDRESS") ?? "");
-console.log(`demo store env written: apps/demo-store/.env.local (names: POP_BASE_URL, POP_API_KEY, POP_WEBHOOK_SECRET, MERCHANT_PK, POP_ATTESTOR_ADDRESS). Add KURTA_ARKIV_ACCESS_KEY there (its own Arkiv key).`);
+console.log(`demo store env written: apps/demo-store/.env.local (names: POP_BASE_URL, POP_API_KEY, POP_WEBHOOK_SECRET, MERCHANT_PK, DATABASE_URL, POP_ATTESTOR_ADDRESS). Add KURTA_ARKIV_ACCESS_KEY there (its own Arkiv key).`);
 
 // ---- 2) register the merchant wallet as seller @kurta.co
 const dep = loadDeployment();

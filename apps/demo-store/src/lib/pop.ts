@@ -23,6 +23,17 @@ export function pinnedChain(): { id: number; rpcUrl: string; checkout: Address; 
   return undefined;
 }
 
+export type ChainInfo = { id: number; rpcUrl: string; checkout: Address; registry: Address; deployBlock: string };
+let remote: ChainInfo | undefined;
+/** Chain config: the pin if set, otherwise PoP's public /api/config (cached). */
+export async function chainInfo(): Promise<ChainInfo> {
+  const pin = pinnedChain();
+  if (pin) return pin;
+  if (remote) return remote;
+  const j = await (await fetch(`${POP_BASE_URL()}/api/config`, { cache: "no-store" })).json();
+  return (remote = { id: j.chainId, rpcUrl: j.rpcUrl, checkout: j.checkout, registry: j.registry, deployBlock: j.deployBlock ?? "0" });
+}
+
 let pop: PoP | undefined;
 export function getPop(): PoP {
   const pin = pinnedChain();

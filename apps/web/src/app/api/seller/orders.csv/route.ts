@@ -29,7 +29,7 @@ export async function GET() {
   if (!s) return new Response("sign in", { status: 401 });
   const seller = s.wallet as Address;
   const d = deployment();
-  const latest = await pub.getBlockNumber();
+  const latest = await pub.getBlockNumber({ cacheTime: 0 });
   const from = BigInt(d.deployBlock);
   const base = { address: d.checkout, abi: checkoutAbi } as const;
 

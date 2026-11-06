@@ -2,7 +2,7 @@ import "server-only";
 import { createPublicClient, http, type Address } from "viem";
 import { checkoutAbi, chunkedLogs, registryAbi } from "@pop/shared";
 import { readSellerReviews } from "@pop/shared/server/arkiv";
-import { POP_BASE_URL, pinnedChain } from "./pop";
+import { chainInfo } from "./pop";
 
 export type Reputation = {
   active: boolean;
@@ -22,18 +22,15 @@ export type Reputation = {
 export async function readReputation(seller: Address): Promise<Reputation> {
   const key = process.env.KURTA_ARKIV_ACCESS_KEY?.trim();
   const attestor = process.env.POP_ATTESTOR_ADDRESS?.trim() as Address | undefined;
-  const pin = pinnedChain();
-  const cfg = pin
-    ? { rpcUrl: pin.rpcUrl, checkout: pin.checkout, registry: pin.registry, deployBlock: pin.deployBlock }
-    : await (await fetch(`${POP_BASE_URL()}/api/config`, { cache: "no-store" })).json();
+  const cfg = await chainInfo();
   const pc = createPublicClient({ transport: http(cfg.rpcUrl) });
   const [active, completed, lostDisputes] = await Promise.all([
     pc.readContract({ address: cfg.registry, abi: registryAbi, functionName: "isActive", args: [seller] }),
     pc.readContract({ address: cfg.checkout, abi: checkoutAbi, functionName: "completed", args: [seller] }),
     pc.readContract({ address: cfg.checkout, abi: checkoutAbi, functionName: "lostDisputes", args: [seller] }),
   ]);
-  const tip = await pc.getBlockNumber();
-  const funded = await chunkedLogs(BigInt(cfg.deployBlock ?? "0"), tip, (fromBlock, toBlock) =>
+  const tip = await pc.getBlockNumber({ cacheTime: 0 });
+  const funded = await chunkedLogs(BigInt(cfg.deployBlock), tip, (fromBlock, toBlock) =>
     pc.getContractEvents({ address: cfg.checkout, abi: checkoutAbi, eventName: "OrderFunded", args: { seller }, fromBlock, toBlock }),
   );
   const out: Reputation = {

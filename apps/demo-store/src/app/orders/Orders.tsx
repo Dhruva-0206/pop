@@ -16,6 +16,7 @@ const LABEL: Record<string, string> = {
   delivered: "Delivered (code entered at the door)",
   released: "Complete: seller paid",
   refunded: "Refunded to you",
+  split: "Settled by the arbiter (split)",
 };
 
 export default function Orders() {
