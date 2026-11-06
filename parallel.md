@@ -197,13 +197,14 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 ## 3. Active claims
 | Agent or human | Task | Files claimed | Claimed at (IST) |
 |---|---|---|---|
+| agent 2 (second machine) | Merge badge-ux and copy-v2 into main, finish copy on onboard, verify, dashboard | apps/web/src/app/onboard/Onboard.tsx, apps/web/src/app/verify/[handle]/*, apps/web/src/app/dashboard/Dashboard.tsx, parallel.md | Fri 23:25 |
 
 ## 4. Locks
 | Lock | Holder | Since | Note |
 |---|---|---|---|
 | chain (Whitechain 1874 and Arkiv writes) | free | | |
-| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | free | | |
-| vercel (deploys and env changes) | free | | |
+| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | agent 2 | Fri 23:25 | gates for the merges |
+| vercel (deploys and env changes) | agent 2 | Fri 23:25 | production redeploys from the merges into main (no env changes) |
 
 ## 5. Requests between agents
 Format: `[Fri HH:MM IST] FROM -> TO: request`. The receiver replies indented under it and marks it DONE.
