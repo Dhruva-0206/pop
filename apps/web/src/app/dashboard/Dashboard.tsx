@@ -10,6 +10,7 @@ import { friendlyShipError } from "@/lib/client/errors";
 import { STATE_LABEL, countdown, short, usdt } from "@/lib/client/format";
 import { TestModeBanner } from "@/components/Banners";
 import { FinalizeButton } from "@/components/FinalizeButton";
+import { BadgeKit } from "@/components/BadgeKit";
 
 type Row = {
   orderId: string;
@@ -246,6 +247,7 @@ export default function Dashboard() {
               {r.live?.canFinalize && <FinalizeButton cfg={cfg} orderId={r.orderId} onDone={load} />}
             </div>
           ))}
+          {signedIn.handle && <BadgeKit handle={signedIn.handle} />}
         </>
       )}
       {msg && (
