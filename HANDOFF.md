@@ -206,10 +206,10 @@ If the fork restarts, run `npm run db:reset-fork` and then `npm run fork:up` aga
 
 | Sponsor | Status | Notes |
 |---|---|---|
-| **Whitechain** | ◐ | USDT `0xcedf…` read on-chain OK. Deploy dry-run on fork OK. **Not deployed to 1874; no real USDT payment yet.** Need WBT + USDT. |
+| **Whitechain** | ☑ deployed + verified | PoPCheckout `0xB6A894bE070951a7331DebFf615e11F7a076794c` and SellerRegistry `0x6D61cD77239dd61e43e943a4Aac006d8A6C285E5` on 1874, both verified on Blockscout. Real test-USDT order #1 (release) and #2 (late-ship refund) done; links in docs/evidence.md. **Do not redeploy** (it resets every seller's review history). Mentor question (gate 5) still open. |
 | **World** | ◐ code ready, never run | **World ID 4.0 proofs are one-time per (human, action)**, so there is **one portal action per seller**: `review-meera-jewels`, `review-kurta-co`, `review-demo-seller3` (map `WORLD_REVIEW_ACTIONS` in packages/shared). Signal = `keccak(orderId, buyer)`. Postgres `UNIQUE(nullifier_hash, seller_wallet)` is a second layer. Arkiv only ever gets `keccak(nullifier, seller)`. Verify endpoint: `POST https://developer.world.org/api/v4/verify/{rp_id}` (staging host UNVERIFIED). |
-| **Arkiv** | ◐ script ready, never run | `scripts/smoke-arkiv.ts`: create readonly `pop_review_v1` → query by creator → `changeOwnership` to buyer. Needs access key + tGLM. |
-| **Supabase** | ◐ | Migration written; `scripts/smoke-db.ts` ready. Not connected. |
+| **Arkiv** | ☑ smoke C passed; review pipeline built | readonly `pop_review_v1` created by the attestor and transferred to the buyer (keys in docs/evidence.md). Review path e2e-tested on the fork with the DEV skip-World flag. |
+| **Supabase** | ☑ | Postgres is the only store (`DATABASE_URL`); schema `public` = testnet, `pop_fork` = fork. `npm run db:migrate`. |
 
 ### Arkiv design (from the architecture doc)
 | Schema | Indexed fields | Flags | Owner | Expiry |
@@ -247,7 +247,7 @@ Readers trust only rows whose `$creator` is our attestor and, for reviews, only 
 - ✅ Local fork mode with real USDT bytecode, deploy + seed scripts
 - ✅ Rough pages: checkout, order, seller dashboard, courier, settle button
 - ✅ `scripts/e2e-fork.ts` passes (pay → confirm → ship → wrong code rejected → right code → finalize → seller withdraws 0.99; unshipped order refunded 1.00; handover refused → Disputed)
-- ◐ World, Arkiv and Supabase code written, never run (no keys)
+- ☑ Arkiv and Supabase run for real; ◐ World code written, real proof never run (portal actions not created)
 
 ## 10. What is LEFT
 
@@ -266,7 +266,7 @@ Readers trust only rows whose `$creator` is our attestor and, for reviews, only 
 ### Building (in this order)
 1. Run smoke C, D, E as soon as the keys land; log the results
 2. **Replace the JSON store with Supabase** (DONE Fri 6 Nov, see CLAUDE.md §8)
-3. Deploy + verify on 1874 (**ask the team first**) → one real USDT `pay` → save explorer links in `docs/evidence.md`
+3. ~~Deploy + verify on 1874~~ **DONE Fri 6 Nov** (addresses in the Whitechain row above, links in `docs/evidence.md`). Never redeploy without the team's approval.
 4. Review flow: World proof → order Released on-chain + buyer matches → `UNIQUE(nullifier, seller)` → Arkiv readonly review → `changeOwnership` to buyer
 5. `/verify/[handle]`: Arkiv + contract counters; red for unknown or banned
 6. **Kurta Co. demo store**: own Arkiv key, own merchant key, "Pay with PoP" in ~20 lines, `order.funded` webhook (HMAC) re-checked on-chain

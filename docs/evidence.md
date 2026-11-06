@@ -30,6 +30,17 @@ Seller @meera.jewels (tier 1) registered via an attestor-signed registration; li
 
 Result: seller received 0.990000 USDT, treasury (deployer) holds 0.01 USDT credit (1% fee), `totalLocked` = 0, checkout token balance = `totalCredit` = 0.01. `completed(seller)` = 1. `/api/verify/meera.jewels` shows 1 order, 1 released. Script: `scripts/testnet-order.ts` (testnet-only, guarded, run once).
 
+### Late-ship refund order (Fri 6 Nov, order #2, 1.00 test USDT)
+The seller never shipped; real time passed the ship-by deadline (180 s); a third party (the deployer wallet, not buyer, seller or courier) called `finalize`; the buyer withdrew the full refund. `OrderRefunded` reason 1 (no ship), amount 1000000 (1.000000 USDT), no fee.
+| Step | Tx |
+|---|---|
+| Buyer `approve` 1.00 USDT (block 12331733) | [`0xfd1b7227…5863f7`](https://explorer.testnet.whitechain.io/tx/0xfd1b7227c996bd03e5496490a7de72cd8f0985f87657f9c82ddb9583165863f7) |
+| Buyer `pay` (block 12331736) | [`0x924b43d9…b0bb50`](https://explorer.testnet.whitechain.io/tx/0x924b43d9454d01c9a9c3ab7116e1f5499f2a8f8f9bc743b0c3ce303fa4b0bb50) |
+| Anyone `finalize` after ship-by (block 12331922) → Refunded | [`0xa9d9489e…8f0278`](https://explorer.testnet.whitechain.io/tx/0xa9d9489ed3094a5497b3ff6982abf3ec7b5ddad3559423a6d3ad696aa28f0278) |
+| Buyer `withdraw` 1.00 USDT (block 12331926) | [`0xea25db67…03008e`](https://explorer.testnet.whitechain.io/tx/0xea25db67fa057553cd95c6915ac60fa04fab48e78b56d1be4fc28dacb403008e) |
+
+Result: buyer credit 0 → 1,000,000, then the buyer's USDT balance went back to 4.000000; `totalLocked` = 0. The seller was paid nothing and `completed(seller)` stays 1. Script: `scripts/testnet-refund.ts` (testnet-only, guarded, run once).
+
 Re-run: `npx tsx scripts/smoke-whitechain.ts`
 
 ## Arkiv Rabdi (7794095)
