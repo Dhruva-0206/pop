@@ -62,10 +62,10 @@ export const ARKIV_SMOKE = {
 
 /** Test counts as of the last full run. Re-run the commands to reproduce. */
 export const TEST_COUNTS = {
-  asOf: "Fri 6 Nov 2026 (night)",
+  asOf: "Fri 6 Nov 2026 (evening, re-run)",
   forge: "58 passed, 0 failed: 6 registry + 5 arbiter-timeout + 18 force-refund/self-purchase + 28 checkout, plus 1 invariant suite with 6 invariants (64 runs, 2048 calls)",
   forgeCmd: "cd contracts && forge test -vv   (Git Bash)",
-  e2eFork: "scripts/e2e-fork.ts: 65 checks on a local fork (payments, refunds, disputes, arbiter, onboarding, reviews, badge, pages)",
-  e2eMerchant: "scripts/e2e-merchant.ts: 48 checks on a local fork and 47 on Whitechain Sepolia in real time (sessions, signed webhooks and the refusals, the store reading Arkiv itself, CSV)",
+  e2eFork: "scripts/e2e-fork.ts: 66 checks on a local fork (payments, refunds, disputes, arbiter, onboarding, reviews, badge, pages)",
+  e2eMerchant: "scripts/e2e-merchant.ts: 48 checks on a local fork (re-run Fri 6 Nov evening) and 47 on Whitechain Sepolia in real time (earlier run) (sessions, signed webhooks and the refusals, the store reading Arkiv itself, CSV)",
   e2eCmd: "npx tsx scripts/e2e-fork.ts   ·   npx tsx scripts/e2e-merchant.ts",
 };
