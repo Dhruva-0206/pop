@@ -31,7 +31,14 @@ _TODO_ (see `specs/PoP_Technical_Architecture.md`).
 | `specs/` | Pre-build planning specs (AI and spec disclosure) |
 
 ## Deployed contracts and evidence
-_TODO_: see `docs/evidence.md`.
+Whitechain Sepolia (chain 1874), both **verified on Blockscout**. Test USDT only; nothing here has any value.
+| Contract | Address |
+|---|---|
+| PoPCheckout | [`0xB6A894bE070951a7331DebFf615e11F7a076794c`](https://explorer.testnet.whitechain.io/address/0xB6A894bE070951a7331DebFf615e11F7a076794c?tab=contract) |
+| SellerRegistry | [`0x6D61cD77239dd61e43e943a4Aac006d8A6C285E5`](https://explorer.testnet.whitechain.io/address/0x6D61cD77239dd61e43e943a4Aac006d8A6C285E5?tab=contract) |
+| Specified test USDT | [`0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7`](https://explorer.testnet.whitechain.io/address/0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7) |
+
+A full protected order (pay, ship, deliver with the buyer's code, finalize, withdraw) was run with the specified USDT: pay [`0xa59f9067…aa5da3`](https://explorer.testnet.whitechain.io/tx/0xa59f9067bf1d58c716809efe520a0666e4aacbca2dfea4a52b0ad8a79caa5da3), deliver [`0x2df7522a…a8c3de`](https://explorer.testnet.whitechain.io/tx/0x2df7522a98d718c38bf7771f48447eb13d2e6fe3e5ba8fb076afbf8968a8c3de), finalize [`0x38708e79…c51290`](https://explorer.testnet.whitechain.io/tx/0x38708e796235108faede33d124e92e9777478041de13bec3a1322393e8c51290), withdraw [`0xee21a184…b5306a`](https://explorer.testnet.whitechain.io/tx/0xee21a18433c0a018c24d749faddc6f19f7c58322b55a3c987fe52bddc9b5306a). Every tx link is in `docs/evidence.md`.
 
 ## Arkiv
 _TODO_: writer wallet + runnable query.

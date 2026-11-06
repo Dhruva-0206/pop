@@ -1,0 +1,10 @@
+{
+  "mode": "testnet",
+  "chainId": 1874,
+  "registry": "0x6D61cD77239dd61e43e943a4Aac006d8A6C285E5",
+  "checkout": "0xB6A894bE070951a7331DebFf615e11F7a076794c",
+  "token": "0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7",
+  "tokenDecimals": 6,
+  "deployBlock": "12330534",
+  "deployedAt": "2026-11-06T01:02:09.400Z"
+}
