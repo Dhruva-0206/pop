@@ -148,6 +148,9 @@ export default function Arbiter() {
 
       <section className="space-y-3">
         <h2>Disputes waiting for a decision ({disputes.length})</h2>
+        <p className="text-sm text-ink-2">
+          Policy: damaged or wrong item with an unboxing video link, full refund. Wrong size, the seller sends the right size and the buyer pays exchange shipping. Refused or changed mind with nothing wrong, the seller keeps the shipping cost both ways and the rest is refunded. No unboxing video, no claim for a damaged item.
+        </p>
         {disputes.length === 0 && <div className="text-sm text-muted">None right now.</div>}
         {disputes.map((d) => (
           <div key={d.orderId} className="card stack-sm text-sm">

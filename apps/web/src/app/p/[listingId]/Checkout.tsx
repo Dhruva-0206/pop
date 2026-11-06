@@ -261,6 +261,15 @@ export default function Checkout() {
                 <dt>If it&apos;s late</dt>
                 <dd>Full refund, automatically</dd>
               </div>
+              <div>
+                <dt>Returns</dt>
+                <dd>
+                  Damaged or wrong item: report it with an unboxing video link for a full refund.{" "}
+                  <Link href="/returns" target="_blank" rel="noreferrer">
+                    Read the returns policy (opens in a new tab)
+                  </Link>
+                </dd>
+              </div>
             </dl>
             <p className="text-sm text-muted">Demo timings are in minutes. Real orders use days.</p>
           </div>
