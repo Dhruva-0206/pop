@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { IDKitRequestWidget, proofOfHuman, type IDKitResult, type RpContext } from "@worldcoin/idkit";
 import { encodePacked, keccak256, type Address } from "viem";
 import type { AppConfig } from "@/lib/client/config";
 import { Notice, Skeleton } from "@/components/ui";
 import { getTestAccount } from "@/lib/client/wallet";
+import { reviewRefusal, widgetRefusal, type Refusal } from "@/lib/client/review-errors";
 import { REVIEW_TEXT_MAX, normaliseReviewText, reviewAuthMessage, reviewRetryMessage } from "@/lib/messages";
 
 type WorldCfg = { app_id: `app_${string}`; action: string; environment: "staging" | "production"; rp_context: RpContext };
@@ -24,6 +25,10 @@ export function ReviewBox({ cfg, orderId, sellerHandle }: { cfg: AppConfig; orde
   const [world, setWorld] = useState<WorldCfg | null>(null);
   const [open, setOpen] = useState(false);
   const [msg, setMsg] = useState("");
+  // Why the last attempt was refused. Kept on the page because the World widget only says "Verification declined" and then calls
+  // onError("failed_by_host_app") without our reason.
+  const [refusal, setRefusal] = useState<Refusal | null>(null);
+  const serverRefused = useRef(false);
   const [busy, setBusy] = useState(false);
 
   const buyer = getTestAccount(cfg, "buyer", false);
@@ -42,10 +47,11 @@ export function ReviewBox({ cfg, orderId, sellerHandle }: { cfg: AppConfig; orde
     return { ok: r.ok, status: r.status, j: await r.json().catch(() => ({})) };
   }
 
-  function report(j: { ok?: boolean; status?: string; error?: string; retry?: boolean }) {
+  function report(j: { ok?: boolean; status?: string; error?: string; retry?: boolean }, status = 0) {
+    setRefusal(null);
     if (j.ok && j.status === "synced") setMsg("Thanks. Your review is published.");
     else if (j.ok) setMsg("Your review was saved but publishing didn't finish. Press Try again.");
-    else setMsg(j.error ?? "The review was not submitted. Check your connection and try again.");
+    else setRefusal(reviewRefusal(status, j.error));
     refresh();
   }
 
@@ -53,9 +59,11 @@ export function ReviewBox({ cfg, orderId, sellerHandle }: { cfg: AppConfig; orde
     if (!buyer) return setMsg("Open this page on the device you paid from.");
     setBusy(true);
     setMsg("");
+    setRefusal(null);
+    serverRefused.current = false;
     try {
       const buyerSignature = await buyer.signMessage({ message: reviewAuthMessage(orderId, sellerHandle, rating, clean) });
-      const { j } = await post("/api/world/verify-review", {
+      const { j, status } = await post("/api/world/verify-review", {
         seller: sellerHandle,
         orderId,
         rating,
@@ -63,8 +71,14 @@ export function ReviewBox({ cfg, orderId, sellerHandle }: { cfg: AppConfig; orde
         buyerSignature,
         ...(proof ? { idkitResult: proof } : { skipWorld: true }),
       });
-      report(j);
-      if (!j.ok) throw new Error(j.error ?? "review failed");
+      report(j, status);
+      if (!j.ok) {
+        serverRefused.current = true; // the widget will now fail; keep OUR reason on screen
+        throw new Error(j.error ?? "review failed");
+      }
+    } catch (e) {
+      if (!serverRefused.current) setRefusal(reviewRefusal(0)); // no answer from our server (network), nothing was sent on
+      throw e;
     } finally {
       setBusy(false);
     }
@@ -72,12 +86,14 @@ export function ReviewBox({ cfg, orderId, sellerHandle }: { cfg: AppConfig; orde
 
   async function startWorld() {
     setMsg("");
+    setRefusal(null);
+    serverRefused.current = false;
     const res = await fetch("/api/world/rp-signature", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ seller: sellerHandle }),
     });
-    if (!res.ok) return setMsg((await res.json().catch(() => ({}))).error ?? "Reviews aren't available for this seller yet.");
+    if (!res.ok) return setRefusal(reviewRefusal(res.status, (await res.json().catch(() => ({}))).error ?? "reviews are not enabled for this seller"));
     setWorld(await res.json());
     setOpen(true);
   }
@@ -87,8 +103,8 @@ export function ReviewBox({ cfg, orderId, sellerHandle }: { cfg: AppConfig; orde
     setBusy(true);
     try {
       const buyerSignature = await buyer.signMessage({ message: reviewRetryMessage(orderId, sellerHandle) });
-      const { j } = await post("/api/reviews/retry", { seller: sellerHandle, orderId, buyerSignature });
-      report(j);
+      const { j, status } = await post("/api/reviews/retry", { seller: sellerHandle, orderId, buyerSignature });
+      report(j, status);
     } finally {
       setBusy(false);
     }
@@ -115,6 +131,12 @@ export function ReviewBox({ cfg, orderId, sellerHandle }: { cfg: AppConfig; orde
               {busy ? "Publishing, about 10 seconds" : "Try again to publish"}
             </button>
           </>
+        )}
+        {refusal && (
+          <Notice tone={refusal.tone} title={refusal.title}>
+            <span className="block">{refusal.body}</span>
+            <span className="block">{refusal.next}</span>
+          </Notice>
         )}
         {msg && (
           <p role="status" className="text-sm text-ink-2">
@@ -182,8 +204,17 @@ export function ReviewBox({ cfg, orderId, sellerHandle }: { cfg: AppConfig; orde
             await submit(result);
           }}
           onSuccess={() => setMsg("Verified. Publishing your review.")}
-          onError={(code) => setMsg(`World ID stopped with "${code}". Nothing was published. You can try again.`)}
+          onError={(code) => {
+            // If our server already gave the reason, never replace it with the widget's generic code.
+            if (!serverRefused.current) setRefusal(widgetRefusal(String(code)));
+          }}
         />
+      )}
+      {refusal && (
+        <Notice tone={refusal.tone} title={refusal.title}>
+          <span className="block">{refusal.body}</span>
+          <span className="block">{refusal.next}</span>
+        </Notice>
       )}
       {msg && (
         <p role="status" className="text-sm text-ink-2">
