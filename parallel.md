@@ -201,8 +201,8 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 ## 4. Locks
 | Lock | Holder | Since | Note |
 |---|---|---|---|
-| chain (Whitechain 1874 and Arkiv writes) | free | | |
-| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | free | | |
+| chain (Whitechain 1874 and Arkiv writes) | agent 2 (copy-v2) | Fri 23:35 | Arkiv only: one 24 h DEV review entity from e2e-fork with POP_DEV_SKIP_WORLD; no 1874 transactions |
+| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | agent 2 (copy-v2) | Fri 23:35 | copy-v2 gates on the fork |
 | vercel (deploys and env changes) | free | | |
 
 ## 5. Requests between agents
