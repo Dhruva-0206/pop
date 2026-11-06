@@ -202,7 +202,7 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 ## 4. Locks
 | Lock | Holder | Since | Note |
 |---|---|---|---|
-| chain (Whitechain 1874 and Arkiv writes) | free | | |
+| chain (Whitechain 1874 and Arkiv writes) | Dhruva's agent | Fri 12:09 | re-seed Kurta merchant row on public, live smoke (no transactions) |
 | fork (local anvil, schemas `pop_fork` and `kurta_31337`) | free | | |
 | vercel (deploys and env changes) | free | | |
 
