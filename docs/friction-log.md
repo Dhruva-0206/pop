@@ -26,3 +26,5 @@ Format: **[Sponsor] when (IST): title.** Expected / Actual / Repro / Workaround.
 - Fri 6 Nov night (World): the v4 verify endpoint answers a fake proof identically for an existing and a non-existent action (`all_verifications_failed`, `verification_failed: execution reverted (unknown custom error)`), so an integrator cannot test action setup without a real proof. The error-codes page has no "action not found".
 - Fri 6 Nov night (World): the docs we could read describe creating actions in the Developer Portal or with an MCP tool; no REST endpoint and no statement on dynamic action strings. One action per seller has to be created by hand.
 - Fri 6 Nov night (our tooling): `source .env` after `export NETWORK_MODE=testnet` silently switches a local server back to fork. Export after sourcing.
+
+- Fri 6 Nov night (tooling, not the apps): the browser automation tool cannot resize its viewport, so 375 px views were taken in an iframe of exact width; pages in the Next dev server did not hydrate inside that tab while production builds did, so screenshots come from `next build` + `next start`.

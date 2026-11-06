@@ -73,6 +73,6 @@ Testnet activity tonight: none. After you handed over the plan I sent no transac
 
 ## What I need from you when you wake (in this order)
 1. **World smoke D click-through** (5 minutes): the READY-TO-CLICK checklist under Step 1 above. It is the only gate-4 step left.
-2. **Read this file and the commits** (`git log --oneline`, about 12 commits since `677803f`). Anything you disagree with in the redesign is easy to change in one place: the tokens in `apps/web/src/app/globals.css` (and the store's copy).
+2. **Read this file and the commits** (`git log --oneline`, 7 commits since `677803f`). Anything you disagree with in the redesign is easy to change in one place: the tokens in `apps/web/src/app/globals.css` (and the store's copy).
 3. **Decide**: gate 5 mentor answer; go or no-go for the two Vercel projects (`docs/deployment.md`); whether to run `seed-demo.ts` on testnet (about 15 test transactions, 0.02 WBT, run it 3 to 5 minutes before each demo segment).
 4. **Things you may not expect**: the whole UI is now light only (the old dark theme had unreadable text); the nav only shows "Sell with PoP" and "Proof" and the team tools moved to the landing page footer section; page titles are now sentence case; the Kurta store has its own terracotta accent, deliberately different from PoP's green; the README now says the deployer wallet holds an admin role that can grant and revoke roles.
