@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { short, when } from "@/lib/client/format";
 import { useConfig } from "@/lib/client/config";
 import { TestModeBanner } from "@/components/Banners";
+import { Details, ErrorBox, Notice, PageSkeleton } from "@/components/ui";
 
 type Review = { key: string; orderId: string; rating: number; createdAt: number; text: string; owner: string };
 type Ok = {
@@ -29,8 +31,8 @@ type Ok = {
 };
 type NotOk = { registered: false; handle: string; reason: "unknown" | "banned" };
 
-const TIER = ["Unverified handle", "Handle checked by PoP staff", "Handle cryptographically proven"];
-const stars = (n: number) => "★".repeat(n) + "☆".repeat(5 - n);
+const TIER = ["Handle not checked", "Handle checked by PoP staff", "Handle proven cryptographically"];
+const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
 export default function Verify() {
   const { handle } = useParams<{ handle: string }>();
@@ -42,27 +44,32 @@ export default function Verify() {
     fetch(`/api/verify/${encodeURIComponent(handle)}`, { cache: "no-store" })
       .then(async (r) => {
         if (r.status === 404 || r.ok) setData(await r.json());
-        else setErr("Couldn't load this seller record. Try again in a moment.");
+        else setErr("The seller record service answered with an error.");
       })
-      .catch(() => setErr("Couldn't load this seller record. Try again in a moment."));
+      .catch(() => setErr("The request did not reach the server."));
   }, [handle]);
 
-  if (err) return <main className="mx-auto max-w-md p-6 text-red-700">{err}</main>;
-  if (!data) return <main className="mx-auto max-w-md p-6 text-neutral-500">Checking @{handle}…</main>;
+  if (err) {
+    return (
+      <div className="page stack">
+        <ErrorBox what="Couldn't load this seller record." why={err} next="Refresh the page in a minute. If it keeps failing, don't pay this seller yet." />
+      </div>
+    );
+  }
+  if (!data) return <PageSkeleton />;
 
   if (!data.registered) {
     return (
-      <main className="mx-auto max-w-md space-y-4 p-4">
+      <div className="page stack">
         <TestModeBanner cfg={cfg} />
-        <div className="space-y-2 rounded-xl border-2 border-red-600 bg-red-50 p-5 text-red-900">
-          <div className="text-2xl font-bold">Not a registered seller</div>
-          <div>
-            <span className="font-mono">@{data.handle}</span> is not a registered PoP seller
-            {data.reason === "banned" ? ", and this handle has been banned" : ""}.
-          </div>
-          <div className="text-sm">Do not pay this seller through PoP. Orders from them cannot be protected.</div>
+        <div role="alert" className="notice notice-danger stack-sm">
+          <h1 className="text-danger">Not a registered seller</h1>
+          <p>
+            <span className="mono">@{data.handle}</span> is not a registered PoP seller{data.reason === "banned" ? ", and this handle has been banned" : ""}.
+          </p>
+          <p>Do not pay this seller through PoP. Orders from them cannot be protected.</p>
         </div>
-      </main>
+      </div>
     );
   }
 
@@ -74,78 +81,73 @@ export default function Verify() {
   const b = c.breakdown;
 
   return (
-    <main className="mx-auto max-w-md space-y-4 p-4">
+    <div className="page stack">
       <TestModeBanner cfg={cfg} />
 
-      <div className="space-y-1 rounded-xl border-2 border-emerald-500 bg-emerald-50 p-4">
-        <div className="text-xl font-bold">@{data.handle} is a registered PoP seller</div>
-        <div className="text-sm">{TIER[data.handleTier] ?? "Unknown"}</div>
-        <div className="font-mono text-xs text-neutral-500">wallet {short(data.wallet)}</div>
-      </div>
+      <section className="stack-sm">
+        <h1>@{data.handle}</h1>
+        <Notice tone="info" title="Registered PoP seller">
+          {TIER[data.handleTier] ?? "Handle check unknown"}.
+        </Notice>
+      </section>
 
-      <div className="space-y-2 rounded-xl border p-4 text-sm">
-        <div className="font-semibold">Protected orders (read from the contract)</div>
-        <div>
-          <span className="text-lg font-semibold">{completed}</span> of {total} protected order{total === 1 ? "" : "s"} completed
-        </div>
-        <div>
-          <span className="font-semibold">{lost}</span> of {total} were disputes the buyer won
-        </div>
+      <section aria-labelledby="orders" className="card stack-sm">
+        <h2 id="orders">Protected orders</h2>
+        <p className="text-sm text-muted">Read from the contract, not from the seller.</p>
+        <p className="text-2xl font-semibold">
+          {completed} of {total} <span className="text-base font-normal text-ink-2">{plural(total, "order completed", "orders completed")}</span>
+        </p>
+        <p>
+          <strong>{lost}</strong> of {total} {plural(total, "was a dispute", "were disputes")} the buyer won.
+        </p>
         {b && total > 0 && (
-          <div className="text-xs text-neutral-600">
-            Of {total}: {b.released} paid out · {b.refunded} refunded · {b.split} split · {b.open} still in progress
-          </div>
+          <p className="text-sm text-ink-2">
+            Of {total}: {b.released} paid out, {b.refunded} refunded, {b.split} split, {b.open} still in progress.
+          </p>
         )}
-        {total === 0 && <div className="text-xs text-neutral-600">No protected orders yet.</div>}
-      </div>
+        {total === 0 && <p className="text-sm text-ink-2">No protected orders yet.</p>}
+      </section>
 
-      <div className="space-y-2 rounded-xl border p-4 text-sm">
-        <div className="font-semibold">Reviews from verified humans (read from Arkiv)</div>
-        {rv.error && <div className="text-amber-700">{rv.error}</div>}
-        {!rv.error && rv.verified.count === 0 && <div className="text-neutral-600">No reviews yet.</div>}
+      <section aria-labelledby="reviews" className="card stack-sm">
+        <h2 id="reviews">Reviews from verified people</h2>
+        <p className="text-sm text-muted">Stored on Arkiv. One review per person per seller, and only after a completed order.</p>
+        {rv.error && <Notice tone="warn">{rv.error} The counts above are still correct.</Notice>}
+        {!rv.error && rv.verified.count === 0 && <p className="text-ink-2">No reviews yet. The first buyer to complete an order can leave one.</p>}
         {rv.verified.count > 0 && (
           <>
-            <div>
-              <span className="text-lg font-semibold">{rv.verified.average?.toFixed(1)}</span> / 5 from {rv.verified.count} review
-              {rv.verified.count === 1 ? "" : "s"}
-            </div>
-            <div className="text-xs text-neutral-600">
-              {rv.verified.count} review{rv.verified.count === 1 ? "" : "s"} from {completed} completed order{completed === 1 ? "" : "s"}.
-              One review per person per seller.
-            </div>
-            <ul className="space-y-2">
+            <p className="text-2xl font-semibold">
+              {rv.verified.average?.toFixed(1)} <span className="text-base font-normal text-ink-2">out of 5, from {rv.verified.count} {plural(rv.verified.count, "review", "reviews")}</span>
+            </p>
+            <ul className="stack-sm">
               {rv.verified.items.map((r) => (
-                <li key={r.key} className="rounded border p-2">
-                  <div className="text-amber-600" aria-label={`${r.rating} out of 5`}>
-                    {stars(r.rating)}
-                  </div>
-                  {r.text && <div className="whitespace-pre-wrap">{r.text}</div>}
-                  <div className="text-xs text-neutral-500">
-                    Order #{r.orderId} · {when(r.createdAt)} · entry {short(r.key)}
-                  </div>
+                <li key={r.key} className="rounded-control border p-3">
+                  <p className="font-semibold">{r.rating} out of 5</p>
+                  {r.text && <p className="whitespace-pre-wrap break-words">{r.text}</p>}
+                  <p className="mono text-xs text-muted">
+                    Order #{r.orderId}, {when(r.createdAt)}, entry {short(r.key)}
+                  </p>
                 </li>
               ))}
             </ul>
           </>
         )}
         {rv.dev.count > 0 && (
-          <div className="rounded border border-dashed border-neutral-400 bg-neutral-50 p-2 text-xs text-neutral-600">
-            {rv.dev.count} developer test review{rv.dev.count === 1 ? "" : "s"} written without a World ID proof. Not counted above.
-          </div>
+          <Notice tone="warn">
+            {rv.dev.count} developer test {plural(rv.dev.count, "review was", "reviews were")} written without a World ID proof. {plural(rv.dev.count, "It is", "They are")} not counted above.
+          </Notice>
         )}
-        {(rv.ignoredUnmatched ?? 0) > 0 && (
-          <div className="text-xs text-neutral-500">
-            {rv.ignoredUnmatched} entries ignored because their payment is not a protected order on this contract.
-          </div>
-        )}
-        {rv.ignoredNotReadonly > 0 && (
-          <div className="text-xs text-neutral-500">{rv.ignoredNotReadonly} entries ignored because they were not locked (readonly).</div>
-        )}
-      </div>
-
-      <div className="text-xs text-neutral-500">
-        Reviews are only counted if PoP&apos;s writer wallet {short(data.attestor)} created them and they are locked (readonly) on Arkiv.
-      </div>
-    </main>
+        <Details summary="Show details">
+          <p>Seller wallet: <span className="mono">{short(data.wallet)}</span></p>
+          <p>
+            A review counts only if PoP&apos;s writer wallet <span className="mono">{short(data.attestor)}</span> created it, it is locked (read-only) on Arkiv, and its payment is a real order on this contract.
+          </p>
+          {(rv.ignoredUnmatched ?? 0) > 0 && <p>{rv.ignoredUnmatched} entries ignored because their payment is not a protected order on this contract.</p>}
+          {rv.ignoredNotReadonly > 0 && <p>{rv.ignoredNotReadonly} entries ignored because they were not locked.</p>}
+          <p>
+            <Link href="/proof">See the proof page</Link>
+          </p>
+        </Details>
+      </section>
+    </div>
   );
 }

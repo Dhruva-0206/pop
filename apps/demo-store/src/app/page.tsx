@@ -1,28 +1,41 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
-import Link from "next/link";
 import { getPop } from "@/lib/pop";
 import { readReputation } from "@/lib/reputation";
 import { PRODUCT } from "@/lib/product";
+import { Notice, Skeleton } from "@/components/ui";
 import PayButton from "./PayButton";
 
 export default function Home() {
   return (
-    <main className="mx-auto flex max-w-xl flex-1 flex-col justify-center gap-4 p-6">
-      <div className="rounded bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">TEST MODE · test USDT has no value</div>
-      <p className="text-sm font-semibold uppercase tracking-wide text-orange-700">Kurta Co.</p>
-      <h1 className="text-3xl font-bold">
-        {PRODUCT.title} · ₹{PRODUCT.priceInr.toLocaleString("en-IN")}
-      </h1>
-      <p className="text-neutral-600">{PRODUCT.priceUsdt} test USDT at the demo rate. Ships within 3 minutes (demo timings), or you are refunded automatically.</p>
-      <Suspense fallback={<div className="rounded-xl border p-4 text-sm text-neutral-500">Loading our record…</div>}>
+    <div className="page stack">
+      <Notice tone="warn">
+        <strong>TEST MODE</strong> Test USDT has no value. Nothing here is a real payment.
+      </Notice>
+
+      <section className="stack-sm">
+        <h1>{PRODUCT.title}</h1>
+        <p className="text-2xl font-semibold">
+          ₹{PRODUCT.priceInr.toLocaleString("en-IN")} <span className="text-base font-normal text-ink-2">({PRODUCT.priceUsdt} test USDT at the demo rate)</span>
+        </p>
+        <p className="prose-width text-ink-2">A demo product from Kurta Co., made up for this hackathon. There is no real kurta and nothing will be shipped.</p>
+      </section>
+
+      <section aria-labelledby="protect" className="card stack-sm">
+        <h2 id="protect">How your payment is protected</h2>
+        <ul className="list-disc space-y-1 pl-5 text-ink-2">
+          <li>Your payment goes into a PoP contract, not to us.</li>
+          <li>If we don&apos;t ship within 3 minutes, you are refunded automatically. (Demo timing. Real orders use days.)</li>
+          <li>We are paid only when you give the delivery code at your door.</li>
+        </ul>
+      </section>
+
+      <Suspense fallback={<Skeleton className="h-32 w-full" />}>
         <Record />
       </Suspense>
+
       <PayButton />
-      <Link href="/orders" className="text-sm underline">
-        My orders
-      </Link>
-    </main>
+    </div>
   );
 }
 
@@ -33,26 +46,26 @@ async function Record() {
   try {
     rep = await readReputation(getPop().account.address);
   } catch {
-    return <div className="rounded-xl border p-4 text-sm text-neutral-500">Our protected record is unavailable right now.</div>;
+    return <Notice tone="warn">Our protected record is unavailable right now. You can still check it at PoP&apos;s proof page.</Notice>;
   }
   return (
-    <div className="space-y-1 rounded-xl border p-4 text-sm">
-      <div className="font-semibold">Our protected record</div>
-      <div>
-        {rep.completed} of {rep.totalOrders} protected orders completed · {rep.lostDisputes} disputes lost
-      </div>
-      <div>
+    <section aria-labelledby="record" className="card stack-sm">
+      <h2 id="record">Our record</h2>
+      <p>
+        <strong>{rep.completed}</strong> of {rep.totalOrders} protected orders completed, <strong>{rep.lostDisputes}</strong> disputes lost.
+      </p>
+      <p>
         {rep.reviews.count > 0
-          ? `${rep.reviews.average?.toFixed(1)} / 5 from ${rep.reviews.count} verified-human review${rep.reviews.count === 1 ? "" : "s"}`
-          : "No verified-human reviews yet"}
-      </div>
+          ? `${rep.reviews.average?.toFixed(1)} out of 5 from ${rep.reviews.count} ${rep.reviews.count === 1 ? "review" : "reviews"} by verified people.`
+          : "No reviews by verified people yet."}
+      </p>
       {rep.reviews.latest.map((r) => (
-        <div key={r.createdAt} className="text-neutral-600">
-          {"★".repeat(r.rating)} {r.text}
-        </div>
+        <p key={r.createdAt} className="rounded-control border p-3">
+          <span className="font-semibold">{r.rating} out of 5.</span> {r.text}
+        </p>
       ))}
-      {rep.error && <div className="text-xs text-neutral-500">{rep.error}</div>}
-      <div className="text-xs text-neutral-500">Read directly from the contracts and Arkiv by this store. Reviews count only if tied to a real payment.</div>
-    </div>
+      {rep.error && <p className="text-sm text-muted">{rep.error}</p>}
+      <p className="text-sm text-muted">This store reads these numbers itself, from the contracts and from Arkiv. A review counts only if it is tied to a real payment.</p>
+    </section>
   );
 }

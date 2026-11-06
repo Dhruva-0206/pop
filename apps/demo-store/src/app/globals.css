@@ -1,26 +1,373 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Design tokens (see docs/design-tokens.md). Components use ONLY these tokens: the default Tailwind palette, radii and shadows
+ * are removed below, so a stray `bg-emerald-600` or `shadow-lg` renders as nothing and shows up in review.
+ * apps/demo-store/src/app/globals.css is the same file with its own accent color.
+ */
+@theme {
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-bg: #ffffff;
+  --color-surface: #f6f7f9;
+  --color-line: #dadce3;
+  --color-line-strong: #7a7f8e;
+  --color-ink: #0b1020;
+  --color-ink-2: #3d4354;
+  --color-muted: #596072;
+  --color-accent: #9a3412;
+  --color-accent-strong: #7c2a0e;
+  --color-accent-soft: #fdeee5;
+  --color-warn: #7a4b00;
+  --color-warn-soft: #fff4d6;
+  --color-danger: #a31515;
+  --color-danger-soft: #fdecec;
+  --color-focus: #1d4ed8;
+
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius-*: initial;
+  --radius-control: 12px;
+  --radius-card: 16px;
+  --shadow-*: initial;
+
+  --text-*: initial;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.875rem;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 2.25rem;
+  --text-3xl: 2.25rem;
+  --text-3xl--line-height: 2.75rem;
+
+  --container-page: 40rem;
+  --container-wide: 56rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-line);
+  }
+  html {
+    color-scheme: light;
+  }
+  body {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--color-ink);
+  }
+  h1 {
+    font-size: 1.375rem;
+    line-height: 1.875rem;
+  }
+  h2 {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+  h3 {
+    font-size: 1rem;
+    line-height: 1.5rem;
+    letter-spacing: -0.01em;
+  }
+  @media (min-width: 768px) {
+    h1 {
+      font-size: 1.75rem;
+      line-height: 2.25rem;
+    }
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  a {
+    color: var(--color-accent-strong);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  code,
+  pre,
+  .mono {
+    font-family: var(--font-mono);
+  }
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+  }
+  table {
+    border-collapse: collapse;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* layout */
+  .page {
+    margin-inline: auto;
+    width: 100%;
+    max-width: var(--container-page);
+    padding: 1.5rem 1rem 3rem;
+  }
+  .page-wide {
+    margin-inline: auto;
+    width: 100%;
+    max-width: var(--container-wide);
+    padding: 1.5rem 1rem 3rem;
+  }
+  @media (min-width: 768px) {
+    .page,
+    .page-wide {
+      padding: 2.5rem 1.5rem 4rem;
+    }
+  }
+  .stack > * + * {
+    margin-top: 1.5rem;
+  }
+  .stack-sm > * + * {
+    margin-top: 0.5rem;
+  }
+  .prose-width {
+    max-width: 65ch;
+  }
+
+  /* surfaces */
+  .card {
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    padding: 1rem;
+    background: var(--color-bg);
+  }
+  @media (min-width: 768px) {
+    .card {
+      padding: 1.5rem;
+    }
+  }
+  .panel {
+    border-radius: var(--radius-card);
+    padding: 1rem;
+    background: var(--color-surface);
+  }
+
+  /* buttons: 44 px high, 12 px radius, 150 ms color transitions */
+  .btn {
+    display: inline-flex;
+    min-height: 44px;
+    min-width: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-control);
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+      color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .btn:disabled,
+  .btn[aria-disabled="true"] {
+    cursor: not-allowed;
+    background: var(--color-surface);
+    border-color: var(--color-line);
+    color: var(--color-muted);
+  }
+  .btn-primary {
+    background: var(--color-accent);
+    color: var(--color-white);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-accent-strong);
+  }
+  .btn-secondary {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    border-color: var(--color-line-strong);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--color-surface);
+  }
+  .btn-danger {
+    background: var(--color-danger);
+    color: var(--color-white);
+  }
+  .btn-danger:hover:not(:disabled) {
+    filter: brightness(0.9);
+  }
+  .btn-block {
+    width: 100%;
+  }
+  .btn-sm {
+    min-height: 44px;
+    padding-inline: 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  /* forms */
+  .label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+  .hint {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--color-muted);
+  }
+  .field {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-control);
+    background: var(--color-bg);
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    color: var(--color-ink);
+    transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .field::placeholder {
+    color: var(--color-muted);
+  }
+  .field[aria-invalid="true"] {
+    border-color: var(--color-danger);
+  }
+
+  /* status messages: always words, never color alone */
+  .notice {
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  .notice-info {
+    background: var(--color-accent-soft);
+    border-color: var(--color-accent);
+    color: var(--color-accent-strong);
+  }
+  .notice-warn {
+    background: var(--color-warn-soft);
+    border-color: var(--color-warn);
+    color: var(--color-warn);
+  }
+  .notice-danger {
+    background: var(--color-danger-soft);
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+  }
+  .notice strong {
+    font-weight: 600;
+  }
+
+  /* loading */
+  .skeleton {
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    50% {
+      opacity: 0.55;
+    }
+  }
+
+  /* progress: a bar plus a numbered step list (see Progress in components/ui.tsx) */
+  .bar {
+    height: 8px;
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+    overflow: hidden;
+  }
+  .bar > span {
+    display: block;
+    height: 100%;
+    background: var(--color-accent);
+    transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* tables stay inside their own scroll area on small screens */
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table-scroll table {
+    width: 100%;
+    min-width: 36rem;
+    text-align: left;
+    font-size: 0.875rem;
+  }
+  .table-scroll th {
+    padding: 0.5rem 0.75rem 0.5rem 0;
+    font-weight: 600;
+    color: var(--color-ink-2);
+    border-bottom: 1px solid var(--color-line-strong);
+  }
+  .table-scroll td {
+    padding: 0.5rem 0.75rem 0.5rem 0;
+    border-bottom: 1px solid var(--color-line);
+    vertical-align: top;
+  }
+
+  /* wordmark: our own small mark (two squares) next to the name */
+  .mark {
+    position: relative;
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--color-accent);
+  }
+  .mark::after {
+    content: "";
+    position: absolute;
+    inset: 6px 6px 6px 6px;
+    border-radius: 2px;
+    background: var(--color-white);
+  }
+
+  details > summary {
+    cursor: pointer;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    color: var(--color-accent-strong);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
 }

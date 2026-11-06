@@ -14,13 +14,13 @@
 - **Scaling limit (honest):** one portal action per seller doesn't scale to thousands of sellers by hand. The docs list a create-action API (`POST /api/v2/create-action/{app_id}`) and an MCP tool `create_world_id_action`, but don't say whether they apply to 4.0 RPs. Top improvement request: documented dynamic/scoped actions (e.g. action prefix + suffix) for marketplaces.
 
 ## Timeline
-- Thu 23:55: read 4.x docs; found the v1–v3 → 4.0 breaking changes (RP signature, `IDKitRequestWidget`, v4 verify).
+- Thu 23:55: read 4.x docs; found the v1, v3 → 4.0 breaking changes (RP signature, `IDKitRequestWidget`, v4 verify).
 - Fri 00:28: server routes + dev page built against `@worldcoin/idkit` 4.6.0.
 - Fri 01:05: switched to one action per seller (above).
 - Time to first successful verification: _pending the human simulator step (see docs/OVERNIGHT.md)_. From the first docs read (Thu 23:55) to a signed request that World's verify host accepts structurally: about 9 hours of wall clock, mostly waiting for a person to create the portal app, rp_id, signing key and actions.
 
 ## Friction
-See `docs/friction-log.md` [World] entries: v4 breaking changes with v1–v3 tutorials still common; signal check helper (`hashSignal`) not in the docs; "max verifications" undocumented for 4.0; whether `nullifier_replayed` is raised by World or only by the app is unclear; npm page blocked automated fetches (403).
+See `docs/friction-log.md` [World] entries: v4 breaking changes with v1, v3 tutorials still common; signal check helper (`hashSignal`) not in the docs; "max verifications" undocumented for 4.0; whether `nullifier_replayed` is raised by World or only by the app is unclear; npm page blocked automated fetches (403).
 
 ## Most impactful improvement
 _Draft._ Let an RP create and name actions through a documented API, or accept a counterparty-scoped action string, so a marketplace can scope uniqueness per seller without hand-creating one portal action per seller. Second: return a distinct code for an unknown action (today a fake proof gets the same `verification_failed` whether the action exists or not).

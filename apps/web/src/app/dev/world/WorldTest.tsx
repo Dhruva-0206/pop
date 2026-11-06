@@ -13,12 +13,12 @@ const SELLER = "meera.jewels";
 export default function WorldTest() {
   const { cfg } = useConfig();
   const [orderId, setOrderId] = useState("1");
-  if (!cfg) return <div className="text-sm text-neutral-500">Loading…</div>;
+  if (!cfg) return <div className="text-sm text-muted">Loading…</div>;
   return (
     <div className="space-y-4">
       <label className="block text-sm">
         Released order id (seller @{SELLER}){" "}
-        <input className="w-24 rounded border p-1" value={orderId} onChange={(e) => setOrderId(e.target.value.trim())} />
+        <input className="field w-24" value={orderId} onChange={(e) => setOrderId(e.target.value.trim())} />
       </label>
       {/^\d+$/.test(orderId) && <ReviewBox key={orderId} cfg={cfg} orderId={orderId} sellerHandle={SELLER} />}
     </div>

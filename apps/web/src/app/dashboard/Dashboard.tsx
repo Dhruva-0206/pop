@@ -127,26 +127,26 @@ export default function Dashboard() {
     }
   }
 
-  if (!cfg) return <main className="mx-auto max-w-2xl p-6 text-neutral-500">Loading…</main>;
+  if (!cfg) return <div className="page-wide stack">Loading…</div>;
 
   return (
-    <main className="mx-auto max-w-2xl space-y-4 p-4">
+    <div className="page-wide stack">
       <TestModeBanner cfg={cfg} />
       <h1 className="text-xl font-semibold">Seller dashboard{signedIn?.handle ? ` · @${signedIn.handle}` : ""}</h1>
 
       {!signedIn && (
-        <div className="space-y-2 rounded-xl border p-4 text-sm">
+        <div className="card stack-sm text-sm">
           {addr ? (
             <div>
               Seller test wallet in this browser: <span className="font-mono">{short(addr)}</span>{" "}
-              <button className="text-xs underline" onClick={() => { forgetTestKey(cfg, "seller"); setAddr(""); }}>forget</button>
+              <button className="btn btn-secondary btn-sm" onClick={() => { forgetTestKey(cfg, "seller"); setAddr(""); }}>forget</button>
             </div>
           ) : (
             <div className="space-y-1">
               <div>TEST MODE: paste the demo seller&apos;s test key (kept only in this browser).</div>
-              <input className="w-full rounded border p-2 font-mono text-xs" type="password" value={keyInput} onChange={(e) => setKeyInput(e.target.value)} placeholder="0x…" />
+              <input className="field mono" type="password" value={keyInput} onChange={(e) => setKeyInput(e.target.value)} placeholder="0x…" aria-label="0x…" />
               <button
-                className="rounded bg-neutral-800 px-3 py-1 text-white"
+                className="btn btn-primary"
                 onClick={() => {
                   try {
                     importTestKey(cfg, "seller", keyInput);
@@ -161,7 +161,7 @@ export default function Dashboard() {
               </button>
             </div>
           )}
-          <button disabled={!addr} onClick={signIn} className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white disabled:opacity-50">
+          <button disabled={!addr} onClick={signIn} className="btn btn-primary">
             Sign in (signature only, moves no money)
           </button>
         </div>
@@ -169,47 +169,47 @@ export default function Dashboard() {
 
       {signedIn && (
         <>
-          <div className="flex items-center justify-between rounded-xl border p-4">
+          <div className="card flex items-center justify-between">
             <div>
-              <div className="text-sm text-neutral-500">Ready to withdraw</div>
+              <div className="text-sm text-muted">Ready to withdraw</div>
               <div className="text-xl font-semibold">{usdt(credit, cfg.tokenDecimals)} test USDT</div>
             </div>
-            <button disabled={busy || credit === BigInt(0)} onClick={withdraw} className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white disabled:opacity-50">
+            <button disabled={busy || credit === BigInt(0)} onClick={withdraw} className="btn btn-primary">
               Withdraw
             </button>
           </div>
 
-          <a href="/api/seller/orders.csv" download className="inline-block rounded-lg border px-3 py-1.5 text-sm font-semibold">
+          <a href="/api/seller/orders.csv" download className="btn btn-secondary">
             Export orders (CSV with tx hashes)
           </a>
-          {rows.length === 0 && <div className="text-sm text-neutral-500">No orders yet.</div>}
+          {rows.length === 0 && <div className="text-sm text-muted">No orders yet.</div>}
           {rows.map((r) => (
-            <div key={r.orderId} className="space-y-2 rounded-xl border p-4 text-sm">
+            <div key={r.orderId} className="card stack-sm text-sm">
               <div className="flex justify-between">
                 <span className="font-semibold">Order #{r.orderId}</span>
                 <span>{usdt(r.amountUnits, cfg.tokenDecimals)} test USDT</span>
               </div>
               <div>{r.live ? STATE_LABEL[r.live.state] ?? r.live.state : "?"}</div>
               {r.delivery && (
-                <div className="rounded bg-neutral-50 p-2 text-xs">
+                <div className="rounded-control bg-surface p-2 text-xs">
                   Ship to: {r.delivery.name} · {r.delivery.phone}
                   <br />
                   {r.delivery.address}
                 </div>
               )}
-              {r.courierStatus && <div className="text-xs text-neutral-500">Courier (simulated): {r.courierStatus}</div>}
+              {r.courierStatus && <div className="text-xs text-muted">Courier (simulated): {r.courierStatus}</div>}
               {r.live?.state === "Funded" && (
                 <div className="flex gap-2">
                   <input
-                    className="flex-1 rounded border p-2"
-                    placeholder="Tracking number"
+                    className="field flex-1"
+                    placeholder="Tracking number" aria-label="Tracking number"
                     value={tracking[r.orderId] ?? ""}
                     onChange={(e) => setTracking({ ...tracking, [r.orderId]: e.target.value })}
                   />
-                  <button disabled={busy} onClick={() => ship(r.orderId)} className="rounded bg-neutral-900 px-3 text-white">
+                  <button disabled={busy} onClick={() => ship(r.orderId)} className="btn btn-primary">
                     Mark shipped
                   </button>
-                  <span className="self-center text-xs text-neutral-500">ship within {countdown(r.live.shipBy, r.live.now)}</span>
+                  <span className="self-center text-xs text-muted">ship within {countdown(r.live.shipBy, r.live.now)}</span>
                 </div>
               )}
               {r.live?.canFinalize && <FinalizeButton cfg={cfg} orderId={r.orderId} onDone={load} />}
@@ -217,7 +217,11 @@ export default function Dashboard() {
           ))}
         </>
       )}
-      {msg && <div className="text-sm text-neutral-700">{msg}</div>}
-    </main>
+      {msg && (
+        <p role="status" className="text-sm text-ink-2">
+          {msg}
+        </p>
+      )}
+    </div>
   );
 }

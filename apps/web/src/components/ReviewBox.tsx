@@ -5,6 +5,7 @@ import Link from "next/link";
 import { IDKitRequestWidget, proofOfHuman, type IDKitResult, type RpContext } from "@worldcoin/idkit";
 import { encodePacked, keccak256, type Address } from "viem";
 import type { AppConfig } from "@/lib/client/config";
+import { Notice, Skeleton } from "@/components/ui";
 import { getTestAccount } from "@/lib/client/wallet";
 import { REVIEW_TEXT_MAX, normaliseReviewText, reviewAuthMessage, reviewRetryMessage } from "@/lib/messages";
 
@@ -42,9 +43,9 @@ export function ReviewBox({ cfg, orderId, sellerHandle }: { cfg: AppConfig; orde
   }
 
   function report(j: { ok?: boolean; status?: string; error?: string; retry?: boolean }) {
-    if (j.ok && j.status === "synced") setMsg("Thanks! Your review is published.");
-    else if (j.ok) setMsg("Your review was saved but publishing didn't finish. Press “Try again”.");
-    else setMsg(j.error ?? "Couldn't submit the review.");
+    if (j.ok && j.status === "synced") setMsg("Thanks. Your review is published.");
+    else if (j.ok) setMsg("Your review was saved but publishing didn't finish. Press Try again.");
+    else setMsg(j.error ?? "The review was not submitted. Check your connection and try again.");
     refresh();
   }
 
@@ -93,66 +94,78 @@ export function ReviewBox({ cfg, orderId, sellerHandle }: { cfg: AppConfig; orde
     }
   }
 
-  if (!existing) return null;
+  if (!existing) return <Skeleton className="h-40 w-full" />;
 
   if (existing.exists) {
     return (
-      <div className="space-y-2 rounded-xl border p-4 text-sm">
-        <div className="font-semibold">Your review</div>
-        <div className="text-amber-600">{"★".repeat(existing.rating ?? 0)}{"☆".repeat(5 - (existing.rating ?? 0))}</div>
-        {existing.text && <div className="whitespace-pre-wrap">{existing.text}</div>}
+      <section aria-labelledby="your-review" className="card stack-sm">
+        <h2 id="your-review">Your review</h2>
+        <p className="font-semibold">{existing.rating ?? 0} out of 5</p>
+        {existing.text && <p className="whitespace-pre-wrap break-words">{existing.text}</p>}
         {existing.status === "synced" ? (
-          <div className="text-xs text-emerald-700">
-            Published. <Link className="underline" href={`/verify/${sellerHandle}`}>See @{sellerHandle}&apos;s record</Link>
-          </div>
+          <p className="text-ink-2">
+            Published. <Link href={`/verify/${sellerHandle}`}>See @{sellerHandle}&apos;s record</Link>
+          </p>
         ) : (
-          <button disabled={busy} onClick={retry} className="rounded-lg bg-neutral-900 px-3 py-1 text-white disabled:opacity-50">
-            Try again to publish
-          </button>
+          <>
+            <Notice tone="warn" title="Saved, but not published yet">
+              Your review is saved. Publishing to Arkiv didn&apos;t finish. Trying again does not ask for a new World ID check.
+            </Notice>
+            <button disabled={busy} onClick={retry} className="btn btn-primary btn-block">
+              {busy ? "Publishing, about 10 seconds" : "Try again to publish"}
+            </button>
+          </>
         )}
-        {msg && <div className="text-xs text-neutral-600">{msg}</div>}
-      </div>
+        {msg && (
+          <p role="status" className="text-sm text-ink-2">
+            {msg}
+          </p>
+        )}
+      </section>
     );
   }
 
   const signal = buyer ? keccak256(encodePacked(["uint256", "address"], [BigInt(orderId), buyer.address as Address])) : undefined;
   return (
-    <div className="space-y-2 rounded-xl border p-4 text-sm">
-      <div className="font-semibold">Review @{sellerHandle}</div>
-      <div className="text-xs text-neutral-600">One review per person per seller. We check you are a real, unique person with World ID.</div>
-      <div className="flex gap-1" role="radiogroup" aria-label="Rating">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <button
-            key={n}
-            type="button"
-            role="radio"
-            aria-checked={rating === n}
-            onClick={() => setRating(n)}
-            className={`text-2xl ${n <= rating ? "text-amber-500" : "text-neutral-300"}`}
-          >
-            ★
-          </button>
-        ))}
+    <section aria-labelledby="review-h" className="card stack-sm">
+      <div>
+        <h2 id="review-h">Review @{sellerHandle}</h2>
+        <p className="hint">One review per person per seller. World ID checks that you are a real, unique person. It does not share who you are.</p>
       </div>
-      <textarea
-        className="w-full rounded border p-2"
-        rows={3}
-        maxLength={REVIEW_TEXT_MAX}
-        placeholder="What was it like? (optional)"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-      />
-      <div className="text-right text-xs text-neutral-500">{clean.length}/{REVIEW_TEXT_MAX}</div>
-      <button disabled={busy || !buyer} onClick={startWorld} className="w-full rounded-xl bg-emerald-600 py-2 font-semibold text-white disabled:opacity-50">
-        Verify with World ID and publish
+      <fieldset>
+        <legend className="label">Your rating</legend>
+        <div className="flex gap-1" role="radiogroup" aria-label="Rating, 1 to 5">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button
+              key={n}
+              type="button"
+              role="radio"
+              aria-checked={rating === n}
+              aria-label={`${n} out of 5`}
+              onClick={() => setRating(n)}
+              className={`btn ${rating === n ? "btn-primary" : "btn-secondary"}`}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+      <div>
+        <label className="label" htmlFor="review-text">
+          Your words (optional)
+        </label>
+        <textarea id="review-text" className="field" rows={3} maxLength={REVIEW_TEXT_MAX} value={text} onChange={(e) => setText(e.target.value)} />
+        <p className="hint text-right">
+          {clean.length} of {REVIEW_TEXT_MAX} characters
+        </p>
+      </div>
+      <button disabled={busy || !buyer} onClick={startWorld} className="btn btn-primary btn-block">
+        {busy ? "Working, about 10 seconds" : "Verify with World ID and publish"}
       </button>
+      {!buyer && <p className="hint">Open this page on the device you paid from to leave a review.</p>}
       {cfg.devSkipWorld && (
-        <button
-          disabled={busy || !buyer}
-          onClick={() => submit()}
-          className="w-full rounded-xl border-2 border-dashed border-red-500 py-2 text-xs font-bold text-red-700 disabled:opacity-50"
-        >
-          DEV ONLY: publish WITHOUT a World ID proof (local dev server only)
+        <button disabled={busy || !buyer} onClick={() => submit()} className="btn btn-danger btn-block">
+          Developer only: publish without a World ID proof (local dev server)
         </button>
       )}
       {world && signal && (
@@ -168,11 +181,15 @@ export function ReviewBox({ cfg, orderId, sellerHandle }: { cfg: AppConfig; orde
           handleVerify={async (result: IDKitResult) => {
             await submit(result);
           }}
-          onSuccess={() => setMsg("Verified. Publishing your review…")}
-          onError={(code) => setMsg(`World ID: ${code}. Nothing was published.`)}
+          onSuccess={() => setMsg("Verified. Publishing your review.")}
+          onError={(code) => setMsg(`World ID stopped with "${code}". Nothing was published. You can try again.`)}
         />
       )}
-      {msg && <div className="text-xs text-neutral-700">{msg}</div>}
-    </div>
+      {msg && (
+        <p role="status" className="text-sm text-ink-2">
+          {msg}
+        </p>
+      )}
+    </section>
   );
 }

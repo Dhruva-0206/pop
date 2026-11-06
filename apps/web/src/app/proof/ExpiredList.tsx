@@ -10,12 +10,12 @@ export type Expired = { orderId: string; state: string; amount: string };
 export default function ExpiredList({ orders }: { orders: Expired[] }) {
   const { cfg } = useConfig();
   const router = useRouter();
-  if (!orders.length) return <p className="text-sm text-neutral-500">No order is waiting to be finalized right now.</p>;
-  if (!cfg) return <p className="text-sm text-neutral-500">Loading…</p>;
+  if (!orders.length) return <p className="text-sm text-muted">No order is waiting to be finalized right now.</p>;
+  if (!cfg) return <p className="text-sm text-muted">Loading…</p>;
   return (
     <ul className="space-y-3">
       {orders.map((o) => (
-        <li key={o.orderId} className="space-y-1 rounded border p-3 text-sm">
+        <li key={o.orderId} className="space-y-1 rounded-control border p-3 text-sm">
           <div>
             Order #{o.orderId} · {o.state} · deadline passed
           </div>

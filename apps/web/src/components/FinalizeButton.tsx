@@ -58,7 +58,7 @@ export function FinalizeButton({
         chain: w.chain,
       });
       await pc.waitForTransactionReceipt({ hash: tx });
-      setMsg("Done.");
+      setMsg("Done. The order is settled.");
       onDone?.();
     } catch (e) {
       setMsg(e instanceof Error ? e.message.split("\n")[0] : "Failed");
@@ -67,11 +67,16 @@ export function FinalizeButton({
     }
   }
   return (
-    <div className="space-y-1">
-      <button onClick={go} disabled={busy || !enabled} className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
-        {busy ? "Settling…" : enabled ? "Settle now (anyone can press this)" : "Settle (available when the timer ends)"}
+    <div className="stack-sm">
+      <button onClick={go} disabled={busy || !enabled} className="btn btn-secondary btn-block">
+        {busy ? "Settling, about 5 seconds" : enabled ? "Settle now" : "Settle (opens when the timer ends)"}
       </button>
-      {msg && <div className="text-xs text-neutral-600">{msg}</div>}
+      {enabled && !busy && !msg && <p className="hint">The deadline has passed. Anyone can press this, and the contract decides the outcome.</p>}
+      {msg && (
+        <p role="status" className="text-sm text-ink-2">
+          {msg}
+        </p>
+      )}
     </div>
   );
 }

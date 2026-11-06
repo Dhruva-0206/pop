@@ -28,9 +28,9 @@ export default function Scanner({ onCode, onClose }: { onCode: (text: string) =>
     };
   }, [onCode]);
   return (
-    <div className="space-y-2 rounded-xl border p-3">
+    <div className="card stack-sm">
       <div id="pop-qr-reader" />
-      <button onClick={onClose} className="text-xs underline">close camera</button>
+      <button onClick={onClose} className="btn btn-secondary btn-sm">Close camera</button>
     </div>
   );
 }

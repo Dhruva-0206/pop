@@ -122,24 +122,24 @@ export default function Arbiter() {
     loadStaff();
   }
 
-  if (!cfg) return <main className="mx-auto max-w-2xl p-6 text-neutral-500">Loading…</main>;
+  if (!cfg) return <div className="page-wide stack">Loading…</div>;
   return (
-    <main className="mx-auto max-w-2xl space-y-4 p-4">
+    <div className="page-wide stack">
       <TestModeBanner cfg={cfg} />
       <h1 className="text-xl font-semibold">Arbiter and staff</h1>
 
-      <section className="space-y-2 rounded-xl border p-4 text-sm">
+      <section className="card stack-sm text-sm">
         <div className="font-semibold">Arbiter wallet (TEST MODE: the key stays in this browser)</div>
         {addr ? (
           <div className="space-y-1">
             <div className="font-mono text-xs">{addr}</div>
-            <div className={isArbiter ? "text-emerald-700" : "text-red-700"}>{isArbiter ? "Has the ARBITER role on this checkout." : "This wallet does NOT have the ARBITER role: on-chain actions will fail."}</div>
-            <button className="text-xs underline" onClick={() => { forgetTestKey(cfg, "arbiter"); loadKey(cfg); }}>forget</button>
+            <div className={isArbiter ? "text-accent-strong" : "text-danger"}>{isArbiter ? "Has the ARBITER role on this checkout." : "This wallet does NOT have the ARBITER role: on-chain actions will fail."}</div>
+            <button className="btn btn-secondary btn-sm" onClick={() => { forgetTestKey(cfg, "arbiter"); loadKey(cfg); }}>forget</button>
           </div>
         ) : (
           <div className="flex gap-2">
-            <input className="min-w-0 flex-1 rounded border p-2 font-mono text-xs" placeholder="paste the arbiter test key (0x…)" value={pk} onChange={(e) => setPk(e.target.value)} />
-            <button className="rounded bg-neutral-900 px-3 text-white" onClick={() => { try { importTestKey(cfg, "arbiter", pk); setPk(""); loadKey(cfg); } catch (e) { setMsg(errText(e)); } }}>
+            <input className="field flex-1 min-w-0 mono" placeholder="paste the arbiter test key (0x…)" aria-label="the arbiter test key" value={pk} onChange={(e) => setPk(e.target.value)} />
+            <button className="btn btn-primary" onClick={() => { try { importTestKey(cfg, "arbiter", pk); setPk(""); loadKey(cfg); } catch (e) { setMsg(errText(e)); } }}>
               Import
             </button>
           </div>
@@ -148,40 +148,40 @@ export default function Arbiter() {
 
       <section className="space-y-3">
         <div className="font-semibold">Disputes waiting for a decision ({disputes.length})</div>
-        {disputes.length === 0 && <div className="text-sm text-neutral-500">None right now.</div>}
+        {disputes.length === 0 && <div className="text-sm text-muted">None right now.</div>}
         {disputes.map((d) => (
-          <div key={d.orderId} className="space-y-2 rounded-xl border p-4 text-sm">
+          <div key={d.orderId} className="card stack-sm text-sm">
             <div className="flex justify-between">
               <span className="font-semibold">Order #{d.orderId} · {d.sellerHandle ? `@${d.sellerHandle}` : d.seller.slice(0, 8)}</span>
               <span>{usdt(d.amount, cfg.tokenDecimals)} test USDT</span>
             </div>
-            <div className="text-xs text-neutral-600">
+            <div className="text-xs text-muted">
               {d.kind === "handover-refused" ? "Courier reported: the buyer refused the handover." : "Buyer opened a dispute after delivery."}{" "}
               {d.expired ? "Decision time is over: anyone can finalize into a refund." : `Decide within ${countdown(d.arbiterDeadline, d.now)}.`}
             </div>
-            {d.reason && <div className="rounded bg-neutral-50 p-2 text-xs">Buyer says: {d.reason}</div>}
-            <input className="w-full rounded border p-2 text-xs" placeholder="decision note (its hash is recorded on-chain)" value={notes[d.orderId] ?? ""} onChange={(e) => setNotes({ ...notes, [d.orderId]: e.target.value })} />
+            {d.reason && <div className="rounded-control bg-surface p-2 text-xs">Buyer says: {d.reason}</div>}
+            <input className="field" placeholder="decision note (its hash is recorded on-chain)" aria-label="decision note (its hash is recorded on-chain)" value={notes[d.orderId] ?? ""} onChange={(e) => setNotes({ ...notes, [d.orderId]: e.target.value })} />
             <div className="flex flex-wrap items-center gap-2">
-              <button disabled={busy || d.expired} onClick={() => resolve(d, 10000)} className="rounded bg-red-700 px-3 py-1.5 text-white disabled:opacity-50">Refund buyer</button>
-              <button disabled={busy || d.expired} onClick={() => resolve(d, 0)} className="rounded bg-emerald-700 px-3 py-1.5 text-white disabled:opacity-50">Release to seller</button>
-              <input className="w-20 rounded border p-1.5 text-xs" inputMode="numeric" placeholder="buyer %" value={bps[d.orderId] ?? "50"} onChange={(e) => setBps({ ...bps, [d.orderId]: e.target.value })} />
-              <button disabled={busy || d.expired} onClick={() => resolve(d, Math.max(0, Math.min(100, Math.round(Number(bps[d.orderId] ?? "50")))) * 100)} className="rounded border px-3 py-1.5 disabled:opacity-50">Split</button>
+              <button disabled={busy || d.expired} onClick={() => resolve(d, 10000)} className="btn btn-danger">Refund buyer</button>
+              <button disabled={busy || d.expired} onClick={() => resolve(d, 0)} className="btn btn-primary">Release to seller</button>
+              <input className="field w-24" inputMode="numeric" placeholder="buyer %" aria-label="buyer %" value={bps[d.orderId] ?? "50"} onChange={(e) => setBps({ ...bps, [d.orderId]: e.target.value })} />
+              <button disabled={busy || d.expired} onClick={() => resolve(d, Math.max(0, Math.min(100, Math.round(Number(bps[d.orderId] ?? "50")))) * 100)} className="btn btn-secondary">Split</button>
             </div>
           </div>
         ))}
       </section>
 
-      <section className="space-y-2 rounded-xl border p-4 text-sm">
+      <section className="card stack-sm text-sm">
         <div className="font-semibold">Ban a seller (permanent)</div>
         <div className="flex gap-2">
-          <input className="min-w-0 flex-1 rounded border p-2" placeholder="@handle" value={handle} onChange={(e) => setHandle(e.target.value)} />
-          <button disabled={!handle.trim()} onClick={lookup} className="rounded bg-neutral-900 px-3 text-white disabled:opacity-50">Look up</button>
+          <input className="field flex-1 min-w-0" placeholder="@handle" aria-label="@handle" value={handle} onChange={(e) => setHandle(e.target.value)} />
+          <button disabled={!handle.trim()} onClick={lookup} className="btn btn-primary">Look up</button>
         </div>
         {seller && (
           <div className="space-y-2">
             <div>
               @{seller.handle} · {seller.completed} of {seller.totalOrders} completed · {seller.lostDisputes} disputes lost ·{" "}
-              <b className={seller.banned ? "text-red-700" : "text-emerald-700"}>{seller.banned ? "BANNED" : seller.active ? "active" : "inactive"}</b>
+              <b className={seller.banned ? "text-danger" : "text-accent-strong"}>{seller.banned ? "BANNED" : seller.active ? "active" : "inactive"}</b>
             </div>
             {!seller.banned && (
               <label className="flex items-center gap-2 text-xs">
@@ -190,28 +190,28 @@ export default function Arbiter() {
               </label>
             )}
             {!seller.banned && (
-              <button disabled={busy || !confirmBan} onClick={ban} className="rounded bg-red-700 px-3 py-1.5 text-white disabled:opacity-50">Ban @{seller.handle}</button>
+              <button disabled={busy || !confirmBan} onClick={ban} className="btn btn-danger">Ban @{seller.handle}</button>
             )}
-            {seller.banned && seller.openOrders.length > 0 && <div className="text-xs text-neutral-600">Open orders of a banned seller can be refunded to the buyers in full:</div>}
+            {seller.banned && seller.openOrders.length > 0 && <div className="text-xs text-muted">Open orders of a banned seller can be refunded to the buyers in full:</div>}
             {seller.banned &&
               seller.openOrders.map((o) => (
-                <div key={o.orderId} className="flex items-center justify-between rounded border p-2 text-xs">
+                <div key={o.orderId} className="flex items-center justify-between rounded-control border p-2 text-xs">
                   <span>#{o.orderId} · {o.state} · {usdt(o.amount, cfg.tokenDecimals)} test USDT</span>
-                  <button disabled={busy} onClick={() => forceRefund(o.orderId)} className="rounded bg-red-700 px-2 py-1 text-white disabled:opacity-50">Force refund</button>
+                  <button disabled={busy} onClick={() => forceRefund(o.orderId)} className="btn btn-danger">Force refund</button>
                 </div>
               ))}
-            {!seller.banned && seller.openOrders.length > 0 && <div className="text-xs text-neutral-500">{seller.openOrders.length} open order(s) (refundable after a ban).</div>}
+            {!seller.banned && seller.openOrders.length > 0 && <div className="text-xs text-muted">{seller.openOrders.length} open order(s) (refundable after a ban).</div>}
           </div>
         )}
       </section>
 
-      <section className="space-y-2 rounded-xl border p-4 text-sm">
+      <section className="card stack-sm text-sm">
         <div className="font-semibold">Seller onboarding (staff)</div>
         {staff === false ? (
           <div className="flex gap-2">
-            <input type="password" className="min-w-0 flex-1 rounded border p-2" placeholder="team passcode" value={pass} onChange={(e) => setPass(e.target.value)} />
+            <input type="password" className="field flex-1 min-w-0" placeholder="team passcode" aria-label="team passcode" value={pass} onChange={(e) => setPass(e.target.value)} />
             <button
-              className="rounded bg-sky-700 px-3 text-white"
+              className="btn btn-primary"
               onClick={async () => {
                 const r = await fetch("/api/courier/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ passcode: pass }) });
                 if (!r.ok) setMsg("Wrong passcode");
@@ -223,9 +223,9 @@ export default function Arbiter() {
           </div>
         ) : (
           <>
-            {pending.length === 0 && <div className="text-neutral-500">No pending requests.</div>}
+            {pending.length === 0 && <div className="text-muted">No pending requests.</div>}
             {pending.map((p) => (
-              <div key={p.id} className="space-y-1 rounded border p-2">
+              <div key={p.id} className="space-y-1 rounded-control border p-2">
                 <div>
                   @{p.handle} · wants code <span className="font-mono font-semibold">{p.bioCode}</span> in the bio
                 </div>
@@ -233,8 +233,8 @@ export default function Arbiter() {
                   open the Instagram profile ↗
                 </a>
                 <div className="flex gap-2">
-                  <button disabled={busy} onClick={() => decide(p.id, true)} className="rounded bg-emerald-700 px-3 py-1 text-white">The code is there: approve</button>
-                  <button disabled={busy} onClick={() => decide(p.id, false)} className="rounded border px-3 py-1">Reject</button>
+                  <button disabled={busy} onClick={() => decide(p.id, true)} className="btn btn-primary">The code is there: approve</button>
+                  <button disabled={busy} onClick={() => decide(p.id, false)} className="btn btn-secondary">Reject</button>
                 </div>
               </div>
             ))}
@@ -242,8 +242,12 @@ export default function Arbiter() {
         )}
       </section>
 
-      {msg && <div className="text-sm text-neutral-700">{msg}</div>}
+      {msg && (
+        <p role="status" className="text-sm text-ink-2">
+          {msg}
+        </p>
+      )}
       <TxLink cfg={cfg} hash={lastTx} label="last transaction" />
-    </main>
+    </div>
   );
 }

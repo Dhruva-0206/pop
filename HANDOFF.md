@@ -279,7 +279,7 @@ Readers trust only rows whose `$creator` is our attestor and, for reviews, only 
 - README: problem, why on-chain stablecoin settlement, architecture, live links, contract + tx links, Arkiv writer wallet + runnable query, setup, limitations, prior art
 - `/arkiv/` five files (their whole score comes from these four criteria)
 - `WHITECHAIN_FEEDBACK.md`, `docs/WORLD_DEBRIEF.md`, complete `AI_USAGE.md`
-- Demo video 2–4 min, ≥720p, **recorded on a laptop (not a phone)**, real voice, not sped up, no AI voiceover
+- Demo video 2 to 4 min, ≥720p, **recorded on a laptop (not a phone)**, real voice, not sped up, no AI voiceover
 - Submission form
 
 **Cut order if time slips:** extension → CSV → tiered window → outcome entities → arbiter polish. **Never cut:** deadline refund, delivery code, review gate, verify page, demo store reading Arkiv.
@@ -290,14 +290,14 @@ Readers trust only rows whose `$creator` is our attestor and, for reviews, only 
 
 | When | Goal |
 |---|---|
-| Fri 03:00–08:30 | Keys in → smoke tests → Supabase swap → contract fixes (no testnet deploy yet). Humans sleep in shifts. |
-| Fri 08:30–10:00 | Whitechain booth (USDT + Operate question) → deploy + verify → one real USDT payment |
-| Fri 10:00–14:00 | Review flow → /verify → full loop on a phone |
-| Fri 14:00–17:00 | Kurta Co. store + failure paths |
-| Fri 17:00–20:00 | /onboard, /proof, arbiter page, Vercel, hardening |
+| Fri 03:00 to 08:30 | Keys in → smoke tests → Supabase swap → contract fixes (no testnet deploy yet). Humans sleep in shifts. |
+| Fri 08:30 to 10:00 | Whitechain booth (USDT + Operate question) → deploy + verify → one real USDT payment |
+| Fri 10:00 to 14:00 | Review flow → /verify → full loop on a phone |
+| Fri 14:00 to 17:00 | Kurta Co. store + failure paths |
+| Fri 17:00 to 20:00 | /onboard, /proof, arbiter page, Vercel, hardening |
 | **Fri 20:00** | **FEATURE FREEZE** |
-| Fri 20:00–00:00 | README + sponsor files |
-| Sat 00:00–03:00 | Seed demo orders, rehearse 5×, record video + backup run |
+| Fri 20:00 to 00:00 | README + sponsor files |
+| Sat 00:00 to 03:00 | Seed demo orders, rehearse 5×, record video + backup run |
 | **Sat by 07:00** | **SUBMIT** (hard deadline 09:00) |
 
 ---

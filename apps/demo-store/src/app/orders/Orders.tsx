@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ErrorBox, Skeleton } from "@/components/ui";
 
 type Order = {
   ref: string;
@@ -10,40 +11,49 @@ type Order = {
   history: { event: string; at: number; onChainState: string }[];
 };
 const LABEL: Record<string, string> = {
-  created: "Waiting for payment",
-  funded: "Paid, waiting for the seller to ship",
-  shipped: "Shipped",
-  delivered: "Delivered (code entered at the door)",
-  released: "Complete: seller paid",
-  refunded: "Refunded to you",
-  split: "Settled by the arbiter (split)",
+  created: "Waiting for payment.",
+  funded: "Paid. Waiting for us to ship.",
+  shipped: "Shipped.",
+  delivered: "Delivered. The delivery code was entered at the door.",
+  released: "Complete. We were paid.",
+  refunded: "Refunded to you.",
+  split: "Settled by review.",
 };
 
 export default function Orders() {
   const [rows, setRows] = useState<Order[] | null>(null);
+  const [failed, setFailed] = useState(false);
   useEffect(() => {
     const load = () =>
       fetch("/api/orders", { cache: "no-store" })
-        .then((r) => r.json())
-        .then((j) => setRows(j.orders));
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error("bad status"))))
+        .then((j) => (setRows(j.orders), setFailed(false)))
+        .catch(() => setFailed(true));
     load();
-    const t = setInterval(load, 3000);
+    const t = setInterval(load, 4000);
     return () => clearInterval(t);
   }, []);
-  if (!rows) return <div className="text-sm text-neutral-500">Loading…</div>;
-  if (!rows.length) return <div className="text-sm text-neutral-500">No orders yet.</div>;
+  if (failed && !rows) return <ErrorBox what="We couldn't load your orders." why="The order service did not answer." next="Refresh the page in a few seconds." />;
+  if (!rows)
+    return (
+      <div className="stack-sm" aria-busy="true" aria-label="Loading orders">
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full" />
+      </div>
+    );
+  if (!rows.length) return <p className="text-ink-2">No orders yet. Pick the kurta on the shop page to place one.</p>;
   return (
-    <ul className="space-y-3">
+    <ul className="stack-sm">
       {rows.map((o) => (
-        <li key={o.ref} className="rounded-xl border p-4 text-sm">
-          <div className="flex justify-between">
-            <span className="font-semibold">{o.ref}</span>
+        <li key={o.ref} className="card stack-sm">
+          <p className="flex justify-between gap-2">
+            <span className="mono font-medium">{o.ref}</span>
             <span>{o.amountUsdt ? `${o.amountUsdt} test USDT` : ""}</span>
-          </div>
-          <div>{LABEL[o.status] ?? o.status}</div>
-          <div className="text-xs text-neutral-500">
-            {o.history.length ? `Confirmed on-chain: ${o.history.map((h) => h.event.replace("order.", "")).join(" → ")}` : "Nothing confirmed on-chain yet"}
-          </div>
+          </p>
+          <p className="font-semibold">{LABEL[o.status] ?? o.status}</p>
+          <p className="text-sm text-muted">
+            {o.history.length ? `Confirmed on the network: ${o.history.map((h) => h.event.replace("order.", "")).join(", then ")}.` : "Nothing confirmed on the network yet."}
+          </p>
         </li>
       ))}
     </ul>

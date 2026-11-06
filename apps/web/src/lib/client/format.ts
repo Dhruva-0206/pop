@@ -17,18 +17,18 @@ export function countdown(target: number, now: number): string {
   const s = target - now;
   if (s <= 0) return "passed";
   const m = Math.floor(s / 60);
-  return m > 0 ? `${m} min ${s % 60}s` : `${s}s`;
+  return m > 0 ? `${m} min ${s % 60} s` : `${s} s`;
 }
 
 export const short = (a?: string) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "");
 
 /** Buyer-facing names for order states. No "escrow" wording. */
 export const STATE_LABEL: Record<string, string> = {
-  Funded: "Paid · waiting for the seller to ship",
-  Shipped: "Shipped · on its way",
-  Delivered: "Delivered",
-  Disputed: "Under review by PoP",
-  Released: "Complete · seller paid",
-  Refunded: "Refunded to you",
-  Split: "Settled by review",
+  Funded: "Paid. Waiting for the seller to ship.",
+  Shipped: "Shipped. On its way to you.",
+  Delivered: "Delivered. The problem window is open.",
+  Disputed: "Under review by PoP.",
+  Released: "Complete. The seller was paid.",
+  Refunded: "Refunded to you.",
+  Split: "Settled by review.",
 };

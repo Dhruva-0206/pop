@@ -20,7 +20,7 @@ export function DisputeBox({ cfg, orderId, onDone }: { cfg: AppConfig; orderId: 
 
   async function submit() {
     const reason = text.trim();
-    if (!reason) return setMsg("Tell us what went wrong.");
+    if (!reason) return setMsg("Describe what went wrong first. The reviewer reads this.");
     setBusy(true);
     setMsg("");
     try {
@@ -38,7 +38,7 @@ export function DisputeBox({ cfg, orderId, onDone }: { cfg: AppConfig; orderId: 
       await publicClientOf(cfg).waitForTransactionReceipt({ hash: tx });
       const signature = await acct.signMessage({ message: disputeReasonMessage(orderId, reason) });
       const r = await fetch(`/api/orders/${orderId}/dispute`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: reason, signature }) });
-      setMsg(r.ok ? "Reported. PoP will review it." : "Reported on-chain, but the note could not be saved. The team can still decide.");
+      setMsg(r.ok ? "Reported. PoP will review it and decide soon." : "Your report is recorded, but your note could not be saved. The team can still decide.");
       onDone?.();
     } catch (e) {
       setMsg(e instanceof Error ? e.message.split("\n")[0] : "Failed");
@@ -49,32 +49,42 @@ export function DisputeBox({ cfg, orderId, onDone }: { cfg: AppConfig; orderId: 
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className="w-full rounded-xl border-2 border-red-600 py-2 font-semibold text-red-700">
+      <button onClick={() => setOpen(true)} className="btn btn-secondary btn-block">
         Report a problem
       </button>
     );
   }
   return (
-    <div className="space-y-2 rounded-xl border-2 border-red-600 p-4 text-sm">
-      <div className="font-semibold">What went wrong?</div>
-      <textarea
-        className="w-full rounded border p-2"
-        rows={3}
-        maxLength={DISPUTE_TEXT_MAX}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="e.g. the parcel was empty, or the item is not what was shown"
-      />
-      <div className="text-xs text-neutral-600">Only this window lets you report. PoP decides: refund, pay the seller, or split. If nobody decides in time, you are refunded.</div>
+    <section aria-labelledby="dispute-h" className="card stack-sm">
+      <h2 id="dispute-h">Report a problem</h2>
+      <div>
+        <label className="label" htmlFor="dispute-text">
+          What went wrong?
+        </label>
+        <textarea
+          id="dispute-text"
+          className="field"
+          rows={3}
+          maxLength={DISPUTE_TEXT_MAX}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="For example: the parcel was empty, or the item is not what was shown"
+        />
+        <p className="hint">You can only report during this window. PoP decides: refund, pay the seller, or split. If nobody decides in time, you are refunded.</p>
+      </div>
       <div className="flex gap-2">
-        <button disabled={busy} onClick={submit} className="flex-1 rounded bg-red-700 py-2 font-semibold text-white disabled:opacity-50">
-          {busy ? "Sending…" : "Send report"}
+        <button disabled={busy} onClick={submit} className="btn btn-danger flex-1">
+          {busy ? "Sending, about 10 seconds" : "Send report"}
         </button>
-        <button disabled={busy} onClick={() => setOpen(false)} className="rounded border px-3">
+        <button disabled={busy} onClick={() => setOpen(false)} className="btn btn-secondary">
           Cancel
         </button>
       </div>
-      {msg && <div className="text-neutral-700">{msg}</div>}
-    </div>
+      {msg && (
+        <p role="status" className="text-sm text-ink-2">
+          {msg}
+        </p>
+      )}
+    </section>
   );
 }

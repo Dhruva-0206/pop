@@ -27,22 +27,22 @@ const page = await client
 
 export default function Page() {
   return (
-    <main className="mx-auto max-w-3xl space-y-8 p-4 text-sm">
+    <div className="page-wide stack">
       <h1 className="text-2xl font-semibold">Proof</h1>
-      <p className="text-neutral-600">
+      <p className="text-muted">
         Everything on this page can be checked by someone else: contract addresses, transaction hashes, Arkiv entity keys with a query you can run, the World
         verification log (no secrets) and test counts. Test USDT only; nothing here has any value.
       </p>
-      <Suspense fallback={<p className="text-neutral-500">Reading the chain…</p>}>
+      <Suspense fallback={<p className="text-muted">Reading the chain…</p>}>
         <Live />
       </Suspense>
       <Static />
-    </main>
+    </div>
   );
 }
 
 const tx = (h: string) => (
-  <a className="font-mono text-xs text-emerald-700 underline" href={`${EXPLORER}/tx/${h}`} target="_blank" rel="noreferrer">
+  <a className="mono break-all text-xs text-accent-strong underline" href={`${EXPLORER}/tx/${h}`} target="_blank" rel="noreferrer">
     {h.slice(0, 10)}…{h.slice(-6)}
   </a>
 );
@@ -52,26 +52,25 @@ async function Live() {
   const [facts, orders, arkiv, world] = await Promise.all([contractFacts(), recentOrders(25).catch(() => null), arkivProof(), worldLog().catch(() => null)]);
   const link = (kind: "address" | "tx", v: string, label?: string) =>
     facts.explorer ? (
-      <a className="font-mono text-xs text-emerald-700 underline" href={`${facts.explorer}/${kind}/${v}`} target="_blank" rel="noreferrer">
+      <a className="mono break-all text-xs text-accent-strong underline" href={`${facts.explorer}/${kind}/${v}`} target="_blank" rel="noreferrer">
         {label ?? `${v.slice(0, 10)}…${v.slice(-6)}`}
       </a>
     ) : (
-      <span className="font-mono text-xs">{label ?? `${v.slice(0, 10)}…${v.slice(-6)}`}</span>
+      <span className="mono break-all text-xs">{label ?? `${v.slice(0, 10)}…${v.slice(-6)}`}</span>
     );
   const expired = (orders ?? []).filter((o) => o.canFinalize);
   const row = (k: string, v: React.ReactNode) => (
-    <tr>
-      <td className="py-1 pr-3 text-neutral-500">{k}</td>
-      <td>{v}</td>
-    </tr>
+    <div className="border-b py-2 sm:flex sm:gap-4">
+      <dt className="text-sm text-muted sm:w-44 sm:shrink-0">{k}</dt>
+      <dd className="break-words">{v}</dd>
+    </div>
   );
   return (
     <>
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">Contracts (live)</h2>
-        {facts.isLocalFork && <div className="rounded bg-fuchsia-100 p-2 text-xs font-semibold text-fuchsia-900">LOCAL FORK: these addresses exist only on this laptop. The testnet evidence is further down.</div>}
-        <table className="w-full text-left">
-          <tbody>
+        {facts.isLocalFork && <div className="rounded-control bg-warn-soft p-2 text-xs font-semibold text-warn">LOCAL FORK: these addresses exist only on this laptop. The testnet evidence is further down.</div>}
+        <dl>
             {row("Network", `${facts.isLocalFork ? "Local fork" : "Whitechain Sepolia"} (chain ${facts.chainId})`)}
             {row("PoPCheckout", link("address", facts.checkout, facts.checkout))}
             {row("SellerRegistry", link("address", facts.registry, facts.registry))}
@@ -80,43 +79,42 @@ async function Live() {
             {row("Windows", `${facts.shortWindow} s trusted sellers · ${facts.longWindow} s others · arbiter decides within ${facts.arbiterTimeout} s · trusted after ${facts.trustedMin} completed orders`)}
             {row("Held right now", `${formatUnits(BigInt(facts.totalLocked), facts.tokenDecimals)} locked in open orders · ${formatUnits(BigInt(facts.totalCredit), facts.tokenDecimals)} waiting to be withdrawn`)}
             {row("Deployed at block", facts.deployBlock)}
-          </tbody>
-        </table>
+        </dl>
       </section>
 
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">Orders (live, newest first)</h2>
         {!orders ? (
-          <p className="text-neutral-500">Could not read orders right now.</p>
+          <p className="text-muted">Could not read orders right now.</p>
         ) : orders.length === 0 ? (
-          <p className="text-neutral-500">No orders yet.</p>
+          <p className="text-muted">No orders yet.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="table-scroll">
+            <table>
               <thead>
-                <tr className="text-neutral-500">
-                  <th className="pr-2">#</th>
-                  <th className="pr-2">State</th>
-                  <th className="pr-2">USDT</th>
-                  <th className="pr-2">Paid</th>
-                  <th className="pr-2">Shipped</th>
-                  <th className="pr-2">Delivered</th>
+                <tr>
+                  <th>#</th>
+                  <th>State</th>
+                  <th>USDT</th>
+                  <th>Paid</th>
+                  <th>Shipped</th>
+                  <th>Delivered</th>
                   <th>Settled</th>
                 </tr>
               </thead>
               <tbody>
                 {orders.map((o) => (
-                  <tr key={o.orderId} className="border-t">
-                    <td className="py-1 pr-2">{o.orderId}</td>
-                    <td className="pr-2">{o.state}</td>
-                    <td className="pr-2">{formatUnits(BigInt(o.amount), facts.tokenDecimals)}</td>
-                    <td className="pr-2">{o.txs.funded ? link("tx", o.txs.funded) : ""}</td>
-                    <td className="pr-2">{o.txs.shipped ? link("tx", o.txs.shipped) : ""}</td>
-                    <td className="pr-2">{o.txs.delivered ? link("tx", o.txs.delivered) : ""}</td>
+                  <tr key={o.orderId}>
+                    <td>{o.orderId}</td>
+                    <td>{o.state}</td>
+                    <td>{formatUnits(BigInt(o.amount), facts.tokenDecimals)}</td>
+                    <td>{o.txs.funded ? link("tx", o.txs.funded) : ""}</td>
+                    <td>{o.txs.shipped ? link("tx", o.txs.shipped) : ""}</td>
+                    <td>{o.txs.delivered ? link("tx", o.txs.delivered) : ""}</td>
                     <td>
                       {o.txs.settled ? (
                         <>
-                          {link("tx", o.txs.settled)} <span className="text-neutral-500">{o.txs.settleEvent?.replace("Order", "")}</span>
+                          {link("tx", o.txs.settled)} <span className="text-muted">{o.txs.settleEvent?.replace("Order", "")}</span>
                         </>
                       ) : (
                         ""
@@ -132,45 +130,45 @@ async function Live() {
 
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">Finalize expired orders</h2>
-        <p className="text-neutral-600">A missed ship-by or deliver-by deadline lets anyone settle the order into a full refund; a finished dispute window lets anyone pay the seller. Nobody needs our permission.</p>
+        <p className="text-muted">A missed ship-by or deliver-by deadline lets anyone settle the order into a full refund; a finished dispute window lets anyone pay the seller. Nobody needs our permission.</p>
         <ExpiredList orders={expired.map((o) => ({ orderId: o.orderId, state: o.state, amount: o.amount }))} />
       </section>
 
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">Reviews on Arkiv (live)</h2>
         {!arkiv.ok ? (
-          <p className="text-neutral-500">{arkiv.reason}</p>
+          <p className="text-muted">{arkiv.reason}</p>
         ) : (
           <>
-            <p className="text-neutral-600">
-              Reviews are read-only entities created by our attestor <span className="font-mono text-xs">{arkiv.attestor}</span> on Arkiv Rabdi (chain {RABDI_CHAIN_ID}) and handed to the
+            <p className="text-muted">
+              Reviews are read-only entities created by our attestor <span className="mono break-all text-xs">{arkiv.attestor}</span> on Arkiv Rabdi (chain {RABDI_CHAIN_ID}) and handed to the
               buyer. Readers trust only entities whose creator is the attestor and that are read-only.
             </p>
             {arkiv.rows.length === 0 ? (
-              <p className="text-neutral-500">No review entities yet.</p>
+              <p className="text-muted">No review entities yet.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              <div className="table-scroll">
+                <table>
                   <thead>
-                    <tr className="text-neutral-500">
-                      <th className="pr-2">Entity key</th>
-                      <th className="pr-2">Owner</th>
-                      <th className="pr-2">Read-only</th>
-                      <th className="pr-2">Order</th>
-                      <th className="pr-2">Stars</th>
+                    <tr>
+                      <th>Entity key</th>
+                      <th>Owner</th>
+                      <th>Read-only</th>
+                      <th>Order</th>
+                      <th>Stars</th>
                       <th>Kind</th>
                     </tr>
                   </thead>
                   <tbody>
                     {arkiv.rows.map((r) => (
-                      <tr key={r.key} className="border-t">
-                        <td className="py-1 pr-2 font-mono">
+                      <tr key={r.key}>
+                        <td>
                           {r.key.slice(0, 12)}…{r.key.slice(-6)}
                         </td>
-                        <td className="pr-2 font-mono">{r.owner.slice(0, 8)}…</td>
-                        <td className="pr-2">{r.readonly ? "yes" : "NO"}</td>
-                        <td className="pr-2">{r.orderId}</td>
-                        <td className="pr-2">{r.rating}</td>
+                        <td>{r.owner.slice(0, 8)}…</td>
+                        <td>{r.readonly ? "yes" : "NO"}</td>
+                        <td>{r.orderId}</td>
+                        <td>{r.rating}</td>
                         <td>{r.dev ? "DEV entry (no World proof; expires in 24 h)" : "regular entry (counts only if tied to a real payment)"}</td>
                       </tr>
                     ))}
@@ -184,34 +182,34 @@ async function Live() {
 
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">World ID verification log</h2>
-        <p className="text-neutral-600">
+        <p className="text-muted">
           Every attempt, without secrets: no proof, no signal and no raw nullifier is stored (only the first 12 hex characters of its sha256, enough to see that two rows are the same person).
         </p>
         {!world ? (
-          <p className="text-neutral-500">Log unavailable.</p>
+          <p className="text-muted">Log unavailable.</p>
         ) : world.length === 0 ? (
-          <p className="rounded bg-amber-50 p-2 text-amber-900">No World verification has run on this deployment yet.</p>
+          <p className="rounded-control bg-warn-soft p-2 text-warn">No World verification has run on this deployment yet.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="table-scroll">
+            <table>
               <thead>
-                <tr className="text-neutral-500">
-                  <th className="pr-2">When (UTC)</th>
-                  <th className="pr-2">Seller</th>
-                  <th className="pr-2">Order</th>
-                  <th className="pr-2">Result</th>
-                  <th className="pr-2">Env</th>
+                <tr>
+                  <th>When (UTC)</th>
+                  <th>Seller</th>
+                  <th>Order</th>
+                  <th>Result</th>
+                  <th>Env</th>
                   <th>Detail</th>
                 </tr>
               </thead>
               <tbody>
                 {world.map((w, i) => (
-                  <tr key={i} className="border-t">
-                    <td className="py-1 pr-2">{w.at.slice(0, 19).replace("T", " ")}</td>
-                    <td className="pr-2">{w.sellerHandle ? `@${w.sellerHandle}` : ""}</td>
-                    <td className="pr-2">{w.orderId}</td>
-                    <td className="pr-2 font-semibold">{w.outcome}</td>
-                    <td className="pr-2">{w.environment}</td>
+                  <tr key={i}>
+                    <td>{w.at.slice(0, 19).replace("T", " ")}</td>
+                    <td>{w.sellerHandle ? `@${w.sellerHandle}` : ""}</td>
+                    <td>{w.orderId}</td>
+                    <td>{w.outcome}</td>
+                    <td>{w.environment}</td>
                     <td>
                       {w.detail}
                       {w.nullifierHint ? ` · id ${w.nullifierHint}` : ""}
@@ -239,7 +237,7 @@ function Static() {
               {g.txs.map((t) => (
                 <li key={t.hash}>
                   {t.label}: {tx(t.hash)}
-                  {t.note ? <span className="text-neutral-500"> · {t.note}</span> : null}
+                  {t.note ? <span className="text-muted"> · {t.note}</span> : null}
                 </li>
               ))}
             </ul>
@@ -261,8 +259,8 @@ function Static() {
           </li>
         </ul>
         <div className="font-semibold">Run the query yourself</div>
-        <pre className="overflow-x-auto rounded bg-neutral-100 p-3 text-xs text-black">{ARKIV_QUERY}</pre>
-        <p className="text-xs text-neutral-500">Get a free access key at hub.arkiv.network. The schema also lives in arkiv/schema.md in the repository.</p>
+        <pre className="overflow-x-auto rounded-control bg-surface p-3 text-xs text-ink">{ARKIV_QUERY}</pre>
+        <p className="text-xs text-muted">Get a free access key at hub.arkiv.network. The schema also lives in arkiv/schema.md in the repository.</p>
       </section>
 
       <section className="space-y-2">

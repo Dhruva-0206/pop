@@ -56,6 +56,7 @@ Source: https://baymard.com/ (site root only; UNVERIFIED: I did not open a speci
 - Four states on every page: loading (skeleton), empty (what to do), error (what happened, why, what to do), success.
 
 ## Words we do not use
+Scope: buyer screens (`/`, `/p`, `/o`, `/verify`, `/onboard`, the Kurta Co. store). The judge page `/proof` and the team tools (`/arbiter`, `/courier`, `/dashboard`) may use the technical terms because their readers need them (for example "nullifier" in the World verification log).
 Buyer screens: no "escrow", "nullifier", "chain ID", "gas". Never "trustless", "impossible to fake", "delivery verified on-chain". Label TEST MODE wallets and the SIMULATED COURIER.
 
 ## Checklist against AI-generated look and voice

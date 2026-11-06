@@ -288,7 +288,7 @@ ok(again.enqueued === 0, "running the dispatcher again enqueues nothing new (ide
 
 // ---------------------------------------------------------------- 6) reputation read by the store (own key)
 const home = await http_(KURTA, "/");
-ok(home.status === 200 && home.text.includes("Our protected record"), "store home renders its own record (counters from the contracts)");
+ok(home.status === 200 && home.text.includes("Our record"), "store home renders its own record (counters from the contracts)");
 const rec = (await http_(KURTA, "/api/record")).j;
 ok(rec.active === true && Number(rec.completed) >= 1 && rec.totalOrders >= 2 && rec.lostDisputes === "0", `store reads the contract counters itself: ${rec.completed} of ${rec.totalOrders} completed, ${rec.lostDisputes} disputes lost`);
 ok(rec.reviews && typeof rec.reviews.count === "number" && !rec.error, `store reads Arkiv with its own key: ${rec.reviews.count} verified review(s), ${rec.reviews.unmatchedIgnored} unmatched and ${rec.reviews.devIgnored} dev entries ignored`);
