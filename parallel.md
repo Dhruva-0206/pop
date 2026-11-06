@@ -198,6 +198,7 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 | Agent or human | Task | Files claimed | Claimed at (IST) |
 |---|---|---|---|
 | agent 2 (second machine) | UI/UX pass (presentation only, deadline 19:30 IST) | `apps/web/src/app/{page.tsx,layout.tsx,globals.css}`, `apps/web/src/app/p/[listingId]/Checkout.tsx`, `apps/web/src/app/o/[orderId]/OrderView.tsx`, `apps/web/src/app/verify/[handle]/Verify.tsx`, `apps/web/src/app/proof/page.tsx`, `apps/web/src/app/onboard/Onboard.tsx`, `apps/web/src/app/dashboard/Dashboard.tsx`, `apps/web/src/app/courier/Courier.tsx`, `apps/web/src/app/arbiter/Arbiter.tsx`, `apps/web/src/components/*`, `apps/web/src/lib/client/format.ts`, `apps/demo-store/src/app/{page.tsx,layout.tsx,globals.css,PayButton.tsx,orders/Orders.tsx}`, `apps/demo-store/src/components/ui.tsx`, `docs/design-direction.md`, `docs/design-tokens.md`, `docs/screens/after2/`, `docs/screens/README.md` | Fri 11:05 |
+| agent 1 (first machine) | Vercel prep (no deploy, no env changes) | `apps/web/vercel.json`, `docs/deployment.md`, `scripts/vercel-smoke.ts` | Fri 11:22 |
 
 ## 4. Locks
 | Lock | Holder | Since | Note |
