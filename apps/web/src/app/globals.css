@@ -68,6 +68,11 @@
     font-size: 1rem;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+  /* a fixed bottom bar (checkout on mobile) must never hide the focused field */
+  html:has(.paybar) {
+    scroll-padding-bottom: 7rem;
   }
   h1,
   h2,
@@ -282,8 +287,208 @@
     border-color: var(--color-danger);
     color: var(--color-danger);
   }
+  .notice-neutral {
+    background: var(--color-surface);
+    border-color: var(--color-line-strong);
+    color: var(--color-ink-2);
+  }
   .notice strong {
     font-weight: 600;
+  }
+  /* TEST MODE label: one line, same words, less of the first screen */
+  .testmode {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.5rem;
+    align-items: baseline;
+    border: 1px solid var(--color-warn);
+    border-radius: var(--radius-control);
+    background: var(--color-warn-soft);
+    color: var(--color-warn);
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  .testmode strong {
+    font-weight: 700;
+  }
+
+  /* receipt (order page, landing example): white paper on the surface colour, hairlines, a dashed tear line */
+  .desk {
+    background: var(--color-surface);
+  }
+  .receipt {
+    background: var(--color-bg);
+    border: 1px solid var(--color-line);
+    border-radius: 4px;
+  }
+  .receipt-section {
+    padding: 1.25rem 1rem;
+  }
+  @media (min-width: 768px) {
+    .receipt-section {
+      padding: 1.5rem;
+    }
+  }
+  .receipt-section + .receipt-section {
+    border-top: 1px solid var(--color-line);
+  }
+  .tear {
+    margin-inline: 1rem;
+    border-top: 1px dashed var(--color-line-strong);
+  }
+  .tear + .receipt-section {
+    border-top: 0;
+  }
+  .stamp {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+    padding: 0.125rem 0.625rem;
+    border: 2px solid currentColor;
+    border-radius: 4px;
+    font-weight: 700;
+    line-height: 1.5rem;
+    white-space: nowrap;
+  }
+  .stamp-ink {
+    color: var(--color-ink);
+  }
+  .stamp-accent {
+    color: var(--color-accent-strong);
+  }
+  .stamp-warn {
+    color: var(--color-warn);
+  }
+  .stamp-danger {
+    color: var(--color-danger);
+  }
+  .stamp-muted {
+    color: var(--color-ink-2);
+  }
+  .money {
+    display: inline-flex;
+    flex-direction: column;
+  }
+  .money-inr {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--color-ink);
+  }
+  .money-usdt {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: var(--color-ink-2);
+  }
+  .facts {
+    display: grid;
+  }
+  .fact {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--color-line);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  .fact:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .fact dt {
+    color: var(--color-ink-2);
+  }
+  .fact dd {
+    text-align: right;
+    color: var(--color-ink);
+  }
+  .countdown {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+    font-weight: 500;
+    color: var(--color-ink);
+  }
+
+  /* tracker: four squares on a hairline. Filled = done or now, outlined = not yet or skipped. */
+  .tracker {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .track {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding-right: 0.5rem;
+  }
+  .track:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 6px;
+    left: 14px;
+    right: 2px;
+    border-top: 1px solid var(--color-line-strong);
+  }
+  .track-mark {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--color-ink);
+    background: var(--color-bg);
+  }
+  .track-done .track-mark {
+    background: var(--color-ink);
+  }
+  .track-now .track-mark {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+  .track-next .track-mark,
+  .track-skipped .track-mark {
+    border-color: var(--color-line-strong);
+  }
+  .track-label {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+  .track-next .track-label,
+  .track-skipped .track-label {
+    color: var(--color-muted);
+    font-weight: 400;
+  }
+  .track-note {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--color-ink-2);
+  }
+  .track-now .track-note {
+    color: var(--color-accent-strong);
+    font-weight: 500;
+  }
+
+  /* checkout Pay bar: fixed to the bottom on phones, inline from 768 px */
+  @media (max-width: 767px) {
+    .paybar {
+      position: fixed;
+      inset: auto 0 0 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+      background: var(--color-bg);
+      border-top: 1px solid var(--color-line-strong);
+    }
+    .paybar-space {
+      height: calc(5rem + env(safe-area-inset-bottom));
+    }
   }
 
   /* loading */

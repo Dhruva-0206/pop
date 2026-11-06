@@ -55,7 +55,7 @@ export function DisputeBox({ cfg, orderId, onDone }: { cfg: AppConfig; orderId: 
     );
   }
   return (
-    <section aria-labelledby="dispute-h" className="card stack-sm">
+    <section aria-labelledby="dispute-h" className="stack-sm">
       <h2 id="dispute-h">Report a problem</h2>
       <div>
         <label className="label" htmlFor="dispute-text">

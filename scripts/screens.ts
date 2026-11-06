@@ -107,6 +107,8 @@ for (const job of jobs) {
   await cdp.send("Page.navigate", { url: job.url });
   await loaded;
   for (const s of job.steps ?? []) {
+    const sel = s.type?.[0] ?? s.click;
+    if (sel) for (let i = 0; i < 80 && !(await evaluate(cdp, `!!document.querySelector(${JSON.stringify(sel)})`)); i++) await sleep(250);
     if (s.type) {
       await evaluate(cdp, `(() => { const el = document.querySelector(${JSON.stringify(s.type[0])}); el.focus(); })()`);
       await cdp.send("Input.insertText", { text: s.type[1] });
@@ -118,7 +120,7 @@ for (const job of jobs) {
   }
   // Wait until the page has replaced its skeletons with content (max 15 s), then a short settle for fonts.
   for (let i = 0; i < 60 && (await evaluate(cdp, `!!document.querySelector('.skeleton,[aria-busy="true"]')`)); i++) await sleep(250);
-  await sleep(1500);
+  await sleep(3500); // the order page learns who the buyer is on its second 3 s poll
   const m = await evaluate(cdp, `({ sw: document.documentElement.scrollWidth, iw: innerWidth, sh: document.documentElement.scrollHeight, h1: document.querySelectorAll('h1').length })`);
   if (job.fold) {
     const shot = await cdp.send("Page.captureScreenshot", { format: "png" });

@@ -7,11 +7,12 @@ import { checkoutAbi } from "@pop/shared";
 import { publicClientOf, useConfig } from "@/lib/client/config";
 import { getTestAccount, loadCode, walletOf } from "@/lib/client/wallet";
 import Link from "next/link";
-import { STATE_LABEL, priceLabel, usdt, when } from "@/lib/client/format";
+import { STAMP, STATE_LABEL, clockTime, inr, usdt, when } from "@/lib/client/format";
 import { TestModeBanner, TxLink } from "@/components/Banners";
 import { FinalizeButton } from "@/components/FinalizeButton";
 import { ReviewBox } from "@/components/ReviewBox";
-import { Details, ErrorBox, Notice, PageSkeleton } from "@/components/ui";
+import { Details, ErrorBox, Notice, ReceiptSkeleton } from "@/components/ui";
+import { Countdown, Fact, Money, Receipt, ReceiptSection, Stamp, TearLine, Tracker, type StampTone, type TrackStep } from "@/components/receipt";
 import { DisputeBox } from "@/components/DisputeBox";
 
 type Live = {
@@ -37,8 +38,7 @@ type Resp = {
   listing: { title: string; priceInr: number; sellerHandle: string; merchantName?: string; returnUrl?: string } | null;
 };
 
-/** mm:ss for a countdown. */
-const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+const TONE: Record<string, StampTone> = { Funded: "ink", Shipped: "ink", Delivered: "ink", Disputed: "warn", Released: "accent", Refunded: "muted", Split: "muted" };
 
 export default function OrderView() {
   const { orderId } = useParams<{ orderId: string }>();
@@ -125,146 +125,203 @@ export default function OrderView() {
       </div>
     );
   }
-  if (!d || !cfg) return <PageSkeleton />;
+  if (!d || !cfg) return <ReceiptSkeleton />;
   const o = d.order;
   const isBuyer = Boolean(me) && me.toLowerCase() === o.buyer.toLowerCase();
   // The next deadline for the current state, straight from the contract's order fields.
   const next =
     o.state === "Funded"
-      ? { label: "The seller must ship within", target: o.shipBy, help: "If it isn't shipped in time, you are refunded automatically." }
+      ? { label: "Time left for the seller to ship", target: o.shipBy }
       : o.state === "Shipped"
-        ? { label: "It must arrive within", target: o.deliverBy, help: "If it doesn't arrive in time, you are refunded automatically." }
+        ? { label: "Time left for delivery", target: o.deliverBy }
         : o.state === "Delivered"
-          ? { label: "Time left to report a problem", target: o.releaseAt, help: "Something wrong? Report it before this ends. Afterwards the seller is paid." }
+          ? { label: "Time left to report a problem", target: o.releaseAt }
           : o.state === "Disputed"
-            ? { label: "PoP is reviewing this order. A decision is due within", target: o.arbiterDeadline, help: "If nobody decides in time, you are refunded automatically." }
+            ? { label: "Time left for PoP to decide", target: o.arbiterDeadline }
             : null;
   const done = ["Released", "Refunded", "Split"].includes(o.state);
-  const timeline = [
-    { label: "Paid", at: o.fundedAt, done: true },
-    { label: "Shipped", at: o.shippedAt, done: o.shippedAt > 0 },
-    { label: "Delivered (your code was entered at the door)", at: o.deliveredAt, done: o.deliveredAt > 0 },
-    { label: o.state === "Refunded" ? "Complete: refunded to you" : o.state === "Split" ? "Complete: settled by review" : "Complete: seller paid", at: 0, done },
-  ];
+  // The one rule that applies now, with its time. Refund and dispute exits are stated here, under the tracker.
+  const rule =
+    o.state === "Funded"
+      ? `If it is not shipped by ${when(o.shipBy)}, you are refunded automatically.`
+      : o.state === "Shipped"
+        ? `If it is not delivered by ${when(o.deliverBy)}, you are refunded automatically.`
+        : o.state === "Delivered"
+          ? `Report a problem before ${when(o.releaseAt)}. After that the seller is paid.`
+          : o.state === "Disputed"
+            ? `PoP decides by ${when(o.arbiterDeadline)}. If nobody decides by then, you are refunded automatically.`
+            : o.state === "Released"
+              ? isBuyer
+                ? "The seller was paid after the problem window closed. You can now review them below."
+                : "The seller was paid after the problem window closed."
+              : o.state === "Refunded"
+                ? isBuyer
+                  ? credit > BigInt(0)
+                    ? "The full amount came back to you. It is waiting in PoP: move it to your test wallet below."
+                    : "The full amount came back to you, in your test wallet."
+                  : "The buyer got the full amount back."
+                : o.state === "Split"
+                  ? "PoP reviewed a report and split the payment between the buyer and the seller."
+                  : "";
+  const last = o.state === "Refunded" ? "Refunded" : o.state === "Split" ? "Split" : o.state === "Disputed" ? "PoP decides" : "Seller paid";
+  const nowIdx = done ? -1 : o.state === "Disputed" ? 3 : o.state === "Delivered" ? 2 : o.state === "Shipped" ? 1 : 0;
+  const steps: TrackStep[] = [
+    { label: "Paid", at: o.fundedAt },
+    { label: "Shipped", at: o.shippedAt },
+    { label: "Delivered", at: o.deliveredAt },
+    { label: last, at: 0 },
+  ].map((s, i): TrackStep => {
+    if (i === nowIdx) return { label: s.label, state: "now" };
+    if (i < 3 && s.at > 0) return { label: s.label, state: "done", note: clockTime(s.at) };
+    if (i === 3 && done) return { label: s.label, state: "done", note: "Done" };
+    if (done || (o.state === "Disputed" && i < 3)) return { label: s.label, state: "skipped" };
+    return { label: s.label, state: "next" };
+  });
   const words = code ? code.split(" ") : [];
   const left = next ? Math.max(0, next.target - chainNow) : 0;
+  const showCode = Boolean(code) && ["Funded", "Shipped"].includes(o.state);
+  const amountUsdt = usdt(o.amount, cfg.tokenDecimals);
+  const hasActions = isBuyer && (o.state === "Shipped" || (o.state === "Delivered" && o.releaseAt > chainNow) || (o.state === "Released" && !!d.listing) || credit > BigInt(0) || !!msg);
 
   return (
-    <div className="page stack">
-      <TestModeBanner cfg={cfg} />
+    <div className="desk">
+      <div className="page-wide stack">
+        <TestModeBanner cfg={cfg} />
 
-      <section className="stack-sm">
-        <p className="text-sm text-muted">
-          Order #{o.orderId}
-          {d.listing ? (
-            <>
-              {" "}
-              from <Link href={`/verify/${d.listing.sellerHandle}`}>@{d.listing.sellerHandle}</Link>
-            </>
-          ) : null}
-        </p>
-        <h1>{d.listing?.title ?? "Your order"}</h1>
-        {d.listing && <p className="text-lg font-semibold">{priceLabel(d.listing.priceInr, o.amount, cfg.tokenDecimals)}</p>}
-      </section>
-
-      <section aria-labelledby="status" className="card stack-sm">
-        <h2 id="status">Status</h2>
-        <p className="text-xl font-semibold" aria-live="polite">
-          {STATE_LABEL[o.state] ?? o.state}
-        </p>
-        {next && (
-          <div className="panel stack-sm">
-            <p className="text-sm text-ink-2">{next.label}</p>
-            <p className="mono text-2xl font-medium" aria-label={left > 0 ? `${Math.floor(left / 60)} minutes ${left % 60} seconds left` : "time is up"}>
-              {left > 0 ? clock(left) : o.canFinalize ? "Time is up" : "Time is up, confirming"}
-            </p>
-            <p className="text-sm text-ink-2">{left > 0 || o.canFinalize ? next.help : "Waiting for the network to confirm the new time, about 5 seconds."}</p>
-          </div>
-        )}
-        {!isBuyer && <Notice tone="info">You are looking at this order from a browser that didn&apos;t place it. The delivery code and buyer actions are only on the buyer&apos;s device.</Notice>}
-      </section>
-
-      {code && ["Funded", "Shipped"].includes(o.state) && (
-        <section aria-labelledby="code" className="card stack-sm">
-          <h2 id="code">Your delivery code</h2>
-          <p className="text-ink-2">Give these six words to the courier only when the parcel is in your hand. Take a screenshot now: the code is stored only on this device.</p>
-          <ol className="grid grid-cols-3 gap-2" aria-label="Delivery code, six words in order">
-            {words.map((w, i) => (
-              <li key={i} className="rounded-control border px-2 py-2 text-center">
-                <span className="block text-xs text-muted">{i + 1}</span>
-                <span className="mono text-base font-medium">{w}</span>
-              </li>
-            ))}
-          </ol>
-          {qr && (
-            <Details summary="Show the code as a QR code">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={qr} alt="The delivery code as a QR code" className="mx-auto" width={200} height={200} />
-            </Details>
-          )}
-        </section>
-      )}
-
-      {(isBuyer || next) && (
-        <section aria-labelledby="actions" className="stack-sm">
-          <h2 id="actions" className="sr-only">
-            What you can do now
-          </h2>
-          {isBuyer && o.state === "Shipped" && (
-            <button disabled={busy} onClick={() => send("confirmReceived")} className="btn btn-primary btn-block">
-              {busy ? "Sending, about 5 seconds" : "I received it"}
-            </button>
-          )}
-          {isBuyer && o.state === "Delivered" && o.releaseAt > chainNow && <DisputeBox cfg={cfg} orderId={o.orderId} onDone={load} />}
-          {isBuyer && o.state === "Released" && d.listing && <ReviewBox cfg={cfg} orderId={o.orderId} sellerHandle={d.listing.sellerHandle} />}
-          {next && (
-            <div className="stack-sm">
-              <FinalizeButton cfg={cfg} orderId={o.orderId} onDone={load} enabled={o.canFinalize} auto={autoFin && !!isBuyer} />
-              {isBuyer && (
-                <label className="flex min-h-11 items-center gap-3 text-sm text-ink-2">
-                  <input type="checkbox" className="h-5 w-5" checked={autoFin} onChange={(e) => setAutoFin(e.target.checked)} />
-                  Settle for me when the timer ends. This sends one transaction, and only when the contract allows it.
-                </label>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,36rem)_minmax(0,1fr)] lg:gap-10">
+          <Receipt label={`Receipt for order ${o.orderId}`}>
+            <ReceiptSection className="stack-sm">
+              <div className="flex items-start justify-between gap-3">
+                <p className="mono pt-1 text-sm text-ink-2">Order #{o.orderId}</p>
+                <div aria-live="polite">
+                  <Stamp tone={TONE[o.state] ?? "ink"}>{STAMP[o.state] ?? o.state}</Stamp>
+                  <span className="sr-only">{STATE_LABEL[o.state] ?? o.state}</span>
+                </div>
+              </div>
+              <h1>{d.listing?.title ?? "Your order"}</h1>
+              {d.listing && (
+                <p className="text-sm text-ink-2">
+                  Sold by <Link href={`/verify/${d.listing.sellerHandle}`}>@{d.listing.sellerHandle}</Link>
+                </p>
               )}
-            </div>
-          )}
-          {isBuyer && credit > BigInt(0) && (
-            <button disabled={busy} onClick={() => send("withdraw")} className="btn btn-primary btn-block">
-              {busy ? "Sending, about 5 seconds" : `Move ${usdt(credit, cfg.tokenDecimals)} test USDT back to my wallet`}
-            </button>
-          )}
-          {msg && (
-            <p role="status" className="text-sm text-ink-2">
-              {msg}
-            </p>
-          )}
-        </section>
-      )}
+              <div className="pt-2">{d.listing ? <Money inr={inr(d.listing.priceInr)} usdt={amountUsdt} /> : <Money inr={`${amountUsdt} test USDT`} />}</div>
+            </ReceiptSection>
 
-      <section aria-labelledby="timeline" className="card stack-sm">
-        <h2 id="timeline">Progress</h2>
-        <ol className="stack-sm">
-          {timeline.map((s, i) => (
-            <li key={s.label} className={s.done ? "text-ink" : "text-muted"}>
-              <span className="font-semibold">{i + 1}. {s.label}</span>
-              <span className="block text-sm">{s.done ? `Done${s.at ? `, ${when(s.at)}` : ""}` : "Not yet"}</span>
-            </li>
-          ))}
-        </ol>
-        <Details summary="Show details">
-          <p>
-            <TxLink cfg={cfg} hash={d.meta?.fundTx} label="Your payment" />
-          </p>
-          {d.meta?.courierStatus && <p>Courier (simulated): {d.meta.courierStatus}</p>}
-          {d.meta?.trackingNo && <p>Tracking number: {d.meta.trackingNo}</p>}
-        </Details>
-      </section>
+            <ReceiptSection className="stack">
+              <Tracker steps={steps} />
+              <p className="text-ink-2">{rule}</p>
+              {next && (
+                <div className="stack-sm">
+                  <div>
+                    <p className="text-sm text-ink-2">{next.label}</p>
+                    <Countdown seconds={left} doneText={o.canFinalize ? "Time is up" : "Time is up, confirming"} />
+                    {left === 0 && !o.canFinalize && <p className="hint">Waiting for the network to confirm the new time, about 5 seconds.</p>}
+                  </div>
+                  <FinalizeButton cfg={cfg} orderId={o.orderId} onDone={load} enabled={o.canFinalize} auto={autoFin && !!isBuyer} opensAt={when(next.target)} />
+                  {isBuyer && (
+                    <label className="flex min-h-11 items-center gap-3 text-sm text-ink-2">
+                      <input type="checkbox" className="h-5 w-5 shrink-0" checked={autoFin} onChange={(e) => setAutoFin(e.target.checked)} />
+                      Settle for me when the timer ends. This sends one transaction, and only when the contract allows it.
+                    </label>
+                  )}
+                </div>
+              )}
+              {!isBuyer && o.state !== "Refunded" && o.state !== "Split" && (
+                <Notice tone="neutral">You are viewing this order from a browser that didn&apos;t place it. The delivery code and the buyer&apos;s buttons are only on the buyer&apos;s device.</Notice>
+              )}
+            </ReceiptSection>
 
-      {d.listing?.returnUrl && (
-        <p className="text-center">
-          <a href={d.listing.returnUrl}>Back to {d.listing.merchantName ?? "the store"}</a>
-        </p>
-      )}
+            <ReceiptSection>
+              <h2 className="sr-only">Order facts</h2>
+              <dl className="facts">
+                <Fact label="Order number">#{o.orderId}</Fact>
+                <Fact label="Amount">
+                  {d.listing ? `${inr(d.listing.priceInr)} · ` : ""}
+                  {amountUsdt} test USDT
+                </Fact>
+                <Fact label="Paid">{when(o.fundedAt)}</Fact>
+                {o.shippedAt > 0 ? <Fact label="Shipped">{when(o.shippedAt)}</Fact> : !done && <Fact label="Ship by">{when(o.shipBy)}</Fact>}
+                {o.deliveredAt > 0 ? <Fact label="Delivered">{when(o.deliveredAt)}</Fact> : o.shippedAt > 0 && !done && <Fact label="Deliver by">{when(o.deliverBy)}</Fact>}
+                {o.state === "Delivered" && <Fact label="Problem window ends">{when(o.releaseAt)}</Fact>}
+                {o.state === "Disputed" && <Fact label="Decision due">{when(o.arbiterDeadline)}</Fact>}
+              </dl>
+            </ReceiptSection>
+
+            {showCode && (
+              <>
+                <TearLine />
+                <ReceiptSection className="stack-sm" labelledBy="code">
+                  <h2 id="code">Delivery code</h2>
+                  <p className="text-ink-2">Only give this to the courier when the parcel is in your hand.</p>
+                  <ol className="mx-auto grid max-w-sm grid-cols-3 gap-2" aria-label="Delivery code, six words in order">
+                    {words.map((w, i) => (
+                      <li key={i} className="rounded-control border border-line-strong px-2 py-2 text-center">
+                        <span className="block text-xs text-muted">{i + 1}</span>
+                        <span className="mono text-base font-medium">{w}</span>
+                      </li>
+                    ))}
+                  </ol>
+                  <p className="hint">Take a screenshot now. The code is kept only on this device.</p>
+                  {qr && (
+                    <Details summary="Show as QR">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={qr} alt="The delivery code as a QR code" className="mx-auto" width={200} height={200} />
+                    </Details>
+                  )}
+                </ReceiptSection>
+              </>
+            )}
+
+            {hasActions && (
+              <ReceiptSection className="stack-sm">
+                <h2 className="sr-only">What you can do now</h2>
+                {o.state === "Shipped" && (
+                  <button disabled={busy} onClick={() => send("confirmReceived")} className="btn btn-primary btn-block">
+                    {busy ? "Sending, about 5 seconds" : "I received it"}
+                  </button>
+                )}
+                {o.state === "Delivered" && o.releaseAt > chainNow && <DisputeBox cfg={cfg} orderId={o.orderId} onDone={load} />}
+                {o.state === "Released" && d.listing && <ReviewBox cfg={cfg} orderId={o.orderId} sellerHandle={d.listing.sellerHandle} />}
+                {credit > BigInt(0) && (
+                  <button disabled={busy} onClick={() => send("withdraw")} className="btn btn-primary btn-block">
+                    {busy ? "Sending, about 5 seconds" : `Move ${usdt(credit, cfg.tokenDecimals)} test USDT back to my wallet`}
+                  </button>
+                )}
+                {msg && (
+                  <p role="status" className="text-sm text-ink-2">
+                    {msg}
+                  </p>
+                )}
+              </ReceiptSection>
+            )}
+
+            <ReceiptSection>
+              <Details summary="Show details">
+                <p>
+                  <TxLink cfg={cfg} hash={d.meta?.fundTx} label="Your payment" />
+                </p>
+                {d.meta?.courierStatus && <p>Courier (simulated): {d.meta.courierStatus}</p>}
+                {d.meta?.trackingNo && <p>Tracking number: {d.meta.trackingNo}</p>}
+              </Details>
+            </ReceiptSection>
+          </Receipt>
+
+          <aside className="stack-sm text-sm text-ink-2 lg:pt-2" aria-label="About this receipt">
+            <p className="max-w-prose">The status, times and amounts on this receipt are read from the PoP contract every few seconds. Nobody at PoP can edit them.</p>
+            {d.listing && (
+              <p>
+                <Link href={`/verify/${d.listing.sellerHandle}`}>See @{d.listing.sellerHandle}&apos;s record</Link>
+              </p>
+            )}
+            {d.listing?.returnUrl && (
+              <p>
+                <a href={d.listing.returnUrl}>Back to {d.listing.merchantName ?? "the store"}</a>
+              </p>
+            )}
+          </aside>
+        </div>
+      </div>
     </div>
   );
 }
+

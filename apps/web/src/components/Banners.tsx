@@ -1,16 +1,18 @@
 "use client";
 
 import type { AppConfig } from "@/lib/client/config";
-import { Notice } from "./ui";
 
 /** Test-mode label shown on every screen that uses the browser's test wallet. */
 export function TestModeBanner({ cfg }: { cfg: AppConfig | null }) {
   if (!cfg) return null;
   return (
-    <Notice tone="warn">
-      <strong>TEST MODE</strong> The wallet in this browser is a test wallet. Test USDT has no value.
-      {cfg.isLocalFork && " This is a local copy of the test network, so nothing here is a real payment."}
-    </Notice>
+    <p role="status" className="testmode">
+      <strong>TEST MODE</strong>
+      <span>
+        Test wallet in this browser. Test USDT has no value.
+        {cfg.isLocalFork && " Local copy of the test network."}
+      </span>
+    </p>
   );
 }
 

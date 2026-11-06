@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 /** Status message. Danger is announced at once (role="alert"); others are polite (role="status"). Always has words, never color alone. */
-export function Notice({ tone = "info", title, children }: { tone?: "info" | "warn" | "danger"; title?: string; children?: ReactNode }) {
+export function Notice({ tone = "info", title, children }: { tone?: "info" | "neutral" | "warn" | "danger"; title?: string; children?: ReactNode }) {
   return (
     <div role={tone === "danger" ? "alert" : "status"} className={`notice notice-${tone}`}>
       {title && <strong className="block">{title}</strong>}
@@ -21,6 +21,33 @@ export function PageSkeleton({ wide = false }: { wide?: boolean }) {
       <Skeleton className="h-8 w-2/3" />
       <Skeleton className="h-28 w-full" />
       <Skeleton className="h-44 w-full" />
+    </div>
+  );
+}
+
+/** Loading state for the order page: the receipt's own outline (header, amount, tracker, facts). */
+export function ReceiptSkeleton() {
+  return (
+    <div className="desk" aria-busy="true" aria-label="Loading your order">
+      <div className="page-wide">
+        <div className="receipt max-w-xl">
+          <div className="receipt-section stack-sm">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-7 w-3/4" />
+            <Skeleton className="h-8 w-28" />
+          </div>
+          <div className="receipt-section grid grid-cols-4 gap-2">
+            {[0, 1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-10" />
+            ))}
+          </div>
+          <div className="receipt-section stack-sm">
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-full" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -17,12 +17,15 @@ export function FinalizeButton({
   onDone,
   enabled = true,
   auto = false,
+  opensAt,
 }: {
   cfg: AppConfig;
   orderId: string;
   onDone?: () => void;
   enabled?: boolean;
   auto?: boolean;
+  /** Display only: when the button opens, in words ("3:12 pm, 6 Nov"). */
+  opensAt?: string;
 }) {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
@@ -69,8 +72,9 @@ export function FinalizeButton({
   return (
     <div className="stack-sm">
       <button onClick={go} disabled={busy || !enabled} className="btn btn-secondary btn-block">
-        {busy ? "Settling, about 5 seconds" : enabled ? "Settle now" : "Settle (opens when the timer ends)"}
+        {busy ? "Settling, about 5 seconds" : enabled ? "Settle now" : "Settle"}
       </button>
+      {!enabled && !busy && <p className="hint">{opensAt ? `Settle opens at ${opensAt}, when the timer ends.` : "Settle opens when the timer ends."} Anyone can press it then, and the contract decides the outcome.</p>}
       {enabled && !busy && !msg && <p className="hint">The deadline has passed. Anyone can press this, and the contract decides the outcome.</p>}
       {msg && (
         <p role="status" className="text-sm text-ink-2">

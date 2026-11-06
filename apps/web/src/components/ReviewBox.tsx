@@ -98,7 +98,7 @@ export function ReviewBox({ cfg, orderId, sellerHandle }: { cfg: AppConfig; orde
 
   if (existing.exists) {
     return (
-      <section aria-labelledby="your-review" className="card stack-sm">
+      <section aria-labelledby="your-review" className="stack-sm">
         <h2 id="your-review">Your review</h2>
         <p className="font-semibold">{existing.rating ?? 0} out of 5</p>
         {existing.text && <p className="whitespace-pre-wrap break-words">{existing.text}</p>}
@@ -127,7 +127,7 @@ export function ReviewBox({ cfg, orderId, sellerHandle }: { cfg: AppConfig; orde
 
   const signal = buyer ? keccak256(encodePacked(["uint256", "address"], [BigInt(orderId), buyer.address as Address])) : undefined;
   return (
-    <section aria-labelledby="review-h" className="card stack-sm">
+    <section aria-labelledby="review-h" className="stack-sm">
       <div>
         <h2 id="review-h">Review @{sellerHandle}</h2>
         <p className="hint">One review per person per seller. World ID checks that you are a real, unique person. It does not share who you are.</p>
