@@ -197,11 +197,12 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 ## 3. Active claims
 | Agent or human | Task | Files claimed | Claimed at (IST) |
 |---|---|---|---|
+| agent 1 (Dhruva's agent) | Browser-wallet vendors can ship from /dashboard (fees top-up, readable errors, link from /onboard) | `apps/web/src/app/dashboard/Dashboard.tsx`, `apps/web/src/app/onboard/Onboard.tsx`, `apps/web/src/lib/client/errors.ts`, `parallel.md` | Fri 20:48 |
 
 ## 4. Locks
 | Lock | Holder | Since | Note |
 |---|---|---|---|
-| chain (Whitechain 1874 and Arkiv writes) | free | | |
+| chain (Whitechain 1874 and Arkiv writes) | Dhruva's agent | Fri 20:48 | one throwaway shop on testnet: pay, ship from the dashboard, courier delivery (test USDT and WBT only) |
 | fork (local anvil, schemas `pop_fork` and `kurta_31337`) | free | | |
 | vercel (deploys and env changes) | free | | |
 
