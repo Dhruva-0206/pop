@@ -22,7 +22,7 @@ function findRoot(): string {
 
 /** Addresses: env override (Vercel) or deployments/<mode>.json written by scripts/deploy.ts. */
 export function deployment(): Deployment {
-  if (process.env.CHECKOUT_ADDRESS && process.env.REGISTRY_ADDRESS && mode === "testnet") {
+  if (process.env.CHECKOUT_ADDRESS && process.env.REGISTRY_ADDRESS) {
     return {
       mode,
       chainId: net.chain.id,
@@ -34,6 +34,7 @@ export function deployment(): Deployment {
       deployedAt: "",
     };
   }
+  if (process.env.VERCEL) throw new Error("Set CHECKOUT_ADDRESS, REGISTRY_ADDRESS and DEPLOY_BLOCK in the Vercel project env (no disk reads on Vercel)");
   const p = resolve(findRoot(), "deployments", `${mode}.json`);
   if (!existsSync(p)) throw new Error(`No deployment for ${mode}`);
   return JSON.parse(readFileSync(p, "utf8"));

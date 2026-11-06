@@ -233,3 +233,30 @@ export async function readSellerReviews(accessKey: string, attestor: Address, se
   rows.sort((a, b) => b.createdAt - a.createdAt);
   return { rows, ignoredNotReadonly };
 }
+
+export type ArkivEntityLine = { key: Hex; owner: string; readonly: boolean; seller: string; orderId: string; rating: number; createdAt: number; reviewerKey: string; payTx: string; dev: boolean };
+
+/** Newest reviews created by the attestor, any seller (for the /proof page). Shows creator/owner/readonly so anyone can see the trust rules hold. */
+export async function listAttestorEntities(accessKey: string, attestor: Address, limit = 25): Promise<ArkivEntityLine[]> {
+  const page = await arkivReader(accessKey)
+    .select({ $key: true, $owner: true, $creator: true, $creationFlags: true, seller: true, order_id: true, rating: true, created_at: true, reviewer_key: true, pay_tx: true })
+    .from(ReviewSchema)
+    .createdBy(attestor)
+    .limit(limit)
+    .fetch();
+  return page.entities
+    .filter((e) => e.$creator?.toLowerCase() === attestor.toLowerCase())
+    .map((e) => ({
+      key: e.$key as Hex,
+      owner: String(e.$owner),
+      readonly: Boolean(e.$creationFlags?.readonly),
+      seller: String(e.seller.value),
+      orderId: String(e.order_id.value),
+      rating: Number(e.rating.value),
+      createdAt: Number(e.created_at.value),
+      reviewerKey: String(e.reviewer_key.value),
+      payTx: String(e.pay_tx.value),
+      dev: String(e.reviewer_key.value).startsWith(DEV_REVIEWER_PREFIX),
+    }))
+    .sort((a, b) => b.createdAt - a.createdAt);
+}

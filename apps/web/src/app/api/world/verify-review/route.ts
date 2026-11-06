@@ -6,7 +6,7 @@ import { DEV_REVIEWER_PREFIX } from "@pop/shared/server/arkiv";
 import { historyBucket } from "@pop/shared/server/store";
 import { pub, store } from "@/lib/server/chain";
 import { readOrder } from "@/lib/server/orders";
-import { publishReviewRow } from "@/lib/server/reviews";
+import { logWorld, publishReviewRow } from "@/lib/server/reviews";
 import { devSkipWorld, reviewActionFor, reviewSignal, reviewerKey, verifyReviewProof } from "@/lib/server/world";
 import { REVIEW_TEXT_MAX, normaliseReviewText, reviewAuthMessage } from "@/lib/messages";
 
@@ -90,12 +90,16 @@ export async function POST(req: Request) {
   let publicKey: string;
   if (skipWorld) {
     console.warn(`[world] DEV: World proof SKIPPED for order ${orderId} (POP_DEV_SKIP_WORLD=1). Not a verified human.`);
+    await logWorld({ sellerHandle: sellerRow.handle, orderId, outcome: "dev-skipped", detail: "POP_DEV_SKIP_WORLD (local dev only), no World proof" });
     nullifier = `dev-skip:${orderId}`;
     publicKey = DEV_REVIEWER_PREFIX + keccak256(encodePacked(["uint256", "address"], [BigInt(orderId), sellerRow.wallet as Address])).slice(2);
   } else {
     const signal = reviewSignal(BigInt(orderId), order.buyer as Address);
     const v = await verifyReviewProof(idkitResult as never, action!, signal);
-    if (!v.ok) return NextResponse.json({ ok: false, error: v.reason }, { status: v.status });
+    if (!v.ok) {
+      await logWorld({ sellerHandle: sellerRow.handle, orderId, outcome: "rejected", detail: v.reason, action: action ?? undefined });
+      return NextResponse.json({ ok: false, error: v.reason }, { status: v.status });
+    }
     nullifier = v.nullifier;
     publicKey = reviewerKey(v.nullifier, sellerRow.wallet as Address);
   }
@@ -117,9 +121,11 @@ export async function POST(req: Request) {
     devSkippedWorld: skipWorld,
   });
   if (!claimed) {
+    await logWorld({ sellerHandle: sellerRow.handle, orderId, outcome: "replay", detail: "nullifier already used for this seller, or order already reviewed", action: action ?? undefined, nullifierHint: nullifierHash.slice(0, 12) });
     return NextResponse.json({ ok: false, error: "this person has already reviewed this seller, or this order already has a review" }, { status: 409 });
   }
 
+  if (!skipWorld) await logWorld({ sellerHandle: sellerRow.handle, orderId, outcome: "verified", detail: "World proof verified server-side; review claimed", action: action ?? undefined, nullifierHint: nullifierHash.slice(0, 12) });
   const out = await publishReviewRow(orderId);
   console.log(`[review] order=${orderId} accepted; arkiv=${out.status}${skipWorld ? " (DEV, no World proof)" : ""}`);
   return NextResponse.json({

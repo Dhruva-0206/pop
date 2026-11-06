@@ -1,0 +1,245 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import QRCode from "qrcode";
+import { parseUnits, zeroHash, type Hex } from "viem";
+import { checkoutAbi, listingIdHash, offerDomain, offerTypes, registryAbi, termsHash, type Terms } from "@pop/shared";
+import { publicClientOf, useConfig } from "@/lib/client/config";
+import { getTestAccount, walletOf } from "@/lib/client/wallet";
+import { onboardRequestMessage } from "@/lib/messages";
+import { TestModeBanner, TxLink } from "@/components/Banners";
+
+type Status = {
+  status: "none" | "pending" | "approved" | "rejected";
+  handle?: string;
+  bioCode?: string;
+  registration?: { seller: Hex; handleHash: Hex; handleTier: number; nonce: string; deadline: number; signature: Hex };
+  listing?: { id: string; title: string };
+};
+
+const errText = (e: unknown) => (e instanceof Error ? e.message.split("\n")[0] : "Something went wrong");
+
+export default function Onboard() {
+  const { cfg } = useConfig();
+  const [addr, setAddr] = useState<Hex | "">("");
+  const [st, setSt] = useState<Status>({ status: "none" });
+  const [registered, setRegistered] = useState(false);
+  const [handle, setHandle] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [regTx, setRegTx] = useState("");
+  // product form
+  const [title, setTitle] = useState("Silver jhumkas (oxidised, handmade)");
+  const [priceInr, setPriceInr] = useState("899");
+  const [priceUsdt, setPriceUsdt] = useState("1.00");
+  const [shipMin, setShipMin] = useState("3");
+  const [deliverMin, setDeliverMin] = useState("5");
+  const [qr, setQr] = useState("");
+
+  useEffect(() => {
+    if (cfg) setAddr(getTestAccount(cfg, "seller")!.address);
+  }, [cfg]);
+
+  const refresh = useCallback(async () => {
+    if (!cfg || !addr) return;
+    const r = await fetch(`/api/onboard/status?wallet=${addr}`, { cache: "no-store" });
+    if (r.ok) setSt(await r.json());
+    const active = await publicClientOf(cfg).readContract({ address: cfg.registry, abi: registryAbi, functionName: "isActive", args: [addr] });
+    setRegistered(Boolean(active));
+  }, [cfg, addr]);
+
+  useEffect(() => {
+    refresh();
+    const t = setInterval(refresh, 4000);
+    return () => clearInterval(t);
+  }, [refresh]);
+
+  const link = st.listing && typeof window !== "undefined" ? `${window.location.origin}/p/${st.listing.id}` : "";
+  useEffect(() => {
+    if (link) QRCode.toDataURL(link, { margin: 1, width: 200 }).then(setQr);
+  }, [link]);
+
+  async function ensureGas(a: Hex) {
+    if (!cfg) return;
+    const pc = publicClientOf(cfg);
+    if ((await pc.getBalance({ address: a })) === BigInt(0)) {
+      await fetch("/api/faucet", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ address: a }) });
+    }
+  }
+
+  async function run(fn: () => Promise<void>) {
+    setBusy(true);
+    setMsg("");
+    try {
+      await fn();
+    } catch (e) {
+      setMsg(errText(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const requestCode = () =>
+    run(async () => {
+      if (!cfg) return;
+      const acct = getTestAccount(cfg, "seller")!;
+      const h = handle.trim().toLowerCase().replace(/^@/, "");
+      const signature = await acct.signMessage({ message: onboardRequestMessage(h, acct.address) });
+      const r = await fetch("/api/onboard/request", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ handle: h, wallet: acct.address, signature }) });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error ?? "request failed");
+      await refresh();
+    });
+
+  const registerOnChain = () =>
+    run(async () => {
+      if (!cfg || !st.registration) return;
+      const acct = getTestAccount(cfg, "seller")!;
+      await ensureGas(acct.address);
+      const w = walletOf(cfg, acct);
+      const r = st.registration;
+      const tx = await w.writeContract({
+        address: cfg.registry,
+        abi: registryAbi,
+        functionName: "registerSeller",
+        args: [r.seller, r.handleHash, r.handleTier, BigInt(r.nonce), BigInt(r.deadline), r.signature],
+        account: acct,
+        chain: w.chain,
+      });
+      await publicClientOf(cfg).waitForTransactionReceipt({ hash: tx });
+      setRegTx(tx);
+      await refresh();
+    });
+
+  const publish = () =>
+    run(async () => {
+      if (!cfg || !st.handle) return;
+      const acct = getTestAccount(cfg, "seller")!;
+      const w = walletOf(cfg, acct);
+      const slug = `${st.handle.replace(/[._]/g, "-")}-${Math.random().toString(16).slice(2, 6)}`;
+      const terms: Terms = {
+        title: title.trim(),
+        priceInr: Math.round(Number(priceInr)),
+        shipWithinSec: Math.round(Number(shipMin) * 60),
+        deliverWithinSec: Math.round(Number(deliverMin) * 60),
+        returnPolicy: "Report a problem within the window after delivery; the arbiter decides refund, release or split.",
+      };
+      const minV = await publicClientOf(cfg).readContract({ address: cfg.checkout, abi: checkoutAbi, functionName: "minOfferVersion", args: [acct.address] });
+      const offer = {
+        seller: acct.address,
+        listingId: listingIdHash(slug),
+        termsHash: termsHash(terms),
+        externalRef: zeroHash,
+        price: parseUnits(priceUsdt, cfg.tokenDecimals),
+        shipWithin: terms.shipWithinSec,
+        deliverWithin: terms.deliverWithinSec,
+        maxUnits: 50,
+        validUntil: BigInt(Math.floor(Date.now() / 1000) + 6 * 86400),
+        version: minV > BigInt(1) ? minV : BigInt(1),
+      };
+      const offerSig = await w.signTypedData({ account: acct, domain: offerDomain(cfg.chainId, cfg.checkout), types: offerTypes, primaryType: "Offer", message: offer });
+      const r = await fetch("/api/onboard/listing", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ slug, terms, offerSig, offer: { ...offer, price: offer.price.toString(), validUntil: offer.validUntil.toString(), version: offer.version.toString() } }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(`${j.error ?? "could not publish"}${j.detail ? `: ${j.detail.join("; ")}` : ""}`);
+      await refresh();
+    });
+
+  if (!cfg) return <main className="mx-auto max-w-md p-6 text-neutral-500">Loading…</main>;
+  const embed = st.handle && typeof window !== "undefined" ? `<a href="${link}"><img src="${window.location.origin}/api/badge/${st.handle}" alt="Protected by PoP"></a>` : "";
+
+  return (
+    <main className="mx-auto max-w-md space-y-4 p-4">
+      <TestModeBanner cfg={cfg} />
+      <h1 className="text-xl font-semibold">Become a protected seller</h1>
+      <p className="text-sm text-neutral-600">Four steps: prove your Instagram handle, register, sign one product, share your link. Test wallet in this browser: {addr ? `${addr.slice(0, 8)}…${addr.slice(-4)}` : "…"}</p>
+
+      {st.status === "none" && (
+        <div className="space-y-2 rounded-xl border p-4">
+          <div className="font-semibold">1. Your Instagram handle</div>
+          <input className="w-full rounded border p-2" placeholder="@yourshop" value={handle} onChange={(e) => setHandle(e.target.value)} />
+          <button disabled={busy || !handle.trim()} onClick={requestCode} className="w-full rounded-xl bg-emerald-600 py-2 font-semibold text-white disabled:opacity-50">
+            Get my bio code
+          </button>
+        </div>
+      )}
+
+      {st.status === "pending" && (
+        <div className="space-y-2 rounded-xl border p-4">
+          <div className="font-semibold">2. Put this code in your Instagram bio</div>
+          <div className="rounded bg-neutral-100 p-3 text-center font-mono text-xl">{st.bioCode}</div>
+          <div className="text-sm text-neutral-600">
+            A PoP team member checks @{st.handle}&apos;s bio and approves you. This page updates by itself. (Staff: /arbiter.)
+          </div>
+        </div>
+      )}
+
+      {st.status === "rejected" && <div className="rounded-xl border border-red-300 p-4 text-sm text-red-700">The team could not find the code in the bio. Check the handle and ask again.</div>}
+
+      {st.status === "approved" && !registered && (
+        <div className="space-y-2 rounded-xl border p-4">
+          <div className="font-semibold">3. Approved. Register on-chain</div>
+          <div className="text-sm text-neutral-600">@{st.handle} was checked by the team (handle proof: tier 1). One transaction from your test wallet registers you.</div>
+          <button disabled={busy || !st.registration} onClick={registerOnChain} className="w-full rounded-xl bg-emerald-600 py-2 font-semibold text-white disabled:opacity-50">
+            {busy ? "Registering…" : "Register @" + st.handle}
+          </button>
+        </div>
+      )}
+
+      {registered && !st.listing && (
+        <div className="space-y-2 rounded-xl border p-4">
+          <div className="font-semibold">4. Your product (you sign the offer in your wallet)</div>
+          <TxLink cfg={cfg} hash={regTx} label="registration" />
+          <input className="w-full rounded border p-2" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Product name" />
+          <div className="grid grid-cols-2 gap-2">
+            <label className="text-xs text-neutral-600">
+              Price (₹)
+              <input className="w-full rounded border p-2 text-base text-black" inputMode="numeric" value={priceInr} onChange={(e) => setPriceInr(e.target.value)} />
+            </label>
+            <label className="text-xs text-neutral-600">
+              Price (test USDT)
+              <input className="w-full rounded border p-2 text-base text-black" inputMode="decimal" value={priceUsdt} onChange={(e) => setPriceUsdt(e.target.value)} />
+            </label>
+            <label className="text-xs text-neutral-600">
+              Ship within (minutes, demo)
+              <input className="w-full rounded border p-2 text-base text-black" inputMode="numeric" value={shipMin} onChange={(e) => setShipMin(e.target.value)} />
+            </label>
+            <label className="text-xs text-neutral-600">
+              Deliver within (minutes after shipping)
+              <input className="w-full rounded border p-2 text-base text-black" inputMode="numeric" value={deliverMin} onChange={(e) => setDeliverMin(e.target.value)} />
+            </label>
+          </div>
+          <button disabled={busy} onClick={publish} className="w-full rounded-xl bg-emerald-600 py-2 font-semibold text-white disabled:opacity-50">
+            {busy ? "Signing…" : "Sign and publish"}
+          </button>
+        </div>
+      )}
+
+      {st.listing && (
+        <div className="space-y-3 rounded-xl border-2 border-emerald-500 p-4">
+          <div className="font-semibold">You&apos;re live: {st.listing.title}</div>
+          <div className="break-all rounded bg-neutral-100 p-2 text-sm">
+            <a className="underline" href={link}>
+              {link}
+            </a>
+          </div>
+          {qr && <img src={qr} alt="QR code for your checkout link" width={200} height={200} className="mx-auto" />}
+          <div className="text-xs text-neutral-600">Put this link or QR in your Instagram bio, stories or WhatsApp.</div>
+          {st.handle && (
+            <>
+              <img src={`/api/badge/${st.handle}`} alt="Protected by PoP badge" width={280} height={62} />
+              <textarea readOnly className="w-full rounded border p-2 font-mono text-xs" rows={3} value={embed} />
+              <a className="text-sm underline" href={`/verify/${st.handle}`}>
+                See your public record
+              </a>
+            </>
+          )}
+        </div>
+      )}
+      {msg && <div className="text-sm text-red-700">{msg}</div>}
+    </main>
+  );
+}

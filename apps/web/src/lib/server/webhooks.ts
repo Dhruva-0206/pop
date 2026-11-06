@@ -51,7 +51,7 @@ async function run(): Promise<Summary> {
   // ---- 1) scan new chain events and enqueue
   const key = `webhooks:${net.chain.id}:${d.checkout.toLowerCase()}`;
   const cursor = await store.webhookCursor(key);
-  const latest = await pub.getBlockNumber();
+  const latest = await pub.getBlockNumber({ cacheTime: 0 });
   let from = cursor === undefined ? BigInt(d.deployBlock) : BigInt(cursor) + BigInt(1);
   const blockTs = new Map<bigint, number>();
   const orderInfo = new Map<string, { seller: Address; buyer: Address; amount: bigint; txHash: Hex; listingId: Hex }>();
@@ -60,7 +60,7 @@ async function run(): Promise<Summary> {
     const k = orderId.toString();
     const hit = orderInfo.get(k);
     if (hit) return hit;
-    const tip = await pub.getBlockNumber();
+    const tip = await pub.getBlockNumber({ cacheTime: 0 });
     const evs = await chunkedLogs(BigInt(d.deployBlock), tip, (fromBlock, toBlock) =>
       pub.getContractEvents({ address: d.checkout, abi: checkoutAbi, eventName: "OrderFunded", args: { orderId }, fromBlock, toBlock }),
     );

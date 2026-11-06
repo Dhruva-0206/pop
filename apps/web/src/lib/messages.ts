@@ -37,3 +37,11 @@ export const reviewAuthMessage = (orderId: string, sellerHandle: string, rating:
 /** Signed by the BUYER wallet to retry publishing an already-accepted review to Arkiv. Moves no money. */
 export const reviewRetryMessage = (orderId: string, sellerHandle: string) =>
   `${APP_NAME} review retry\nOrder: ${orderId}\nSeller: ${sellerHandle.trim().toLowerCase()}\nThis signature only asks PoP to retry publishing your review. It moves no money.`;
+
+/** Signed by the seller's wallet to ask for onboarding: proves the requester controls the wallet that will be registered. */
+export const onboardRequestMessage = (handle: string, wallet: string) =>
+  `PoP seller onboarding\nHandle: @${handle.toLowerCase()}\nWallet: ${wallet.toLowerCase()}\nI control this Instagram account and this wallet.`;
+
+/** Signed by the buyer's wallet when saving the reason text of a dispute (the on-chain evidenceHash is keccak(text)). */
+export const disputeReasonMessage = (orderId: string, text: string) => `PoP dispute reason\nOrder: ${orderId}\nReason: ${text}`;
+export const DISPUTE_TEXT_MAX = 500;

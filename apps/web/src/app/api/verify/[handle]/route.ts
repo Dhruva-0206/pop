@@ -39,7 +39,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ handle: string
   }
 
   // Denominator: every protected order ever paid to this seller (OrderFunded events, indexed by seller).
-  const latest = await pub.getBlockNumber();
+  const latest = await pub.getBlockNumber({ cacheTime: 0 });
   const funded = await chunkedLogs(BigInt(d.deployBlock), latest, (fromBlock, toBlock) =>
     pub.getContractEvents({ address: d.checkout, abi: checkoutAbi, eventName: "OrderFunded", args: { seller: owner }, fromBlock, toBlock }),
   );

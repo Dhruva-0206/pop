@@ -7,6 +7,15 @@ import { dispatchWebhooks } from "@/lib/server/webhooks";
  * registration; a cron can hit it too.
  */
 export async function POST() {
+  return run();
+}
+
+/** Same pass for GET: Vercel Cron only issues GET requests. */
+export async function GET() {
+  return run();
+}
+
+async function run() {
   await connection();
   try {
     return NextResponse.json(await dispatchWebhooks());

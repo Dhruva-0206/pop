@@ -338,4 +338,115 @@ if (!cfgJson.devSkipWorld) {
   log(`arbiter force-refunded open order #${D.id} of the banned seller: buyer got ${(Number(after2 - before2) / 10 ** dep.tokenDecimals).toFixed(2)} back; a non-arbiter was blocked`);
 }
 
+// ================= Pass 3: dispute flow, arbiter API, onboarding, badge, proof page =================
+{
+  const chk = (cond: unknown, s: string) => {
+    if (!cond) throw new Error(`FAIL: ${s}`);
+    log(s);
+  };
+  const sellerW = walletOf("SELLER_PK");
+  const courierW = walletOf("COURIER_PK");
+  const arbW = walletOf("ARBITER_PK");
+  const walletFor = (acct: ReturnType<typeof privateKeyToAccount>) => createWalletClient({ chain: net.chain, transport: http(net.rpcUrl), account: acct });
+
+  // ---- buyer reports a problem inside the window, arbiter resolves with a split
+  const E = await buyerPays();
+  await pub.waitForTransactionReceipt({ hash: await sellerW.writeContract({ address: dep.checkout, abi: checkoutAbi, functionName: "markShipped", args: [E.id, keccak256(toHex("T-DISPUTE"))] }) });
+  await pub.waitForTransactionReceipt({ hash: await courierW.writeContract({ address: dep.checkout, abi: checkoutAbi, functionName: "confirmDelivery", args: [E.id, codeBytes(E.code)] }) });
+  chk((await state(E.id)) === "Delivered", `dispute test: order #${E.id} delivered`);
+  const reason = "The parcel was empty (test dispute).";
+  const buyerW = walletFor(E.acct);
+  await api("/api/arbiter/disputes"); // warms the server's block-number cache: the reason POST right after openDispute must still see the new block (regression: viem caches getBlockNumber for 4 s)
+  await pub.waitForTransactionReceipt({ hash: await buyerW.writeContract({ address: dep.checkout, abi: checkoutAbi, functionName: "openDispute", args: [E.id, keccak256(toHex(reason))] }) });
+  chk((await state(E.id)) === "Disputed", "buyer's openDispute inside the window -> Disputed");
+  const { disputeReasonMessage } = await import("../apps/web/src/lib/messages");
+  const strangerAcct = privateKeyToAccount(generatePrivateKey());
+  const badSig = await api(`/api/orders/${E.id}/dispute`, { text: reason, signature: await strangerAcct.signMessage({ message: disputeReasonMessage(E.id.toString(), reason) }) });
+  chk(badSig.status === 403, "dispute reason signed by a non-buyer is rejected (403)");
+  const other = "A different text than the one hashed on-chain.";
+  const mismatch = await api(`/api/orders/${E.id}/dispute`, { text: other, signature: await E.acct.signMessage({ message: disputeReasonMessage(E.id.toString(), other) }) });
+  chk(mismatch.status === 409, "dispute reason that does not match the on-chain evidence hash is rejected (409)");
+  const goodReason = await api(`/api/orders/${E.id}/dispute`, { text: reason, signature: await E.acct.signMessage({ message: disputeReasonMessage(E.id.toString(), reason) }) });
+  chk(goodReason.status === 200, "the buyer's matching, signed reason is saved");
+  const list = (await api("/api/arbiter/disputes")).j.disputes as { orderId: string; kind: string; reason: string | null; sellerHandle: string | null }[];
+  const mine = list.find((d) => d.orderId === E.id.toString());
+  chk(mine && mine.kind === "buyer-dispute" && mine.reason === reason, "arbiter page API lists the dispute with the buyer's reason");
+  const handover = list.find((d) => d.orderId !== E.id.toString());
+  void handover; // the earlier handover-refused order (Disputed too) is listed as well
+  chk(list.some((d) => d.kind === "handover-refused"), "arbiter page API also lists the courier's handover-refused dispute");
+  await pub.waitForTransactionReceipt({ hash: await arbW.writeContract({ address: dep.checkout, abi: checkoutAbi, functionName: "resolveDispute", args: [E.id, 5000, keccak256(toHex("split 50/50 (test)"))] }) });
+  chk((await state(E.id)) === "Split", "arbiter resolved the dispute 50/50 -> Split");
+  chk(!((await api("/api/arbiter/disputes")).j.disputes as { orderId: string }[]).some((d) => d.orderId === E.id.toString()), "a resolved dispute leaves the arbiter list");
+  const lookup = await api("/api/arbiter/seller?handle=meera.jewels");
+  chk(lookup.status === 200 && lookup.j.active === true && lookup.j.banned === false && Array.isArray(lookup.j.openOrders), "arbiter seller lookup returns standing and open orders");
+  chk((await api("/api/arbiter/seller?handle=nobody.here.zz")).status === 404, "arbiter lookup of an unknown handle -> 404");
+
+  // ---- /onboard: bio code -> staff approval -> on-chain registration -> one signed product -> link, badge
+  const { onboardRequestMessage } = await import("../apps/web/src/lib/messages");
+  const nw = privateKeyToAccount(generatePrivateKey());
+  const nwW = walletFor(nw);
+  await pub.request({ method: "anvil_setBalance" as never, params: [nw.address, "0x16345785D8A0000"] as never });
+  const oh = `onb${Math.random().toString(36).slice(2, 8)}`;
+  chk((await api("/api/staff/onboard")).status === 401, "staff list needs a staff session");
+  const strangerReq = await api("/api/onboard/request", { handle: oh, wallet: nw.address, signature: await strangerAcct.signMessage({ message: onboardRequestMessage(oh, nw.address) }) });
+  chk(strangerReq.status === 403, "onboarding request not signed by the wallet is rejected (403)");
+  const req1 = await api("/api/onboard/request", { handle: `@${oh}`, wallet: nw.address, signature: await nw.signMessage({ message: onboardRequestMessage(oh, nw.address) }) });
+  chk(req1.status === 201 && /^POP-[0-9A-F]{6}$/.test(req1.j.bioCode), `onboarding request created, bio code ${req1.j.bioCode}`);
+  const thief = privateKeyToAccount(generatePrivateKey());
+  const dupHandle = await api("/api/onboard/request", { handle: oh, wallet: thief.address, signature: await thief.signMessage({ message: onboardRequestMessage(oh, thief.address) }) });
+  chk(dupHandle.status === 409, "the same handle requested by another wallet is rejected (409)");
+  const takenHandle = await api("/api/onboard/request", { handle: "meera.jewels", wallet: thief.address, signature: await thief.signMessage({ message: onboardRequestMessage("meera.jewels", thief.address) }) });
+  chk(takenHandle.status === 409, "an already registered handle cannot be requested (409)");
+  const st1 = await api(`/api/onboard/status?wallet=${nw.address}`);
+  chk(st1.j.status === "pending" && !st1.j.registration, "status is pending with no registration yet");
+
+  const mkListing = async (acct: ReturnType<typeof privateKeyToAccount>, slug: string, signer = acct) => {
+    const t = { title: "Onboarding test product", priceInr: 499, shipWithinSec: 180, deliverWithinSec: 300, returnPolicy: "Report a problem within the window." };
+    const o = { seller: acct.address, listingId: listingIdHash(slug), termsHash: termsHash(t), externalRef: `0x${"00".repeat(32)}` as Hex, price: 1_000_000n, shipWithin: 180, deliverWithin: 300, maxUnits: 5, validUntil: BigInt(Math.floor(Date.now() / 1000) + 6 * 86400), version: 1n };
+    const sig = await walletFor(signer).signTypedData({ domain: offerDomain(net.chain.id, dep.checkout), types: offerTypes, primaryType: "Offer", message: o });
+    return api("/api/onboard/listing", { slug, terms: t, offerSig: sig, offer: { ...o, price: o.price.toString(), validUntil: o.validUntil.toString(), version: o.version.toString() } });
+  };
+  const early = await mkListing(nw, `${oh}-early`);
+  chk(early.status === 403, "a product before approval is rejected (403)");
+
+  const pend = (await api("/api/staff/onboard", undefined, "pop_courier")).j.pending as { id: number; handle: string }[];
+  const row = pend.find((p) => p.handle === oh);
+  chk(row, "staff (team passcode) sees the pending request");
+  chk((await api("/api/staff/onboard", { id: row!.id, approve: true })).status === 401, "approving without a staff session is rejected (401)");
+  chk((await api("/api/staff/onboard", { id: row!.id, approve: true }, "pop_courier")).j.status === "approved", "staff approved: the attestor signed the registration");
+  chk((await api("/api/staff/onboard", { id: row!.id, approve: true }, "pop_courier")).status === 404, "a decided request cannot be decided again");
+  const st2 = await api(`/api/onboard/status?wallet=${nw.address}`);
+  const rg = st2.j.registration;
+  chk(st2.j.status === "approved" && rg?.signature, "status is approved with the signed registration");
+  const preReg = await mkListing(nw, `${oh}-pre`);
+  chk(preReg.status === 403, "a product before the on-chain registration is rejected (403: not an active seller)");
+  await pub.waitForTransactionReceipt({ hash: await nwW.writeContract({ address: dep.registry, abi: registryAbi, functionName: "registerSeller", args: [rg.seller, rg.handleHash, rg.handleTier, BigInt(rg.nonce), BigInt(rg.deadline), rg.signature] }) });
+  chk(await pub.readContract({ address: dep.registry, abi: registryAbi, functionName: "isActive", args: [nw.address] }), "the new seller registered on-chain with the attestor's signature (tier 1)");
+
+  const slug = `${oh}-product`;
+  const forged = await mkListing(nw, `${oh}-forged`, privateKeyToAccount(generatePrivateKey()));
+  chk(forged.status === 403, "an offer signed by another key is rejected (403)");
+  const made = await mkListing(nw, slug);
+  chk(made.status === 201 && made.j.link === `/p/${slug}`, `the seller's one product is live at ${made.j.link}`);
+  chk((await mkListing(nw, `${oh}-second`)).status === 409, "a second product is rejected: one product per seller (409)");
+  const pub1 = await api(`/api/listings/${slug}`);
+  chk(pub1.status === 200 && pub1.j.listing.sellerHandle === oh && pub1.j.termsHashMatches === true, "the checkout page API serves the new listing with matching terms");
+  const badge = await fetch(`${WEB}/api/badge/${oh}`);
+  const svg = await badge.text();
+  chk(badge.status === 200 && (badge.headers.get("content-type") ?? "").startsWith("image/svg+xml") && svg.includes("Protected by PoP") && svg.includes("0 of 0"), "the badge is an SVG showing 0 of 0 protected orders");
+  const redBadge = await fetch(`${WEB}/api/badge/nobody.here.zz`);
+  chk(redBadge.status === 404 && (await redBadge.text()).includes("Not a registered seller"), "the badge for an unknown handle is the red 'Not a registered seller'");
+  const evil = await fetch(`${WEB}/api/badge/${encodeURIComponent('x"><script>')}`);
+  chk(evil.status === 404 && !(await evil.text()).includes("<script"), "a hostile handle in the badge URL is refused and not echoed");
+
+  // ---- pages render
+  for (const path of ["/onboard", "/arbiter", "/proof", `/p/${slug}`]) {
+    const r = await fetch(`${WEB}${path}`);
+    chk(r.status === 200, `GET ${path} -> 200`);
+  }
+  const proof = await (await fetch(`${WEB}/proof`)).text();
+  chk(proof.includes("Contracts (live)") && proof.includes(dep.checkout) && proof.includes("World ID verification log"), "/proof shows the live contract addresses and the World log section");
+  if (cfgJson.devSkipWorld) chk(proof.includes("dev-skipped"), "/proof's World log lists the DEV-skipped review attempts (no secrets)");
+}
+
 console.log(`\nE2E (LOCAL FORK) PASS · mode=${net.mode} chainId=${net.chain.id} checkout=${dep.checkout}`);

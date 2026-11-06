@@ -209,6 +209,7 @@ create table if not exists merchants (
   allowed_return_origin text,                         -- a session's returnUrl must start with this origin
   created_at            timestamptz not null default now()
 );
+alter table merchants add column if not exists rate_limit_per_min integer not null default 30;   -- max checkout sessions per minute
 create unique index if not exists merchants_api_key_uq on merchants (api_key_hash);
 create unique index if not exists merchants_wallet_uq on merchants (seller_wallet);
 
@@ -229,3 +230,40 @@ create table if not exists webhook_cursor (
   key    text primary key,
   block  bigint not null
 );
+
+-- ---------------------------------------------------------------------------------------------------------------------
+-- Seller onboarding (/onboard): handle proof tier 1 = a staff-checked bio code. The seller's test wallet signs the request,
+-- staff confirm the code is in the Instagram bio, the server (attestor) signs the on-chain Registration, the seller submits it.
+-- ---------------------------------------------------------------------------------------------------------------------
+create table if not exists onboarding_requests (
+  id            bigserial primary key,
+  handle        text not null,                 -- lowercase
+  wallet        text not null,                 -- lowercase
+  bio_code      text not null,
+  status        text not null default 'pending',   -- pending | approved | rejected
+  reg_nonce     text,
+  reg_deadline  bigint,
+  reg_sig       text,
+  created_at    timestamptz not null default now(),
+  decided_at    timestamptz
+);
+create unique index if not exists onboarding_handle_uq on onboarding_requests (handle) where status <> 'rejected';
+create unique index if not exists onboarding_wallet_uq on onboarding_requests (wallet) where status <> 'rejected';
+
+-- Every World verification attempt, WITHOUT secrets: no proof, no signal, no raw nullifier (only the first 12 hex chars of its sha256).
+create table if not exists world_verifications (
+  id              bigserial primary key,
+  at              timestamptz not null default now(),
+  seller_handle   text,
+  order_id        numeric(78,0),
+  outcome         text not null,               -- verified | rejected | replay | dev-skipped
+  detail          text,
+  environment     text,                        -- staging | production
+  action          text,
+  nullifier_hint  text
+);
+
+-- Dispute reason text typed by the buyer; the on-chain evidenceHash must equal keccak(reason) (checked before saving).
+alter table disputes add column if not exists reason text;
+alter table disputes add column if not exists opened_by text;
+alter table disputes add column if not exists created_at timestamptz not null default now();

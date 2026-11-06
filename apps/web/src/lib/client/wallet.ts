@@ -8,7 +8,7 @@ import { chainOf, type AppConfig } from "./config";
  * TEST MODE wallet: a throwaway key kept in this browser's localStorage, per network mode and role.
  * Testnet only. Never used for real funds.
  */
-export type Role = "buyer" | "seller";
+export type Role = "buyer" | "seller" | "arbiter";
 const keyName = (c: AppConfig, role: Role) => `pop:testwallet:${c.mode}:${c.chainId}:${role}`;
 
 export function getTestAccount(c: AppConfig, role: Role, create = true): PrivateKeyAccount | null {

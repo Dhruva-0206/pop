@@ -3,7 +3,8 @@ import { config as loadEnv } from "dotenv";
 import { resolve } from "node:path";
 
 // Local dev: the single source of env is pop/.env (Vercel sets env in the project instead).
-loadEnv({ path: resolve(__dirname, "..", "..", ".env"), quiet: true });
+// Never on Vercel; POP_NO_ROOT_ENV=1 lets a local run prove it works from explicit env only.
+if (!process.env.VERCEL && !process.env.POP_NO_ROOT_ENV) loadEnv({ path: resolve(__dirname, "..", "..", ".env"), quiet: true });
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@pop/shared"],

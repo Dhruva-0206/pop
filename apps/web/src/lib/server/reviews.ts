@@ -2,6 +2,7 @@ import "server-only";
 import type { Address, Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { publishReview } from "@pop/shared/server/arkiv";
+import type { WorldLogRow } from "@pop/shared/server/store";
 import { store } from "./chain";
 
 /** Arkiv access key (server only, never NEXT_PUBLIC_). */
@@ -15,6 +16,20 @@ function attestorPk(): Hex {
   const k = process.env.ATTESTOR_PK?.trim().split("#")[0]?.trim();
   if (!k) throw new Error("ATTESTOR_PK not set");
   return k as Hex;
+}
+
+/** The attestor's signing account (server only): signs seller Registrations and writes Arkiv entities. */
+export function attestorAccount() {
+  return privateKeyToAccount(attestorPk());
+}
+
+/** Best-effort World verification log (never throws, never stores proofs, signals or raw nullifiers). */
+export async function logWorld(x: Omit<WorldLogRow, "at">) {
+  try {
+    await store.logWorldVerification({ environment: process.env.WORLD_ENVIRONMENT?.trim() || "staging", ...x });
+  } catch (e) {
+    console.error("[world] could not write the verification log:", e instanceof Error ? e.message : e);
+  }
 }
 
 /** The attestor ADDRESS readers trust as `$creator`. Derived from ATTESTOR_PK, or POP_ATTESTOR_ADDRESS for read-only apps. */

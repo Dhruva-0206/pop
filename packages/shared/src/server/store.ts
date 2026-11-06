@@ -73,6 +73,7 @@ export type MerchantRow = {
   webhookUrl?: string;
   webhookSecretEnc?: string;
   allowedReturnOrigin?: string;
+  rateLimitPerMin: number;
 };
 export type SessionRow = { id: string; merchantId: number; listingId: string; merchantRef: string; returnUrl?: string; expiresAt: string };
 export type WebhookDelivery = {
@@ -84,6 +85,18 @@ export type WebhookDelivery = {
   attempts: number;
   status: "pending" | "delivered" | "failed";
 };
+export type OnboardingRow = {
+  id: number;
+  handle: string;
+  wallet: string;
+  bioCode: string;
+  status: "pending" | "approved" | "rejected";
+  regNonce?: string;
+  regDeadline?: number;
+  regSig?: string;
+  createdAt: string;
+};
+export type WorldLogRow = { at: string; sellerHandle?: string; orderId?: string; outcome: string; detail?: string; environment?: string; action?: string; nullifierHint?: string };
 export type FaucetGrant = { address: string; ipHash: string; gasTx?: string; usdtTx?: string; createdAt: string };
 
 /** Postgres schema for a network mode. */
@@ -154,6 +167,17 @@ export function createStore(mode: NetworkMode) {
     }
   }
 
+  const onboardingOf = (r: pg.QueryResultRow): OnboardingRow => ({
+    id: Number(r.id),
+    handle: r.handle,
+    wallet: ck(r.wallet),
+    bioCode: r.bio_code,
+    status: r.status,
+    regNonce: opt(r.reg_nonce),
+    regDeadline: r.reg_deadline === null ? undefined : Number(r.reg_deadline),
+    regSig: opt(r.reg_sig),
+    createdAt: iso(r.created_at),
+  });
   const merchantOf = (r: pg.QueryResultRow): MerchantRow => ({
     id: Number(r.id),
     name: r.name,
@@ -162,6 +186,7 @@ export function createStore(mode: NetworkMode) {
     webhookUrl: opt(r.webhook_url),
     webhookSecretEnc: opt(r.webhook_secret_enc),
     allowedReturnOrigin: opt(r.allowed_return_origin),
+    rateLimitPerMin: Number(r.rate_limit_per_min ?? 30),
   });
   const sellerOf = (r: pg.QueryResultRow): SellerRow => ({
     wallet: ck(r.wallet),
@@ -447,8 +472,62 @@ export function createStore(mode: NetworkMode) {
       );
       await one(`update ${T("reviews")} set ${[...sets, "updated_at = now()"].join(", ")} where order_id = $1::numeric`, [orderId, ...vals]);
     },
+    // ------------------------------------------------------------ onboarding (/onboard)
+    /** Returns the row, or undefined if the handle or wallet already has a non-rejected request. */
+    async createOnboarding(handle: string, wallet: string, bioCode: string): Promise<OnboardingRow | undefined> {
+      const r = await one(
+        `insert into ${T("onboarding_requests")} (handle, wallet, bio_code) values (lower($1), lower($2), $3) on conflict do nothing returning *`,
+        [handle, wallet, bioCode],
+      );
+      return r.rows[0] ? onboardingOf(r.rows[0]) : undefined;
+    },
+    async onboardingByWallet(wallet: string): Promise<OnboardingRow | undefined> {
+      const r = await one(`select * from ${T("onboarding_requests")} where wallet = lower($1) and status <> 'rejected' order by id desc limit 1`, [wallet]);
+      return r.rows[0] ? onboardingOf(r.rows[0]) : undefined;
+    },
+    async onboardingById(id: number): Promise<OnboardingRow | undefined> {
+      const r = await one(`select * from ${T("onboarding_requests")} where id = $1`, [id]);
+      return r.rows[0] ? onboardingOf(r.rows[0]) : undefined;
+    },
+    async pendingOnboarding(): Promise<OnboardingRow[]> {
+      return (await one(`select * from ${T("onboarding_requests")} where status = 'pending' order by id limit 100`)).rows.map(onboardingOf);
+    },
+    /** Only a pending request can be decided (returns false otherwise). */
+    async decideOnboarding(id: number, approve: boolean, reg?: { nonce: string; deadline: number; sig: string }): Promise<boolean> {
+      const r = await one(
+        `update ${T("onboarding_requests")} set status = $2, reg_nonce = $3, reg_deadline = $4, reg_sig = $5, decided_at = now() where id = $1 and status = 'pending'`,
+        [id, approve ? "approved" : "rejected", reg?.nonce ?? null, reg?.deadline ?? null, reg?.sig ?? null],
+      );
+      return (r.rowCount ?? 0) > 0;
+    },
+    // ------------------------------------------------------------ World verification log (no secrets)
+    async logWorldVerification(x: Omit<WorldLogRow, "at">) {
+      await one(
+        `insert into ${T("world_verifications")} (seller_handle, order_id, outcome, detail, environment, action, nullifier_hint) values ($1, $2::numeric, $3, $4, $5, $6, $7)`,
+        [x.sellerHandle ?? null, x.orderId ?? null, x.outcome, x.detail?.slice(0, 200) ?? null, x.environment ?? null, x.action ?? null, x.nullifierHint ?? null],
+      );
+    },
+    async worldVerifications(limit = 50): Promise<WorldLogRow[]> {
+      const r = await one(`select * from ${T("world_verifications")} order by id desc limit $1`, [limit]);
+      return r.rows.map((x) => ({
+        at: iso(x.at), sellerHandle: opt(x.seller_handle), orderId: x.order_id === null ? undefined : String(x.order_id),
+        outcome: x.outcome, detail: opt(x.detail), environment: opt(x.environment), action: opt(x.action), nullifierHint: opt(x.nullifier_hint),
+      }));
+    },
+    // ------------------------------------------------------------ dispute reasons
+    async saveDisputeReason(orderId: string, reason: string, evidenceHash: string, openedBy: string) {
+      await one(
+        `insert into ${T("disputes")} (order_id, reason, evidence_hash, opened_by) values ($1::numeric, $2, $3, lower($4))
+         on conflict (order_id) do update set reason = excluded.reason, evidence_hash = excluded.evidence_hash, opened_by = excluded.opened_by`,
+        [orderId, reason, evidenceHash, openedBy],
+      );
+    },
+    async disputeReason(orderId: string): Promise<{ reason?: string; evidenceHash?: string } | undefined> {
+      const r = await one(`select reason, evidence_hash from ${T("disputes")} where order_id = $1::numeric`, [orderId]);
+      return r.rows[0] ? { reason: opt(r.rows[0].reason), evidenceHash: opt(r.rows[0].evidence_hash) } : undefined;
+    },
     // ------------------------------------------------------------ merchants (Pay with PoP)
-    async upsertMerchant(m: Omit<MerchantRow, "id">): Promise<number> {
+    async upsertMerchant(m: Omit<MerchantRow, "id" | "rateLimitPerMin">): Promise<number> {
       const r = await one(
         `insert into ${T("merchants")} (name, seller_wallet, api_key_hash, webhook_url, webhook_secret_enc, allowed_return_origin)
          values ($1, lower($2), $3, $4, $5, $6)
@@ -459,6 +538,17 @@ export function createStore(mode: NetworkMode) {
         [m.name, m.sellerWallet, m.apiKeyHash, m.webhookUrl ?? null, m.webhookSecretEnc ?? null, m.allowedReturnOrigin ?? null],
       );
       return Number(r.rows[0].id);
+    },
+    /** Sessions this merchant created in the last `seconds` (rate limiting; counted in the database, so it holds across serverless instances). */
+    async countRecentSessions(merchantId: number, seconds: number): Promise<number> {
+      const r = await one(
+        `select count(*)::int as n from ${T("checkout_sessions")} where merchant_id = $1 and created_at > now() - make_interval(secs => $2)`,
+        [merchantId, seconds],
+      );
+      return Number(r.rows[0].n);
+    },
+    async setMerchantRateLimit(merchantId: number, perMin: number) {
+      await one(`update ${T("merchants")} set rate_limit_per_min = $2 where id = $1`, [merchantId, perMin]);
     },
     async merchantByKeyHash(h: string): Promise<MerchantRow | undefined> {
       const r = await one(`select * from ${T("merchants")} where api_key_hash = $1`, [h]);

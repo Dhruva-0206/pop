@@ -10,6 +10,7 @@ import { STATE_LABEL, countdown, priceLabel, usdt, when } from "@/lib/client/for
 import { TestModeBanner, TxLink } from "@/components/Banners";
 import { FinalizeButton } from "@/components/FinalizeButton";
 import { ReviewBox } from "@/components/ReviewBox";
+import { DisputeBox } from "@/components/DisputeBox";
 
 type Live = {
   orderId: string;
@@ -179,6 +180,8 @@ export default function OrderView() {
           I received it
         </button>
       )}
+
+      {isBuyer && o.state === "Delivered" && o.releaseAt > chainNow && <DisputeBox cfg={cfg} orderId={o.orderId} onDone={load} />}
 
       {isBuyer && o.state === "Released" && d.listing && <ReviewBox cfg={cfg} orderId={o.orderId} sellerHandle={d.listing.sellerHandle} />}
 
