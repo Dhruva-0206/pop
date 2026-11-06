@@ -161,7 +161,10 @@ export default function Dashboard() {
   return (
     <div className="page-wide stack">
       <TestModeBanner cfg={cfg} />
-      <h1 className="text-xl font-semibold">Seller dashboard{signedIn?.handle ? ` · @${signedIn.handle}` : ""}</h1>
+      <div className="stack-sm">
+        <h1 className="text-xl font-semibold">Merchant dashboard{signedIn?.handle ? ` · @${signedIn.handle}` : ""}</h1>
+        <p className="text-ink-2">Orders, payouts and exports for your shop.</p>
+      </div>
 
       {!signedIn && (
         <div className="card stack-sm text-sm">
