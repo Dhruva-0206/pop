@@ -198,6 +198,7 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 | Agent or human | Task | Files claimed | Claimed at (IST) |
 |---|---|---|---|
 | agent 1 (Dhruva's agent) | Final live verification | `docs/evidence.md`, `parallel.md`, `docs/friction-log.md` (append only, only if a check fails twice) | Fri 17:49 |
+| agent 2 (second machine) | Addendum A to E: money separator, pay bar check, meta description, /proof smoke label, doc facts | `apps/web/src/components/receipt.tsx`, `apps/web/src/app/p/[listingId]/Checkout.tsx`, `apps/web/src/app/layout.tsx`, `apps/web/src/app/proof/page.tsx`, `apps/demo-store/src/app/{page.tsx,layout.tsx}`, `README.md`, `AI_USAGE.md`, `docs/WORLD_DEBRIEF.md`, `docs/submission-tags.md` | Fri 17:58 |
 
 ## 4. Locks
 | Lock | Holder | Since | Note |
