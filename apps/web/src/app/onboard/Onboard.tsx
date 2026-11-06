@@ -401,6 +401,10 @@ export default function Onboard() {
           </div>
           {qr && <img src={qr} alt="QR code for your payment link" width={200} height={200} className="mx-auto" />}
           <div className="text-xs text-muted">Put this link or QR in your Instagram bio, stories or WhatsApp.</div>
+          <a className="btn btn-secondary btn-block" href="/dashboard">
+            Manage your orders
+          </a>
+          <div className="text-xs text-muted">Open it in this same browser: your payout wallet and its key live here, and shipping an order is signed with that key.</div>
           {regTx && <TxLink cfg={cfg} hash={regTx} label="registration" />}
           {auto && <div className="text-xs text-muted">{DEMO_NOTE} PoP&apos;s test faucet wallet paid the network fee for your registration.</div>}
           {payout}

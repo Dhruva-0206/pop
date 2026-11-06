@@ -45,3 +45,25 @@ export function friendlyPayError(e: unknown): string {
   if (/insufficient funds/i.test(links.map((x) => x.shortMessage ?? x.message ?? "").join(" "))) return "Your test wallet needs a little test WBT to send the payment. Press Pay again to add test funds.";
   return first || "Something went wrong";
 }
+
+/** Plain-words messages for a failed "Mark shipped" (markShipped sent from the vendor's browser wallet). Same approach as friendlyPayError. */
+const SHIP_BY_ERROR: Record<string, string> = {
+  TooLate: "The ship-by time for this order has passed. The buyer can now settle it into a refund, so it can no longer be marked shipped.",
+  BadState: "This order is no longer waiting to be shipped. Reload the page to see its current state.",
+  NotSeller: "This browser's wallet is not the seller of this order. Use the browser where you opened your shop.",
+};
+
+export function friendlyShipError(e: unknown): string {
+  const links = chain(e);
+  if (links.some((x) => x.name === "UserRejectedRequestError")) return "You cancelled. The order was not marked shipped.";
+  const rev = links.find((x) => x.name === "ContractFunctionRevertedError");
+  if (rev) {
+    const name = rev.data?.errorName;
+    if (name && SHIP_BY_ERROR[name]) return SHIP_BY_ERROR[name];
+    return name ? `The order was not marked shipped (${name}).` : "The order was not marked shipped and the contract gave no reason. Try again.";
+  }
+  const all = links.map((x) => x.shortMessage ?? x.message ?? "").join(" ");
+  if (/insufficient funds/i.test(all)) return "This wallet has no test WBT for the network fee. Press Mark shipped again to add some, or ask the team.";
+  const first = (links[0]?.shortMessage ?? links[0]?.message ?? "").split("\n")[0];
+  return first || "Something went wrong";
+}

@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { keccak256, toHex } from "viem";
 import { checkoutAbi } from "@pop/shared";
 import { publicClientOf, useConfig } from "@/lib/client/config";
 import { forgetTestKey, getTestAccount, importTestKey, walletOf } from "@/lib/client/wallet";
 import { sellerLoginMessage } from "@/lib/messages";
+import { friendlyShipError } from "@/lib/client/errors";
 import { STATE_LABEL, countdown, short, usdt } from "@/lib/client/format";
 import { TestModeBanner } from "@/components/Banners";
 import { FinalizeButton } from "@/components/FinalizeButton";
@@ -30,6 +31,8 @@ export default function Dashboard() {
   const [tracking, setTracking] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const autoSignIn = useRef(false);
 
   useEffect(() => {
     if (!cfg) return;
@@ -39,10 +42,17 @@ export default function Dashboard() {
 
   const load = useCallback(async () => {
     const r = await fetch("/api/seller/orders", { cache: "no-store" });
+    setLoaded(true);
     if (r.status === 401) return setSignedIn(null);
     const j = await r.json();
     setSignedIn({ handle: j.seller.handle });
     setRows(j.orders);
+    // One click to ship: pre-fill a tracking number for every order that is waiting (the vendor can overwrite it).
+    setTracking((prev) => {
+      const next = { ...prev };
+      for (const o of j.orders as Row[]) if (o.live?.state === "Funded" && !next[o.orderId]) next[o.orderId] = `TRACK-${o.orderId}`;
+      return next;
+    });
     if (cfg && j.seller.wallet) {
       setCredit(
         await publicClientOf(cfg).readContract({ address: cfg.checkout, abi: checkoutAbi, functionName: "credit", args: [j.seller.wallet] }),
@@ -56,6 +66,13 @@ export default function Dashboard() {
     return () => clearInterval(t);
   }, [load]);
 
+  useEffect(() => {
+    if (!cfg || !addr || !loaded || signedIn || autoSignIn.current) return;
+    autoSignIn.current = true;
+    signIn(); // a signature from the local test wallet, no popup and no money moves
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cfg, addr, loaded, signedIn]);
+
   async function signIn() {
     if (!cfg) return;
     setMsg("");
@@ -67,7 +84,7 @@ export default function Dashboard() {
       body: JSON.stringify({ address: acct.address }),
     });
     const nj = await n.json();
-    if (!n.ok) return setMsg(nj.error ?? "Sign-in failed");
+    if (!n.ok) return setMsg(n.status === 403 ? "This browser's wallet is not a registered PoP shop yet. Finish opening your shop at /onboard first." : (nj.error ?? "Sign-in failed"));
     const signature = await acct.signMessage({ message: sellerLoginMessage(acct.address, nj.nonce) });
     const r = await fetch("/api/auth/seller", {
       method: "POST",
@@ -92,6 +109,17 @@ export default function Dashboard() {
       });
       const acct = getTestAccount(cfg, "seller", false)!;
       const w = walletOf(cfg, acct);
+      // A shop opened through /onboard in demo mode never needed test WBT, so its wallet can be empty. Top it up once from the test faucet.
+      const pc = publicClientOf(cfg);
+      if ((await pc.getBalance({ address: acct.address })) === BigInt(0)) {
+        setMsg("Adding a little test WBT for the network fee (once).");
+        const f = await fetch("/api/faucet", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ address: acct.address }) });
+        const fj = await f.json().catch(() => ({}));
+        if (!f.ok) throw new Error(fj.error ?? "The test faucet could not add funds. Ask the team.");
+        for (let i = 0; i < 12 && (await pc.getBalance({ address: acct.address })) === BigInt(0); i++) await new Promise((r) => setTimeout(r, 1000));
+        if ((await pc.getBalance({ address: acct.address })) === BigInt(0)) throw new Error("This wallet has no test WBT for the network fee, and the faucet has already topped it up once. Ask the team to send some.");
+        setMsg("");
+      }
       const tx = await w.writeContract({
         address: cfg.checkout,
         abi: checkoutAbi,
@@ -104,7 +132,7 @@ export default function Dashboard() {
       setMsg(`Order #${orderId} marked shipped.`);
       load();
     } catch (e) {
-      setMsg(e instanceof Error ? e.message.split("\n")[0] : "Failed");
+      setMsg(friendlyShipError(e));
     } finally {
       setBusy(false);
     }
@@ -139,11 +167,14 @@ export default function Dashboard() {
           {addr ? (
             <div>
               Seller test wallet in this browser: <span className="font-mono">{short(addr)}</span>{" "}
-              <button className="btn btn-secondary btn-sm" onClick={() => { forgetTestKey(cfg, "seller"); setAddr(""); }}>forget</button>
+              <button className="btn btn-secondary btn-sm" onClick={() => { forgetTestKey(cfg, "seller"); setAddr(""); }}>forget (cannot be undone)</button>
             </div>
           ) : (
             <div className="space-y-1">
-              <div>TEST MODE: paste the demo seller&apos;s test key (kept only in this browser).</div>
+              <div>
+                This browser has no vendor wallet. Open your shop first at <a className="underline" href="/onboard">/onboard</a>, in this same browser, then come back here.
+              </div>
+              <div className="text-muted">Operator only: paste the demo seller&apos;s test key (kept only in this browser).</div>
               <input className="field mono" type="password" value={keyInput} onChange={(e) => setKeyInput(e.target.value)} placeholder="0x…" aria-label="0x…" />
               <button
                 className="btn btn-primary"
