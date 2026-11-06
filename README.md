@@ -326,6 +326,6 @@ Times, friction and the full debrief are in [docs/WORLD_DEBRIEF.md](docs/WORLD_D
 | `supabase/migrations/` | the database schema |
 | `arkiv/`, `docs/` | Arkiv judging files, evidence, deployment notes, demo script |
 
-**AI use:** we used AI tools heavily, and [AI_USAGE.md](AI_USAGE.md) says exactly where and how. The planning documents are in [`specs/`](specs). **Dependencies and licence:** public libraries (Next.js, viem, OpenZeppelin, the Arkiv SDK, World IDKit and others) are listed in the manifests; MIT licence, see [LICENSE](LICENSE).
+**AI use:** we used AI tools heavily, and [AI_USAGE.md](AI_USAGE.md) says exactly where and how. **Dependencies and licence:** public libraries (Next.js, viem, OpenZeppelin, the Arkiv SDK, World IDKit and others) are listed in the manifests; MIT licence, see [LICENSE](LICENSE).
 
 **Team** (from the git history): Dhruva Somen Chakrabarty, Shantanu Somwanshi, Tanishqa Chopade.

@@ -6,14 +6,14 @@ We are Dhruva Somen Chakrabarty, Shantanu Somwanshi and Tanishqa Chopade. We use
 
 | Tool | What we used it for |
 |---|---|
-| Claude | Planning. The documents in [`specs/`](specs) (build spec, architecture, event rules, sponsor requirements, the winning plan) were written with it from our direction and are included unchanged. |
-| Claude Code | Implementation, tests and documents, working in this repository from our written prompt ([`specs/prompts/`](specs/prompts)) and from decisions we recorded in [`CLAUDE.md`](CLAUDE.md). We ran it on two machines. It wrote the contracts and their tests, both apps, the SDK, the scripts, the end-to-end tests and most of the docs, and it ran the testnet deploy and the test orders after we said go. We do not name a model version here because the repository does not record one. |
+| Claude | Planning. We used it to plan before and during the build: the build spec, the architecture, a reading of the event rules and the sponsor requirements, and the plan for the prize tracks, all written with it from our direction. We removed those planning documents from the repository before submission; they remain in the git history. |
+| Claude Code | Implementation, tests and documents, working in this repository from a prompt we wrote and from decisions we recorded in a project memory file that we keep on our own machines and do not publish. We ran it on two machines. It wrote the contracts and their tests, both apps, the SDK, the scripts, the end-to-end tests and most of the docs, and it ran the testnet deploy and the test orders after we said go. We do not name a model version here because the repository does not record one. |
 | ChatGPT and Figma | The logo and the cover image. ChatGPT gave us concepts and we finished them by hand in Figma. The original logo file is [`docs/brand/pop-logo-original.png`](docs/brand/pop-logo-original.png). |
 
 ## What we decided and did ourselves
 
 - The product: a protected checkout for small sellers on social platforms and websites, paid in USDT, with a refund nobody can stop and a release only by the buyer's code.
-- The trust rules: the refund after a missed deadline, the courier that can only report a refused handover, one review per person per seller, one shop per person, and the ban rules. [`CLAUDE.md`](CLAUDE.md) section 8 records each decision and who made it.
+- The trust rules: the refund after a missed deadline, the courier that can only report a refused handover, one review per person per seller, one shop per person, and the ban rules. We record each decision and who made it in that project memory file.
 - The contract design: the states, the roles, the 1% fee, the windows (30 and 120 seconds, a 300 second arbiter timeout), the arbiter timeout refund, and `forceRefundBanned` for banned sellers. We decided to narrow `forceRefundBanned` after reading the first draft, and Claude Code made the change.
 - The prize targets (Whitechain, Arkiv, World) and the choice to leave other tracks out.
 - Every go decision on money and accounts: the testnet deploy (one broadcast, after a dry run), the test USDT purchase on YetiTrade, the Vercel projects, and what runs on the live sites.
@@ -59,5 +59,3 @@ These are the numbers we measured, not estimates:
 - Every contract change gets tests, and we review the contract before any testnet deploy.
 - We keep secrets out of prompts and logs.
 - We say in the README what we have not proven yet, instead of hiding it.
-
-Organizer confirmation that the planning documents in `specs/` may be included is still pending.
