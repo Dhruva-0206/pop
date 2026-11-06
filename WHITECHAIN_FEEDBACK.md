@@ -1,0 +1,23 @@
+# Whitechain feedback
+
+From building PoP on Whitechain Sepolia (chain 1874) during ETHGlobal Mumbai 2026. Everything below happened to us; each item says what we saw, what we expected, and what we did. Items marked "reported, not verified" come from a teammate and were not independently checked.
+
+## What worked well
+- The RPC and chain were reliable for the whole build. We deployed two contracts and ran 10 real test-USDT orders (release, late-ship refund and merchant orders) without a transaction failing because of the network (our own test mistakes aside).
+- Blockscout verification with Foundry worked in the same command as the deploy (`forge script --verify --verifier blockscout`), and both contracts show as verified with compiler v0.8.30 and the `prague` EVM version.
+- The prize-text USDT (`0xcedf…55a7`) is a normal token with 6 decimals and supports permit and EIP-3009 according to the Whitechain flyer. Our checkout uses plain approve and `transferFrom`.
+
+## Problems and gaps
+1. **`eth_getLogs` is limited to 10,000 blocks per call.** The RPC answers "query exceeds max block range 10000". Any event scan that starts at the deploy block works for a few hours and then fails for good. The first time we hit it was the Kurta store's record endpoint, and the same pattern was in several of our own endpoints (seller records, the arbiter list, the CSV export, the webhook dispatcher, the badge). We fixed it with a `chunkedLogs` helper that splits the range into 9,000-block calls. We found no mention of this limit in docs.whitechain.io. Suggestion: state the limit on the RPC page.
+2. **The test USDT is hard to get.** The faucet gives WBT only (docs say 0.5 WBT per 24 hours with GitHub login, account at least 30 days old). The prize-text USDT could only be obtained by swapping WBT on YetiTrade. The docs token list shows a different USDT (`0xaa79…8f46`, "USDT.e") and not the prize-text address. Suggestion: list both and say which one a build must use.
+3. **Faucet amount.** A teammate reported that the amount the faucet paid out differed from the amount in the docs. Reported, not verified: we did not record the exact amounts.
+4. **Blockscout shows the license as "none"** for both contracts, although the source files carry `SPDX-License-Identifier: MIT`. Cosmetic, but it looks like missing information to a reviewer.
+5. **Verification output is easy to miss in our own deploy script.** This one is ours: `scripts/deploy.ts` printed only the addresses, so we confirmed "verified" through the Blockscout API instead. Worth knowing for anyone wrapping `forge script`: if verification fails after a successful broadcast, a wrapper that throws will look like a failed deploy and invite a second, duplicate deploy. We logged the risk.
+6. **Foundry on Windows.** The docs say PowerShell and Command Prompt cannot run Foundry and tell people to install WSL. Foundry also runs from Git Bash. Suggestion: mention Git Bash.
+7. **Webhook receivers need time.** Our merchant webhook receiver rechecks each order on chain (several RPC calls) before it answers. On the local fork it answered in about 2 seconds. On Whitechain Sepolia, about 2 of 12 deliveries across two runs hit our 5 second timeout and succeeded on the retry (we raised the timeout to 15 seconds). RPC round trip time is a real part of any "verify on chain before you trust a webhook" design.
+8. **Proxy token storage.** The test USDT is a proxy and its balance is not a plain mapping in the first storage slots. Writing balances on a local fork required finding the slot from an access list. Not a Whitechain bug, but a note in the docs about the token's implementation would help builders test locally.
+
+## Numbers from our run
+- Contracts: SellerRegistry `0x6D61cD77239dd61e43e943a4Aac006d8A6C285E5`, PoPCheckout `0xB6A894bE070951a7331DebFf615e11F7a076794c`, deployed at block 12330545. Estimated deploy cost about 0.053 WBT at most; the deployer spent about 0.0204 WBT on the actual deploy.
+- Block time: about one to two seconds per block (our estimate from order timings, not a stated figure).
+- All transaction links are in `docs/evidence.md`.
