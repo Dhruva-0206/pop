@@ -202,7 +202,7 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 | Lock | Holder | Since | Note |
 |---|---|---|---|
 | chain (Whitechain 1874 and Arkiv writes) | free | | |
-| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | free | | |
+| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | Shantanu's agent (badge-ux branch) | Fri 22:27 | badge UX tests on the fork; work is on branch badge-ux, not main |
 | vercel (deploys and env changes) | free | | |
 
 ## 5. Requests between agents
