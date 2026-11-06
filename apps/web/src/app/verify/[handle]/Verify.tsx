@@ -113,6 +113,7 @@ export default function Verify() {
               <span className="text-sm text-ink-2">{TIER[data.handleTier] ?? "Handle check unknown"}</span>
             </div>
             <h1 className="break-words md:text-3xl">@{data.handle}</h1>
+            <p className="max-w-prose text-ink-2">Check before you pay. This record comes from paid orders only, and the seller cannot edit it.</p>
           </section>
 
           <section aria-labelledby="orders" className="stack-sm border-t pt-6">
@@ -130,8 +131,8 @@ export default function Verify() {
           </section>
 
           <section aria-labelledby="reviews" className="stack-sm border-t pt-6">
-            <h2 id="reviews">Reviews from verified people</h2>
-            <p className="text-sm text-muted">Stored on Arkiv. One review per person per seller, and only after a completed order.</p>
+            <h2 id="reviews">Reviews from verified buyers</h2>
+            <p className="text-sm text-muted">One per person per shop, after a completed order. Stored on Arkiv.</p>
             {rv.error && <Notice tone="warn">{rv.error} The counts above are still correct.</Notice>}
             {!rv.error && rv.verified.count === 0 && <p className="text-ink-2">No reviews yet. The first buyer to complete an order can leave one.</p>}
             {rv.verified.count > 0 && (
