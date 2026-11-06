@@ -7,6 +7,11 @@ import ExpiredList from "./ExpiredList";
 
 export const metadata = { title: "Proof" };
 
+/** The Arkiv smoke-test entity (gate 3) is a real entity but not a review of a real order. */
+const isSmoke = (r: { key: string }) => r.key.toLowerCase() === ARKIV_SMOKE.entityKey.toLowerCase();
+/** Table order: regular reviews first, then DEV entries, then the smoke entity. Stable within each group. */
+const kindRank = (r: { key: string; dev: boolean }) => (isSmoke(r) ? 2 : r.dev ? 1 : 0);
+
 const ARKIV_QUERY = `import { createPublicClient, http } from "@arkiv-network/sdk";
 import { rabdi } from "@arkiv-network/sdk/chains";
 import { defineSchema, addr, str, u256, u64, bytes } from "@arkiv-network/sdk/schema";
@@ -160,7 +165,9 @@ async function Live() {
                     </tr>
                   </thead>
                   <tbody>
-                    {arkiv.rows.map((r) => (
+                    {[...arkiv.rows]
+                      .sort((a, b) => kindRank(a) - kindRank(b))
+                      .map((r) => (
                       <tr key={r.key}>
                         <td>
                           {r.key.slice(0, 12)}…{r.key.slice(-6)}
@@ -169,7 +176,7 @@ async function Live() {
                         <td>{r.readonly ? "yes" : "NO"}</td>
                         <td>{r.orderId}</td>
                         <td>{r.rating}</td>
-                        <td>{r.dev ? "DEV entry (no World proof; expires in 24 h)" : "regular entry (counts only if tied to a real payment)"}</td>
+                        <td>{isSmoke(r) ? "smoke test (not a real order)" : r.dev ? "DEV entry (no World proof; expires in 24 h)" : "regular entry (counts only if tied to a real payment)"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -248,7 +255,7 @@ function Static() {
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">Arkiv entity, step by step (recorded)</h2>
         <p>
-          First review entity (Rabdi chain {ARKIV_SMOKE.chainId}): key <span className="break-all font-mono text-xs">{ARKIV_SMOKE.entityKey}</span>
+          Smoke-test entity, not a real order (Rabdi chain {ARKIV_SMOKE.chainId}): key <span className="break-all font-mono text-xs">{ARKIV_SMOKE.entityKey}</span>
         </p>
         <ul className="ml-4 list-disc">
           <li>
