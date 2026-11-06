@@ -24,7 +24,7 @@ export default function PayButton() {
         {!busy && <Image src="/brand/pop-logo-64.png" alt="" width={22} height={22} style={{ borderRadius: 6, boxShadow: "0 0 0 1.5px rgba(255,255,255,0.85)" }} />}
         {busy ? "Opening the checkout, about 5 seconds" : "Pay with PoP"}
       </button>
-      <p className="text-sm text-muted">You pay on PoP&apos;s protected checkout and come back here afterwards.</p>
+      <p className="text-sm text-muted">Secure checkout by PoP. You&apos;ll come straight back here.</p>
     </div>
   );
 }

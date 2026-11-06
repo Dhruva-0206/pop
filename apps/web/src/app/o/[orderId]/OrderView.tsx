@@ -251,8 +251,8 @@ export default function OrderView() {
               <>
                 <TearLine />
                 <ReceiptSection className="stack-sm" labelledBy="code">
-                  <h2 id="code">Delivery code</h2>
-                  <p className="text-ink-2">Only give this to the courier when the parcel is in your hand.</p>
+                  <h2 id="code">Your delivery code</h2>
+                  <p className="text-ink-2">Read these 6 words to the courier only when the parcel is in your hand.</p>
                   <ol className="mx-auto grid max-w-sm grid-cols-3 gap-2" aria-label="Delivery code, six words in order">
                     {words.map((w, i) => (
                       <li key={i} className="rounded-control border border-line-strong px-2 py-2 text-center">

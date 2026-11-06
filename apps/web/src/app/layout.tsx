@@ -13,7 +13,7 @@ const SITE =
   process.env.NEXT_PUBLIC_BASE_URL?.trim() ||
   (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : process.env.VERCEL ? "https://pop-web-six.vercel.app" : "http://localhost:3000");
 const TITLE = `${APP_NAME}: ${APP_TAGLINE}`;
-const DESCRIPTION = "Pay an Instagram seller with a protected checkout: if it is not shipped in time, the money comes back automatically. Test network.";
+const DESCRIPTION = "A USDT checkout for social sellers and small online stores. No parcel, no payout. Late orders are refunded automatically. Test network.";
 
 // The icons (icon.png, apple-icon.png, favicon.ico) and the share image (opengraph-image.png, twitter-image.png) are picked up from this folder.
 export const metadata: Metadata = {
@@ -38,10 +38,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Image src="/brand/pop-logo-256.png" alt={APP_NAME} width={36} height={36} priority />
             </Link>
             <nav aria-label="Main" className="flex items-center">
-              <Link href="/onboard" className="inline-flex min-h-11 items-center px-3 text-ink-2 no-underline hover:text-ink">
-                Sell with {APP_NAME}
+              <Link href="/onboard" className="inline-flex min-h-11 items-center px-2 text-ink-2 no-underline hover:text-ink sm:px-3">
+                Start selling
               </Link>
-              <Link href="/proof" className="inline-flex min-h-11 items-center px-3 text-ink-2 no-underline hover:text-ink">
+              <Link href="/merchants" className="inline-flex min-h-11 items-center px-2 text-ink-2 no-underline hover:text-ink sm:px-3">
+                For websites
+              </Link>
+              <Link href="/proof" className="inline-flex min-h-11 items-center px-2 text-ink-2 no-underline hover:text-ink sm:px-3">
                 Proof
               </Link>
             </nav>
@@ -51,8 +54,22 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
         </main>
         <footer className="border-t">
-          <div className="mx-auto max-w-wide px-4 py-6 text-sm text-muted md:px-6">
-            {APP_NAME} is an ETHGlobal Mumbai 2026 project. It runs on a test network: test USDT has no value and no real money moves.
+          <div className="mx-auto stack-sm max-w-wide px-4 py-6 text-sm text-muted md:px-6">
+            <p>PoP stands for Proof of Purchase. This is a test network: test USDT has no value.</p>
+            <p>
+              For judges:{" "}
+              <Link href="/dashboard" className="text-muted">
+                seller dashboard
+              </Link>
+              ,{" "}
+              <Link href="/courier" className="text-muted">
+                simulated courier
+              </Link>
+              ,{" "}
+              <Link href="/arbiter" className="text-muted">
+                arbiter
+              </Link>
+            </p>
           </div>
         </footer>
       </body>

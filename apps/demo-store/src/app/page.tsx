@@ -34,16 +34,16 @@ export default function Home() {
             <h2 id="protect">How your payment is protected</h2>
             <dl className="stack-sm text-ink-2">
               <div>
-                <dt className="inline font-semibold text-ink">Your money: </dt>
-                <dd className="inline">it waits in a PoP contract, not with us.</dd>
+                <dt className="inline font-semibold text-ink">When we are paid: </dt>
+                <dd className="inline">when your parcel arrives.</dd>
               </div>
               <div>
                 <dt className="inline font-semibold text-ink">If we are late: </dt>
                 <dd className="inline">if we don&apos;t ship within 3 minutes, you are refunded automatically. Demo timing; real orders use days.</dd>
               </div>
               <div>
-                <dt className="inline font-semibold text-ink">When we are paid: </dt>
-                <dd className="inline">only after you give the delivery code at your door.</dd>
+                <dt className="inline font-semibold text-ink">At your door: </dt>
+                <dd className="inline">your 6-word code is how the courier confirms delivery.</dd>
               </div>
             </dl>
           </section>

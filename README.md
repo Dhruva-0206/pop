@@ -2,7 +2,11 @@
 
 # PoP: Proof of Purchase
 
-**Pay an Instagram seller without trusting them.** The money waits in a contract. It comes back to the buyer automatically if the parcel is late, and it is paid out only when the buyer's own code is entered at the door.
+Checkout is the easy part. PoP handles what happens after.
+
+No parcel, no payout. Late means refunded. No review without a receipt.
+
+A USDT checkout for sellers on Instagram, WhatsApp, Facebook and small websites. The payment comes back to the buyer automatically if the parcel is late, and it is paid out when the buyer's own code is entered at the door.
 
 Built from scratch at ETHGlobal Mumbai 2026 (Whitechain, Arkiv and World prize tracks).
 
@@ -45,7 +49,7 @@ Public pages as they look on Fri 6 Nov evening (screenshots taken with a clean b
 
 ## 3. The problem and who it is for
 
-A lot of small Indian sellers live on Instagram and WhatsApp. A buyer who has never heard of the shop asks the familiar question: "Do you do cash on delivery?" Cash on delivery lets the buyer wait for the parcel before paying, but the seller carries the cost when parcels are refused. Paying first flips the risk onto the buyer, and a shop's reputation is scattered across posts and comments that anyone can fake or delete.
+A lot of small Indian sellers live on Instagram, WhatsApp, Facebook and small websites. A buyer who has never heard of the shop asks the familiar question: "Do you do cash on delivery?" Cash on delivery lets the buyer wait for the parcel before paying, but the seller carries the cost when parcels are refused. Paying first flips the risk onto the buyer, and a shop's reputation is scattered across posts and comments that anyone can fake or delete.
 
 PoP is a protected prepayment for these sellers. The buyer pays into a contract, not to the seller. If the seller does not ship in time, or the parcel is not delivered in time, the buyer gets the full amount back and nobody has to approve it. The seller is paid when the buyer types a six-word code at the door. Reviews can only come from orders that went through this flow.
 

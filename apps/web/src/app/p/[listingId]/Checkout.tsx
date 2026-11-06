@@ -239,7 +239,7 @@ export default function Checkout() {
 
         <aside className="stack lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:pt-1" aria-labelledby="protect">
           <div className="stack-sm">
-            <h2 id="protect">How this payment is protected</h2>
+            <h2 id="protect">How you&apos;re protected</h2>
             <dl className="rules">
               <div>
                 <dt>Ship by</dt>
@@ -256,6 +256,10 @@ export default function Checkout() {
               <div>
                 <dt>Seller paid when</dt>
                 <dd>You give your delivery code at the door and the short window to report a problem has passed.</dd>
+              </div>
+              <div>
+                <dt>If it&apos;s late</dt>
+                <dd>Full refund, automatically</dd>
               </div>
             </dl>
             <p className="text-sm text-muted">Demo timings are in minutes. Real orders use days.</p>
@@ -353,6 +357,7 @@ export default function Checkout() {
                 {busy ? "Paying" : `Pay ${inr(l.priceInr)}`}
               </button>
             </div>
+            <p className="text-sm text-ink-2">You pay now. The seller is paid when the parcel reaches you.</p>
             <div className="paybar-space" aria-hidden="true" />
           </form>
         </div>
