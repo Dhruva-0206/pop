@@ -179,6 +179,9 @@ export default function Dashboard() {
             </button>
           </div>
 
+          <a href="/api/seller/orders.csv" download className="inline-block rounded-lg border px-3 py-1.5 text-sm font-semibold">
+            Export orders (CSV with tx hashes)
+          </a>
           {rows.length === 0 && <div className="text-sm text-neutral-500">No orders yet.</div>}
           {rows.map((r) => (
             <div key={r.orderId} className="space-y-2 rounded-xl border p-4 text-sm">
