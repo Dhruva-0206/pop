@@ -203,7 +203,7 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 | Lock | Holder | Since | Note |
 |---|---|---|---|
 | chain (Whitechain 1874 and Arkiv writes) | free | | |
-| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | free | | |
+| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | agent 2 (second machine) | Fri 11:08 | UI pass: fork, db:reset-fork, fork:up, seed-demo on fork, e2e on fork, local prod builds on 3200/3300 |
 | vercel (deploys and env changes) | free | | |
 
 ## 5. Requests between agents
