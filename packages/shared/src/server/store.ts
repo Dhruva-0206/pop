@@ -97,6 +97,7 @@ export type OnboardingRow = {
   createdAt: string;
 };
 export type WorldLogRow = { at: string; sellerHandle?: string; orderId?: string; outcome: string; detail?: string; environment?: string; action?: string; nullifierHint?: string };
+export type VendorVerification = { id: number; nullifierHash: string; nullifierHint: string; handle: string; createdAt: string; banned: boolean };
 export type FaucetGrant = { address: string; ipHash: string; gasTx?: string; usdtTx?: string; createdAt: string };
 
 /** Postgres schema for a network mode. */
@@ -167,6 +168,14 @@ export function createStore(mode: NetworkMode) {
     }
   }
 
+  const vendorOf = (r: pg.QueryResultRow): VendorVerification => ({
+    id: Number(r.id),
+    nullifierHash: r.nullifier_hash,
+    nullifierHint: r.nullifier_hint,
+    handle: r.handle,
+    createdAt: new Date(r.created_at).toISOString(),
+    banned: Boolean(r.banned),
+  });
   const onboardingOf = (r: pg.QueryResultRow): OnboardingRow => ({
     id: Number(r.id),
     handle: r.handle,
@@ -499,6 +508,31 @@ export function createStore(mode: NetworkMode) {
         [id, approve ? "approved" : "rejected", reg?.nonce ?? null, reg?.deadline ?? null, reg?.sig ?? null],
       );
       return (r.rowCount ?? 0) > 0;
+    },
+    // ------------------------------------------------------------ vendor verification (one human, one shop)
+    /** Inserts the claim; returns false if this nullifier hash is already claimed (UNIQUE). */
+    async claimVendor(nullifierHash: string, handle: string): Promise<boolean> {
+      const r = await one(
+        `insert into ${T("vendor_verifications")} (nullifier_hash, nullifier_hint, handle) values ($1, $2, lower($3)) on conflict (nullifier_hash) do nothing`,
+        [nullifierHash, nullifierHash.slice(0, 12), handle],
+      );
+      return (r.rowCount ?? 0) > 0;
+    },
+    async vendorByNullifier(nullifierHash: string): Promise<VendorVerification | undefined> {
+      const r = await one(`select * from ${T("vendor_verifications")} where nullifier_hash = $1`, [nullifierHash]);
+      return r.rows[0] ? vendorOf(r.rows[0]) : undefined;
+    },
+    async vendorsByHandle(handle: string): Promise<VendorVerification[]> {
+      return (await one(`select * from ${T("vendor_verifications")} where handle = lower($1) order by id`, [handle])).rows.map(vendorOf);
+    },
+    /** Mirrors an on-chain ban onto every verification row of that handle. Returns how many rows changed. */
+    async markVendorBanned(handle: string): Promise<number> {
+      const r = await one(`update ${T("vendor_verifications")} set banned = true where handle = lower($1) and banned = false`, [handle]);
+      return r.rowCount ?? 0;
+    },
+    /** Undo a claim (only used when the rest of the onboarding request could not be created). */
+    async releaseVendor(nullifierHash: string): Promise<void> {
+      await one(`delete from ${T("vendor_verifications")} where nullifier_hash = $1 and banned = false`, [nullifierHash]);
     },
     // ------------------------------------------------------------ World verification log (no secrets)
     async logWorldVerification(x: Omit<WorldLogRow, "at">) {

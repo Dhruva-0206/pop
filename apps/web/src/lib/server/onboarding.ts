@@ -12,7 +12,7 @@ export const SLUG_RE = /^[a-z0-9][a-z0-9-]{2,40}$/;
 export const bioCodeFor = (handle: string, wallet: string) => `POP-${keccak256(toHex(`${handle.toLowerCase()}:${wallet.toLowerCase()}`)).slice(2, 8).toUpperCase()}`;
 
 /** Attestor-signed Registration (EIP-712, same typed data as scripts/seed-seller.ts) that the seller submits to SellerRegistry. */
-export async function signRegistration(seller: Address, handleHash: `0x${string}`) {
+export async function signRegistration(seller: Address, handleHash: `0x${string}`, handleTier = 1) {
   const d = deployment();
   const nonce = BigInt(`0x${randomBytes(8).toString("hex")}`);
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 24 * 3600);
@@ -28,7 +28,7 @@ export async function signRegistration(seller: Address, handleHash: `0x${string}
       ],
     },
     primaryType: "Registration",
-    message: { seller, handleHash, handleTier: 1, nonce, deadline },
+    message: { seller, handleHash, handleTier, nonce, deadline },
   });
   return { nonce: nonce.toString(), deadline: Number(deadline), sig };
 }

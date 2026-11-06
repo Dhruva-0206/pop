@@ -390,10 +390,13 @@ if (!cfgJson.devSkipWorld) {
   chk((await api("/api/staff/onboard")).status === 401, "staff list needs a staff session");
   const strangerReq = await api("/api/onboard/request", { handle: oh, wallet: nw.address, signature: await strangerAcct.signMessage({ message: onboardRequestMessage(oh, nw.address) }) });
   chk(strangerReq.status === 403, "onboarding request not signed by the wallet is rejected (403)");
-  const req1 = await api("/api/onboard/request", { handle: `@${oh}`, wallet: nw.address, signature: await nw.signMessage({ message: onboardRequestMessage(oh, nw.address) }) });
+  // One human, one shop: a request needs a World ID proof for the handle (this dev server skips it with POP_DEV_SKIP_WORLD=1).
+  const noProof = await api("/api/onboard/request", { handle: `@${oh}`, wallet: nw.address, signature: await nw.signMessage({ message: onboardRequestMessage(oh, nw.address) }) });
+  chk(noProof.status === 400 && /proof required/i.test(String(noProof.j.error)), "onboarding request without a World ID proof is refused (400)");
+  const req1 = await api("/api/onboard/request", { handle: `@${oh}`, wallet: nw.address, skipWorld: true, signature: await nw.signMessage({ message: onboardRequestMessage(oh, nw.address) }) });
   chk(req1.status === 201 && /^POP-[0-9A-F]{6}$/.test(req1.j.bioCode), `onboarding request created, bio code ${req1.j.bioCode}`);
   const thief = privateKeyToAccount(generatePrivateKey());
-  const dupHandle = await api("/api/onboard/request", { handle: oh, wallet: thief.address, signature: await thief.signMessage({ message: onboardRequestMessage(oh, thief.address) }) });
+  const dupHandle = await api("/api/onboard/request", { handle: oh, wallet: thief.address, skipWorld: true, signature: await thief.signMessage({ message: onboardRequestMessage(oh, thief.address) }) });
   chk(dupHandle.status === 409, "the same handle requested by another wallet is rejected (409)");
   const takenHandle = await api("/api/onboard/request", { handle: "meera.jewels", wallet: thief.address, signature: await thief.signMessage({ message: onboardRequestMessage("meera.jewels", thief.address) }) });
   chk(takenHandle.status === 409, "an already registered handle cannot be requested (409)");

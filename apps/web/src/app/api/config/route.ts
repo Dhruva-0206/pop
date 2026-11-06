@@ -1,6 +1,7 @@
 import { NextResponse, connection } from "next/server";
 import { deployment, mode, net } from "@/lib/server/chain";
 import { devSkipWorld } from "@/lib/server/world";
+import { autoApproveOn } from "@/lib/server/vendor";
 
 /** Public network config for the browser (addresses, RPC, labels). No secrets. Always request-time. */
 export async function GET() {
@@ -19,5 +20,7 @@ export async function GET() {
     tokenDecimals: d.tokenDecimals,
     explorer: net.isLocalFork ? null : "https://explorer.testnet.whitechain.io",
     devSkipWorld: devSkipWorld() === "on",
+    /** Demo mode for /onboard: the staff check of the bio is skipped. Only ever true on testnet. */
+    onboardAutoApprove: autoApproveOn(),
   });
 }

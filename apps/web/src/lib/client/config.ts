@@ -16,6 +16,8 @@ export type AppConfig = {
   explorer: string | null;
   /** True only on a local `next dev` server started with POP_DEV_SKIP_WORLD=1. Shows a clearly labelled DEV review button. */
   devSkipWorld?: boolean;
+  /** Demo mode for /onboard (testnet only): the staff check of the bio is skipped. */
+  onboardAutoApprove?: boolean;
 };
 
 let cached: Promise<AppConfig> | null = null;

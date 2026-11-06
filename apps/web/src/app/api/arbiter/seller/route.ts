@@ -1,7 +1,7 @@
 import { NextResponse, connection } from "next/server";
 import { zeroAddress, type Address } from "viem";
 import { checkoutAbi, chunkedLogs, handleHash, registryAbi } from "@pop/shared";
-import { deployment, pub } from "@/lib/server/chain";
+import { deployment, pub, store } from "@/lib/server/chain";
 import { readOrder } from "@/lib/server/orders";
 
 const HANDLE_RE = /^[a-z0-9._]{1,30}$/;
@@ -30,6 +30,9 @@ export async function GET(req: Request) {
     const live = await readOrder(e.args.orderId!);
     if (live && ["Funded", "Shipped", "Disputed"].includes(live.state)) open.push({ orderId: live.orderId, state: live.state, amount: live.amount, buyer: live.buyer });
   }
+  // The arbiter looks a seller up before and after a ban. Mirror an on-chain ban into the vendor World record (a PoP database rule:
+  // that person may not open another shop). Best effort; the vendor check also asks the chain itself.
+  if (bannedWallet) await store.markVendorBanned(handle).catch(() => 0);
   return NextResponse.json({
     handle,
     wallet: owner,

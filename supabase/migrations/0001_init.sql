@@ -267,3 +267,16 @@ create table if not exists world_verifications (
 alter table disputes add column if not exists reason text;
 alter table disputes add column if not exists opened_by text;
 alter table disputes add column if not exists created_at timestamptz not null default now();
+
+-- One human, one shop (vendor onboarding). A vendor proves they are a unique person with World ID before registering a handle.
+-- Only the sha256 of the World nullifier is stored (never the raw value); nullifier_hint is its first 12 hex characters for display.
+-- `banned` is a PoP database rule mirrored from the on-chain ban (the chain does not know about nullifiers).
+create table if not exists vendor_verifications (
+  id              bigserial primary key,
+  nullifier_hash  text not null unique,
+  nullifier_hint  text not null,
+  handle          text not null,
+  created_at      timestamptz not null default now(),
+  banned          boolean not null default false
+);
+create index if not exists vendor_verifications_handle on vendor_verifications (handle);
