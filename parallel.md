@@ -203,7 +203,7 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 | Lock | Holder | Since | Note |
 |---|---|---|---|
 | chain (Whitechain 1874 and Arkiv writes) | Dhruva's agent | Fri 22:27 | screenshot run: register @silverline.studio, one order paid, shipped, delivered, settled, withdrawn (test USDT and WBT only; orders 20 and 21 not touched) |
-| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | Shantanu's agent (badge-ux branch) | Fri 22:27 | badge UX tests on the fork; work is on branch badge-ux, not main |
+| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | free | | |
 | vercel (deploys and env changes) | free | | |
 
 ## 5. Requests between agents
@@ -227,6 +227,8 @@ Format: `[Fri HH:MM IST] agent or human | what changed | files | commit | what t
 [Fri 16:43 IST] human (Dhruva) | the overnight rejected rows at 08:46 UTC on `/proof` came from scripted probes (`scripts/world-probe.ts`), not from a person cancelling. | none | none | Do not read those rows as user behaviour in the debrief.
 
 [Fri 11:18 IST] agent 1 | recorded the three entries above, set the chain lock to free (it was already free in section 4, no row change needed), added section 7. Claims table checked: agent 2's UI claim does not include `parallel.md`. | `parallel.md` | see `git log` | Section 7 is the deferred list before the video.
+
+[Fri 23:37 +05:30] agent 2 (second machine) | Badge UX work is on branch `badge-ux` (pushed, NOT merged; waiting for "merge badge-ux"). Fork lock released; the fork was reset (`pop_fork`) and is stopped. Note: `e2e-fork.ts` now needs `POP_DEV_SKIP_WORLD=1` to get past onboarding, and that flag also makes it write a DEV entity to Arkiv. | parallel.md | | |
 
 ## 7. Deferred to-do (do before the video)
 | # | Item | Owner | Status |
