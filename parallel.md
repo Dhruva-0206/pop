@@ -197,12 +197,13 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 ## 3. Active claims
 | Agent or human | Task | Files claimed | Claimed at (IST) |
 |---|---|---|---|
+| agent 1 (Dhruva's agent) | Saturday prep: evidence, prize files, UI text fixes, persistent seed, deadline wording | `docs/evidence.md`, `README.md`, `WHITECHAIN_FEEDBACK.md`, `docs/WORLD_DEBRIEF.md`, `arkiv/*.md`, `docs/demo-script.md`, `CLAUDE.md`, `HANDOFF.md`, `parallel.md`, `docs/*.md` (deadline wording), `apps/web/src/components/ReviewBox.tsx`, `apps/web/src/app/p/[listingId]/Checkout.tsx`, `apps/web/src/app/proof/*`, `apps/web/src/lib/server/proof.ts`, `apps/web/src/lib/client/wallet.ts`, `scripts/seed-demo.ts` | Fri 19:31 |
 
 ## 4. Locks
 | Lock | Holder | Since | Note |
 |---|---|---|---|
-| chain (Whitechain 1874 and Arkiv writes) | free | | |
-| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | free | | |
+| chain (Whitechain 1874 and Arkiv writes) | Dhruva's agent | Fri 19:31 | persistent seed scenes on testnet (banned seller, look-alike seller) |
+| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | Dhruva's agent | Fri 19:31 | fork e2e for the UI text fixes |
 | vercel (deploys and env changes) | free | | |
 
 ## 5. Requests between agents
