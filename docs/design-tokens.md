@@ -1,6 +1,6 @@
 # Design tokens
 
-Source of truth: `apps/web/src/app/globals.css` and `apps/demo-store/src/app/globals.css` (same file content). Components use these tokens only: no raw hex values, no default Tailwind palette colors (`emerald-*`, `neutral-*`, `red-*`).
+Source of truth: `apps/web/src/app/globals.css` and `apps/demo-store/src/app/globals.css` (same structure; the store has its own palette, see below). Components use these tokens only: no raw hex values, no default Tailwind palette colors (`emerald-*`, `neutral-*`, `red-*`).
 
 ## What we studied (whitechain.io, Fri 6 Nov 2026)
 We looked at the home page with screenshots and computed styles. We took the structure, not the brand: no logo, text, images or marks are reused.
@@ -61,3 +61,24 @@ Headings: weight 600, letter-spacing -0.02em on 22 px and up. Body: weight 400. 
 - Wordmark: the text "PoP" in Figtree 700 plus a small square mark made of two CSS shapes. It is ours and is not derived from any other brand.
 
 Ratios are computed by `node scripts/contrast.js` (WCAG relative luminance formula), not estimated.
+
+## Receipt pieces (UI pass 2, see `docs/design-direction.md`)
+No new colours: the receipt is `--color-bg` paper on a `--color-surface` desk, with 1 px `--color-line` hairlines and a 1 px dashed `--color-line-strong` tear line. Its radius is 4 px (the one exception to the 12/16 px radii), and so is the stamp's. The stamp is a 2 px border in the text colour. Tracker and checklist squares are 14 px CSS boxes: filled for done and now, outlined in `--color-line-strong` for not yet. `font-variant-numeric: tabular-nums` is set on `body`.
+
+## Kurta Co. palette (`apps/demo-store` only)
+The store is a different shop that uses PoP, so it has its own warm palette and a display serif (Fraunces 600, via `next/font`, store only). PoP's green appears only on the "Pay with PoP" button.
+
+| Token | Value | Use | Contrast |
+|---|---|---|---|
+| `--color-bg` | `#FFFBF5` | page | n/a |
+| `--color-surface` | `#F5ECDF` | header, picture background | n/a |
+| `--color-line` | `#E2D5C3` | decorative hairlines only | 1.40:1 on bg |
+| `--color-line-strong` | `#8A7B6B` | borders of inputs and buttons | 3.97:1 on bg, 3.50:1 on surface |
+| `--color-ink` | `#22170F` | primary text | 17.01:1 on bg |
+| `--color-ink-2` | `#4B3B2E` | secondary text | 10.37:1 on bg, 9.14:1 on surface |
+| `--color-muted` | `#6A584A` | captions | 6.55:1 on bg, 5.77:1 on surface |
+| `--color-accent` | `#9A3412` | the shop's terracotta | 7.09:1 on bg, white on it 7.31:1 |
+| `--color-pop` | `#0A6B45` | "Pay with PoP" only | white on it 6.56:1 |
+| `--color-pop-strong` | `#07553A` | its hover | white on it 8.86:1 |
+
+Ratios computed with the formula in `scripts/contrast.js` (WCAG relative luminance).

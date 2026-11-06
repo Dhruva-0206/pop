@@ -3,18 +3,19 @@
 /*
  * Design tokens (see docs/design-tokens.md). Components use ONLY these tokens: the default Tailwind palette, radii and shadows
  * are removed below, so a stray `bg-emerald-600` or `shadow-lg` renders as nothing and shows up in review.
- * apps/demo-store/src/app/globals.css is the same file with its own accent color.
+ * This is the Kurta Co. copy: same structure as apps/web, with the shop's own warm palette, a display serif and PoP's green for one button.
  */
 @theme {
   --color-*: initial;
   --color-white: #ffffff;
-  --color-bg: #ffffff;
-  --color-surface: #f6f7f9;
-  --color-line: #dadce3;
-  --color-line-strong: #7a7f8e;
-  --color-ink: #0b1020;
-  --color-ink-2: #3d4354;
-  --color-muted: #596072;
+  /* Kurta Co.'s own warm palette (docs/design-tokens.md, store section) */
+  --color-bg: #fffbf5;
+  --color-surface: #f5ecdf;
+  --color-line: #e2d5c3;
+  --color-line-strong: #8a7b6b;
+  --color-ink: #22170f;
+  --color-ink-2: #4b3b2e;
+  --color-muted: #6a584a;
   --color-accent: #9a3412;
   --color-accent-strong: #7c2a0e;
   --color-accent-soft: #fdeee5;
@@ -23,8 +24,12 @@
   --color-danger: #a31515;
   --color-danger-soft: #fdecec;
   --color-focus: #1d4ed8;
+  /* PoP's green: only the "Pay with PoP" button uses it, so the integration is visible */
+  --color-pop: #0a6b45;
+  --color-pop-strong: #07553a;
 
   --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
   --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --radius-*: initial;
@@ -359,6 +364,67 @@
     align-items: center;
     font-weight: 600;
     color: var(--color-accent-strong);
+  }
+}
+
+@layer components {
+  .display {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  /* the shop's mark: a block-print square */
+  .mark {
+    border-radius: 4px;
+  }
+  .mark::after {
+    inset: 5px;
+    border-radius: 1px;
+    background: transparent;
+    border: 2px solid var(--color-white);
+  }
+  /* large product picture, 4:5 like a garment photo */
+  .garment {
+    aspect-ratio: 4 / 5;
+    width: 100%;
+    border-radius: var(--radius-card);
+    background-color: var(--color-surface);
+    background-size: cover;
+    background-position: center;
+  }
+  /* "Pay with PoP": the one place PoP's look appears inside the store */
+  .btn-pop {
+    background: var(--color-pop);
+    color: var(--color-white);
+  }
+  .btn-pop:hover:not(:disabled) {
+    background: var(--color-pop-strong);
+  }
+  .pop-mark {
+    position: relative;
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    background: var(--color-white);
+  }
+  .pop-mark::after {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    border-radius: 2px;
+    background: var(--color-pop);
+  }
+  .stamp {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+    padding: 0.125rem 0.625rem;
+    border: 2px solid currentColor;
+    border-radius: 4px;
+    font-weight: 700;
+    line-height: 1.5rem;
+    white-space: nowrap;
   }
 }
 

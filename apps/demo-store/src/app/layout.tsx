@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
-import { Figtree, IBM_Plex_Mono } from "next/font/google";
+import { Figtree, Fraunces, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
 const figtree = Figtree({ variable: "--font-figtree", subsets: ["latin"] });
+const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"], weight: ["600"] });
 const plexMono = IBM_Plex_Mono({ variable: "--font-plex-mono", subsets: ["latin"], weight: ["400", "500"] });
 
 export const metadata: Metadata = {
@@ -14,14 +15,14 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${figtree.variable} ${plexMono.variable}`}>
+    <html lang="en" className={`${figtree.variable} ${fraunces.variable} ${plexMono.variable}`}>
       <body className="flex min-h-screen flex-col">
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-10 focus:rounded-control focus:bg-bg focus:px-3 focus:py-2">
           Skip to content
         </a>
-        <header className="border-b">
+        <header className="border-b bg-surface">
           <div className="mx-auto flex max-w-wide items-center justify-between px-4 py-1 md:px-6">
-            <Link href="/" className="flex min-h-11 items-center gap-2 font-bold text-ink no-underline">
+            <Link href="/" className="display flex min-h-11 items-center gap-2 py-2 text-xl text-ink no-underline md:text-2xl">
               <span className="mark" aria-hidden="true" />
               Kurta Co.
             </Link>

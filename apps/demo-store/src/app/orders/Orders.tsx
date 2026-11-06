@@ -10,6 +10,15 @@ type Order = {
   amountUsdt?: string;
   history: { event: string; at: number; onChainState: string }[];
 };
+const STAMP: Record<string, string> = {
+  created: "Waiting",
+  funded: "Paid",
+  shipped: "Shipped",
+  delivered: "Delivered",
+  released: "Complete",
+  refunded: "Refunded",
+  split: "Split",
+};
 const LABEL: Record<string, string> = {
   created: "Waiting for payment.",
   funded: "Paid. Waiting for us to ship.",
@@ -43,17 +52,20 @@ export default function Orders() {
     );
   if (!rows.length) return <p className="text-ink-2">No orders yet. Pick the kurta on the shop page to place one.</p>;
   return (
-    <ul className="stack-sm">
+    <ul className="border-t">
       {rows.map((o) => (
-        <li key={o.ref} className="card stack-sm">
-          <p className="flex justify-between gap-2">
-            <span className="mono font-medium">{o.ref}</span>
-            <span>{o.amountUsdt ? `${o.amountUsdt} test USDT` : ""}</span>
-          </p>
-          <p className="font-semibold">{LABEL[o.status] ?? o.status}</p>
-          <p className="text-sm text-muted">
-            {o.history.length ? `Confirmed on the network: ${o.history.map((h) => h.event.replace("order.", "")).join(", then ")}.` : "Nothing confirmed on the network yet."}
-          </p>
+        <li key={o.ref} className="grid gap-2 border-b py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-x-6">
+          <div className="stack-sm min-w-0">
+            <p className="flex flex-wrap items-center gap-3">
+              <span className={`stamp text-sm ${o.status === "refunded" ? "text-ink-2" : o.status === "released" ? "text-accent-strong" : "text-ink"}`}>{STAMP[o.status] ?? o.status}</span>
+              <span className="mono break-all text-sm text-ink-2">{o.ref}</span>
+            </p>
+            <p className="font-semibold">{LABEL[o.status] ?? o.status}</p>
+            <p className="text-sm text-muted">
+              {o.history.length ? `Confirmed on the network: ${o.history.map((h) => h.event.replace("order.", "")).join(", then ")}.` : "Nothing confirmed on the network yet."}
+            </p>
+          </div>
+          <p className="mono text-sm text-ink sm:text-right">{o.amountUsdt ? `${Number(o.amountUsdt).toFixed(2)} test USDT` : ""}</p>
         </li>
       ))}
     </ul>
