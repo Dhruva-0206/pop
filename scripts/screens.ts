@@ -8,7 +8,7 @@
  * jobs.json: [{ "name": "375-order", "url": "http://localhost:3200/o/1", "width": 375, "profile": "buyer",
  *               "storage": { "pop:testwallet:fork:31337:buyer": "$TEST_BUYER_PK" }, "steps": [...], "fold": true }]
  * `$NAME` values in `storage` are read from pop/.env and never printed. A "profile" keeps its localStorage between jobs.
- * Steps: { "type": [selector, text] } | { "click": selector } | { "waitUrl": "substring" } | { "wait": ms }.
+ * Steps: { "type": [selector, text] } | { "click": selector } | { "clickText": exact button text } | { "waitUrl": "substring" } | { "wait": ms }.
  * "fold": also save the first screen only (name-fold.png), to check sticky bars.
  */
 import { spawn, type ChildProcess } from "node:child_process";
@@ -17,7 +17,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { opt } from "./env";
 
-type Step = { type?: [string, string]; click?: string; waitUrl?: string; wait?: number };
+type Step = { type?: [string, string]; click?: string; clickText?: string; waitUrl?: string; wait?: number };
 type Job = { settle?: number; name: string; url: string; width: number; profile?: string; storage?: Record<string, string>; steps?: Step[]; fold?: boolean; height?: number };
 
 const [jobsFile, outDir] = process.argv.slice(2);
@@ -114,6 +114,9 @@ for (const job of jobs) {
       await cdp.send("Input.insertText", { text: s.type[1] });
     } else if (s.click) {
       await evaluate(cdp, `document.querySelector(${JSON.stringify(s.click)}).click()`);
+    } else if (s.clickText) {
+      const js = `(() => { const b = [...document.querySelectorAll("button")].find((x) => x.textContent.trim() === ${JSON.stringify(s.clickText)} && !x.disabled); if (b) { b.click(); return true; } return false; })()`;
+      for (let i = 0; i < 80 && !(await evaluate(cdp, js)); i++) await sleep(250);
     } else if (s.waitUrl) {
       for (let i = 0; i < 240 && !String(await evaluate(cdp, "location.href")).includes(s.waitUrl); i++) await sleep(500);
     } else if (s.wait) await sleep(s.wait);

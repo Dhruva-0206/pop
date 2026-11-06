@@ -152,8 +152,8 @@ export default function Arbiter() {
         {disputes.map((d) => (
           <div key={d.orderId} className="card stack-sm text-sm">
             <div className="flex justify-between">
-              <span className="mono font-semibold">Order #{d.orderId} · {d.sellerHandle ? `@${d.sellerHandle}` : d.seller.slice(0, 8)}</span>
-              <span className="mono">{usdt(d.amount, cfg.tokenDecimals)} test USDT</span>
+              <span className="font-semibold">Order #{d.orderId} · {d.sellerHandle ? `@${d.sellerHandle}` : d.seller.slice(0, 8)}</span>
+              <span className="mono whitespace-nowrap">{usdt(d.amount, cfg.tokenDecimals)} test USDT</span>
             </div>
             <div className="text-xs text-muted">
               {d.kind === "handover-refused" ? "Courier reported: the buyer refused the handover." : "Buyer opened a dispute after delivery."}{" "}

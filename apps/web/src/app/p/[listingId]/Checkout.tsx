@@ -205,7 +205,7 @@ export default function Checkout() {
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-x-12">
         <div className="stack lg:col-start-1">
           <section className="flex items-start gap-4" aria-labelledby="product">
-            <div className="product-pic" role="img" aria-label={`Picture of ${l.title}`} style={l.imageUrl ? { backgroundImage: `url(${JSON.stringify(l.imageUrl)})` } : undefined} />
+            {l.imageUrl && <div className="product-pic" role="img" aria-label={`Picture of ${l.title}`} style={{ backgroundImage: `url(${JSON.stringify(l.imageUrl)})` }} />}
             <div className="stack-sm min-w-0">
               <p className="text-sm text-ink-2">
                 Sold by <Link href={`/verify/${l.sellerHandle}`}>@{l.sellerHandle}</Link>
