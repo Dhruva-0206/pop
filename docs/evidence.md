@@ -27,6 +27,16 @@ Arkiv entities written by these two verified reviews (creator is the attestor, r
 
 **A World review cannot be completed on a phone with the staging simulator.** The World widget asks for the real World App on a phone, so the reviews above were done on a laptop with the Simulator. The phone order #19 was paid and settled, but not reviewed.
 
+## Persistent demo scenes seeded on testnet (Fri 6 Nov 2026, 19:48 IST, `scripts/seed-demo.ts`, default scenes 4 and 5)
+| Scene | What was created | Tx |
+|---|---|---|
+| 4 banned seller | @bad.bazaar registered (`registerSeller`) | [registerSeller](https://explorer.testnet.whitechain.io/tx/0xfb127e3ca5661e17cacbbb59865ef65cf4f71989347eceaaf22fe01679119fa1) |
+| 4 banned seller | open order **#20**, 1.00 test USDT, paid and left Funded | [pay](https://explorer.testnet.whitechain.io/tx/0x0b8ef1dec614832af421b61765bd3cee3a3f07e987551ddb1c78172e557b6771) |
+| 4 banned seller | seller banned by the arbiter key (permanent) | [ban](https://explorer.testnet.whitechain.io/tx/0x3834d4db53bb1e390e041c495cc55b42022f72ac871bba6b5c5a77d068077561) |
+| 5 look-alike | listing `demo-fake-meera` for @meera.jewels.official, a handle that is NOT registered (database row only, no transaction) | none |
+
+Checked through the live APIs the pages read (not by looking at the pages): `/api/verify/bad.bazaar` is 404 with reason `banned`; `/api/verify/meera.jewels.official` is 404 with reason `unknown`; `/api/listings/demo-fake-meera` is 200 with `sellerStanding.active: false` (the checkout disables Pay when the seller is not active); `/api/arbiter/seller?handle=bad.bazaar` shows banned and the open order #20 (Funded, 1.00). **Order #20 has not been force-refunded**; it is the force-refund scene for the demo (arbiter page, look up @bad.bazaar, Force refund). The timed scenes 1 to 3 were not seeded.
+
 ## Live deployments (Vercel Pro)
 | What | Value | Checked |
 |---|---|---|
