@@ -17,11 +17,24 @@
 - Thu 23:55: read 4.x docs; found the v1, v3 → 4.0 breaking changes (RP signature, `IDKitRequestWidget`, v4 verify).
 - Fri 00:28: server routes + dev page built against `@worldcoin/idkit` 4.6.0.
 - Fri 01:05: switched to one action per seller (above).
-- Fri 16:43 IST: first successful verification (below).
+- Fri 03:55 IST: World app created in the Developer Portal.
+- Fri 03:57 IST: relying party registered (rp_id and signing key).
+- Fri 09:21 IST: the per-seller actions created by hand in the portal.
+- Fri 14:16 IST (08:46 UTC): scripted probes against the verify host (four rejected rows, by design).
+- Fri 16:43 IST: first successful verification, @meera.jewels order #1, Simulator on a laptop (below).
+- Fri 19:04 and 19:05 IST: the same person tried to review @meera.jewels again on order #17; refused both times, nothing written (log ids 6 and 7).
+- Fri 19:12 IST (log row 19:11:55): first success against the deployed site, @kurta.co order #18, with its own action (log id 8, hint `595fe89d6634`).
 - **Time to first successful verification**, from the World log on `/proof` (UTC): the first logged request is at 08:46:03 (14:16:03 IST) and the first `verified` row is at 11:13:05 (16:43:05 IST), so 2 h 27 min between them. The four rows at 08:46 UTC were scripted probes (`scripts/world-probe.ts`, wrong action, signal mismatch, wrong environment, fake proof), rejected by design, not a person trying. The log does not record when the person opened the Simulator, so the length of the human step itself is not measured. From the first docs read (Thu 23:55 IST) to the first verified proof (Fri 16:43 IST): 16 h 48 min of wall clock, most of it waiting for the portal app, rp_id, signing key and actions to be created by a person.
 
 ## Friction
-See `docs/friction-log.md` [World] entries: v4 breaking changes with v1, v3 tutorials still common; signal check helper (`hashSignal`) not in the docs; "max verifications" undocumented for 4.0; whether `nullifier_replayed` is raised by World or only by the app is unclear; npm page blocked automated fetches (403).
+Things that cost us time, in the order they bit:
+- **The portal action form has only an identifier and a description.** There is no field for the per-seller scoping we needed, so one action per seller was created by hand (three of them took until 09:21 IST).
+- **The dev server reloaded in a loop** on `/dev/world`. A production build (`npm run build`, `npm run start`) was the workaround. We suspect the file watcher, with the repo under Desktop (possibly OneDrive sync). Not proven.
+- **The Simulator offers Human, Passport, ID and Device.** Our preset is `proofOfHuman`, and the Simulator showed Unique Human with World ID 4.0 selected for the successful runs. The other options sit in the same picker; we did not test them.
+- **The widget hides the server's reason.** When our server refuses a proof, `handleVerify` throws; the widget shows its own "Verification declined" and calls `onError("failed_by_host_app")` with no message. We had to keep our own reason on the page (`ReviewBox`, commit 89fb3db) to tell the person what really happened (for example "You have already reviewed this seller").
+- **A phone shows only the real World App.** On a phone the widget asks for the real World App, so a staging proof cannot be completed on a phone with the Simulator. We reviewed on a laptop. The phone order (#19) was paid and settled but not reviewed.
+
+Also see `docs/friction-log.md` [World] entries: v4 breaking changes with v1, v3 tutorials still common; signal check helper (`hashSignal`) not in the docs; "max verifications" undocumented for 4.0; whether `nullifier_replayed` is raised by World or only by the app is unclear; npm page blocked automated fetches (403).
 
 ## Most impactful improvement
 _Draft._ Let an RP create and name actions through a documented API, or accept a counterparty-scoped action string, so a marketplace can scope uniqueness per seller without hand-creating one portal action per seller. Second: return a distinct code for an unknown action (today a fake proof gets the same `verification_failed` whether the action exists or not).
@@ -39,4 +52,6 @@ _Draft._ Let an RP create and name actions through a documented API, or accept a
 - **What this proof shows and what it does not.** It shows that a unique person, as World counts them, approved this review for this order and this seller. It does not show that a purchase was satisfying, that the parcel was delivered, or that the seller is honest: those come from the PoP contract (the order reached Released) and from the review text.
 - **Simulator, not a phone.** Every proof here comes from the World Simulator in the staging environment. No production World ID and no real phone has been used.
 - **India availability is unverified.** We did not check which World ID credentials a real buyer in India can get today, or where an Orb is available.
-- Still open: the denied paths with a real proof (a second review for the same seller, a cancelled request), see `parallel.md` section 7.
+- **Denied path done with a real proof: same-person replay.** On order #17 of @meera.jewels the person who had reviewed order #1 tried again at 19:04 and 19:05 IST. Our server refused (`replay`, "nullifier already used for this seller, or order already reviewed"), nothing was written, and the nullifier hint was the same as the first review (`f2d508a533b2`). World itself did not refuse: the refusal came from our `UNIQUE(nullifier_hash, seller_wallet)` check, so the proof had been accepted by World before our server said no.
+- **Second success, different seller:** @kurta.co order #18, 19:12 IST, hint `595fe89d6634` (a different hint from the first review, because each seller has its own action). Review entity `0x5f509ea8843c62d9c4b8c10de5a219710de819d62cdf0a43eea3301d6065f42b`.
+- Still open: a cancelled request in the Simulator (expected message: "You cancelled in World App. Nothing was published."), see `parallel.md` section 7.
