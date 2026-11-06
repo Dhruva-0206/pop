@@ -13,6 +13,7 @@ import { TestModeBanner } from "@/components/Banners";
 import { Details, ErrorBox, Notice, PageSkeleton } from "@/components/ui";
 import { Checklist } from "@/components/Checklist";
 import { Money } from "@/components/receipt";
+import { friendlyPayError } from "@/lib/client/errors";
 import { orderRegisterMessage } from "@/lib/messages";
 
 type ListingResp = {
@@ -169,7 +170,7 @@ export default function Checkout() {
       if (!reg.ok) throw new Error(`Paid (order #${orderId}), but saving delivery details failed. Open /o/${orderId}.`);
       router.push(`/o/${orderId}?new=1`);
     } catch (e) {
-      setStep(e instanceof Error ? e.message.split("\n")[0] : "Something went wrong");
+      setStep(friendlyPayError(e));
     } finally {
       setBusy(false);
     }
