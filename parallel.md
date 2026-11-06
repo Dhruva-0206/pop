@@ -197,12 +197,12 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 ## 3. Active claims
 | Agent or human | Task | Files claimed | Claimed at (IST) |
 |---|---|---|---|
-| | | | |
+| agent 1 (Dhruva's agent) | demo-driver script and demo dry run | `scripts/demo-driver.ts`, `docs/demo-script.md` (timings only), `parallel.md` | Fri 18:33 |
 
 ## 4. Locks
 | Lock | Holder | Since | Note |
 |---|---|---|---|
-| chain (Whitechain 1874 and Arkiv writes) | free | | |
+| chain (Whitechain 1874 and Arkiv writes) | Dhruva's agent | Fri 18:33 | demo-driver.ts and a timed dry run of docs/demo-script.md on the live sites (test USDT and WBT only) |
 | fork (local anvil, schemas `pop_fork` and `kurta_31337`) | free | | |
 | vercel (deploys and env changes) | free | | |
 
