@@ -1,10 +1,14 @@
-<p align="center"><img src="apps/web/public/brand/pop-logo-256.png" alt="PoP logo" width="120"></p>
+<div align="center">
 
-# PoP: Proof of Purchase
+<img src="apps/web/public/brand/pop-logo-256.png" width="120" alt="PoP logo">
 
-Checkout is the easy part. PoP handles what happens after.
+<h1 align="center">PoP: Proof of Purchase</h1>
 
-No parcel, no payout. Late means refunded. No review without a receipt.
+<p align="center"><strong>Checkout is the easy part. PoP handles what happens after.</strong></p>
+
+<p align="center">No parcel, no payout. Late means refunded. No review without a receipt.</p>
+
+</div>
 
 A USDT checkout for sellers on Instagram, WhatsApp, Facebook and small websites. The payment comes back to the buyer automatically if the parcel is late, and it is paid out when the buyer's own code is entered at the door.
 
