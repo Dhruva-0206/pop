@@ -5,7 +5,7 @@ import { arkivProof, contractFacts, recentOrders, worldLog, RABDI_CHAIN_ID } fro
 import { ARKIV_SMOKE, EXPLORER, STATIC_TXS, TEST_COUNTS } from "@/lib/proof-data";
 import ExpiredList from "./ExpiredList";
 
-export const metadata = { title: "Proof · PoP" };
+export const metadata = { title: "Proof" };
 
 const ARKIV_QUERY = `import { createPublicClient, http } from "@arkiv-network/sdk";
 import { rabdi } from "@arkiv-network/sdk/chains";

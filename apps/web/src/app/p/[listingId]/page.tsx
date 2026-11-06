@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { PageSkeleton } from "@/components/ui";
 import Checkout from "./Checkout";
 
-export const metadata = { title: "Checkout · PoP" };
+export const metadata = { title: "Checkout" };
 
 // Cache Components: the static shell prerenders; the live checkout streams in at request time.
 export default function Page() {
