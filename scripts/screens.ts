@@ -9,6 +9,7 @@
  *               "storage": { "pop:testwallet:fork:31337:buyer": "$TEST_BUYER_PK" }, "steps": [...], "fold": true }]
  * `$NAME` values in `storage` are read from pop/.env and never printed. A "profile" keeps its localStorage between jobs.
  * Steps: { "type": [selector, text] } | { "click": selector } | { "clickText": exact button text } | { "waitUrl": "substring" } | { "wait": ms }.
+ * "scale": device pixel ratio (default 1; 2 for retina-style shots).
  * "fold": also save the first screen only (name-fold.png), to check sticky bars. "probe": a JS expression evaluated in the page; its JSON result is printed.
  */
 import { spawn, type ChildProcess } from "node:child_process";
@@ -18,7 +19,7 @@ import { join, resolve } from "node:path";
 import { opt } from "./env";
 
 type Step = { type?: [string, string]; click?: string; clickText?: string; waitUrl?: string; wait?: number };
-type Job = { probe?: string; settle?: number; name: string; url: string; width: number; profile?: string; storage?: Record<string, string>; steps?: Step[]; fold?: boolean; height?: number };
+type Job = { scale?: number; probe?: string; settle?: number; name: string; url: string; width: number; profile?: string; storage?: Record<string, string>; steps?: Step[]; fold?: boolean; height?: number };
 
 const [jobsFile, outDir] = process.argv.slice(2);
 if (!jobsFile || !outDir) throw new Error("usage: npx tsx scripts/screens.ts <jobs.json> <outDir>");
@@ -91,7 +92,7 @@ for (const job of jobs) {
   if (!browsers.has(prof)) browsers.set(prof, await open(prof, port++));
   const { cdp } = browsers.get(prof)!;
   const h = job.height ?? (job.width < 600 ? 800 : 900);
-  await cdp.send("Emulation.setDeviceMetricsOverride", { width: job.width, height: h, deviceScaleFactor: 1, mobile: job.width < 600 });
+  await cdp.send("Emulation.setDeviceMetricsOverride", { width: job.width, height: h, deviceScaleFactor: job.scale ?? 1, mobile: job.width < 600 });
   if (job.storage) {
     const origin = new URL(job.url).origin;
     const loaded = cdp.once("Page.loadEventFired");

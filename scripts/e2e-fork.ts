@@ -441,6 +441,12 @@ if (!cfgJson.devSkipWorld) {
   chk(redBadge.status === 404 && (await redBadge.text()).includes("Not a registered seller"), "the badge for an unknown handle is the red 'Not a registered seller'");
   const evil = await fetch(`${WEB}/api/badge/${encodeURIComponent('x"><script>')}`);
   chk(evil.status === 404 && !(await evil.text()).includes("<script"), "a hostile handle in the badge URL is refused and not echoed");
+  const dark = await fetch(`${WEB}/api/badge/${oh}?theme=dark`);
+  const darkSvg = await dark.text();
+  chk(dark.status === 200 && darkSvg.includes(`@${oh}`) && darkSvg.includes("<title>Protected by PoP"), "the dark badge returns 200 with the handle and a full-sentence title");
+  const longBadge = await fetch(`${WEB}/api/badge/${"z".repeat(30)}`);
+  const longW = Number((await longBadge.text()).match(/<svg[^>]* width="(\d+)"/)?.[1] ?? 0);
+  chk(longBadge.status === 404 && longW >= 240 && longW <= 420, `a 30-character handle's badge stays between 240 and 420 px wide (${longW})`);
 
   // ---- pages render
   for (const path of ["/onboard", "/arbiter", "/proof", `/p/${slug}`]) {
