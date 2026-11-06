@@ -93,6 +93,18 @@ Both PoP contracts are recorded as verified on Blockscout. Deployment block: **1
 | Kurta order #3: merchant checkout payment | [pay](https://explorer.testnet.whitechain.io/tx/0x7bdbd73f594d9bbf0a54f1bf9312e0473fa3622a87deb27c6c0f317e7ef40120) |
 | Kurta order #3: release | [finalize](https://explorer.testnet.whitechain.io/tx/0xe924962b6eb53b871b60867d9f81f2c056cdc04606eb27744688db12ac3163d0) |
 
+### Later orders on the live sites (Fri 6 Nov 2026)
+Full hashes and the World log are in [docs/evidence.md](docs/evidence.md).
+| Order | What happened | Links |
+|---|---|---|
+| #11 | Paid in a browser through the live Kurta store, released | [pay](https://explorer.testnet.whitechain.io/tx/0xdaa45657ffae0e638b54ec9ef9e0fc1f0a0e4aecb13ea2e4a88de3bcedc19d17), [finalize](https://explorer.testnet.whitechain.io/tx/0xee163815e16110c405d2918287c8cf075edbafc9e7c58e4beea6f7e464d3d179) |
+| #16 | Report a problem, arbiter split 50/50 | [openDispute](https://explorer.testnet.whitechain.io/tx/0xd64d92cb531fe9a3e0af4598c06cee19bf382bf0e7d535e4e07c189505c31657), [resolveDispute](https://explorer.testnet.whitechain.io/tx/0x317912f725369419fb9086c1d9ead89a28b7aaedda0383c4bf6397bedcacb3d7) |
+| #17 | Released (driven by `scripts/demo-driver.ts`) | [pay](https://explorer.testnet.whitechain.io/tx/0x46be3418165ffb4875fd56598e34dd299961199602498e25f89c816e20eb99c2), [finalize](https://explorer.testnet.whitechain.io/tx/0x729fc4819ef49d29c451abf04180e43fc9f263440d6868047e7a23ec42e9b988) |
+| #18 | Paid in a browser through the live Kurta store, released, reviewed with World ID | [pay](https://explorer.testnet.whitechain.io/tx/0x3ed1afc4ce4610057bf80707964b93f4435eafde76fedd3dd465e7390401509e), [finalize](https://explorer.testnet.whitechain.io/tx/0xb2039b9f5da80b144147510747636f6006ffdf406ae6fa2ff84e5fff37640a39) |
+| **#19** | **Paid by a person on a real phone over mobile data (4G) through the live Kurta store, Fri 6 Nov about 19:26 IST**, released | [pay](https://explorer.testnet.whitechain.io/tx/0x28d7bcaade234cb29b7d5a8fa8e987a26227a82f8229852a903e6134dbf38fd7), [ship](https://explorer.testnet.whitechain.io/tx/0x9b5bed420f52621de57c8ec3081fd5e7de7308c699dd154bf1d8091baf4b1708), [deliver](https://explorer.testnet.whitechain.io/tx/0x9827555357b8d0c8026ab8f231c7544cebb68517be4d4c79ef740894a6b38048), [finalize](https://explorer.testnet.whitechain.io/tx/0xe33009d0d04778e0e18f402ccc1e38e3a85684bf5033091e9ae9caeb3851b886), [withdraw](https://explorer.testnet.whitechain.io/tx/0xae66158d2bfd798b5e0cf97d4438ec2b74c76349989f94725f406e99c2f11058) |
+
+Ship, delivery, finalize and withdraw for #17 to #19 were sent by `scripts/demo-driver.ts`; the payments were made in the checkout.
+
 ### Why on-chain stablecoin settlement
 
 PoP uses USDT on Whitechain to bind payment to seller-signed terms and publicly inspectable settlement rules. Eligible deadline refunds can be triggered by anyone without separate seller or PoP approval. Merchants independently verify payment and settlement events. Conventional rails could offer similar buyer protection, but would require the processor/platform to implement and authorize those outcomes; they do not expose this contract's independently callable settlement mechanism. Whitechain's EVM compatibility allows standard Solidity, token tooling, and wallet clients.
@@ -266,8 +278,10 @@ A transaction claims `UNIQUE(nullifier_hash, seller_wallet)` plus a unique revie
 ### Verification status and failure paths
 
 - RP signing and invalid-proof rejection probes are recorded.
-- Successful official simulator verification and observed cancellation remain pending in [WORLD_DEBRIEF.md](docs/WORLD_DEBRIEF.md).
-- Required demonstration: valid proof -> backend success -> Arkiv publication; cancel/reject -> no publication; same human on another eligible order for the same seller -> refusal.
+- **Verified with the official World Simulator (staging) on a laptop:** @meera.jewels order #1 (16:43 IST) and @kurta.co order #18 (19:11 IST). Both reviews are on Arkiv, readonly, owned by the buyer.
+- **Same-person replay refused:** the same person tried to review @meera.jewels again on order #17 (19:04 and 19:05 IST); the server refused and wrote nothing (log ids 6 and 7 on `/proof`, same nullifier hint `f2d508a533b2` as the first review).
+- A World review cannot be completed on a phone with the staging simulator: the widget asks for the real World App. The phone order #19 was paid and settled but not reviewed.
+- Observed cancellation in the simulator is still to be recorded in [WORLD_DEBRIEF.md](docs/WORLD_DEBRIEF.md).
 - Simulator/staging identities are not production proof-of-human evidence.
 - `POP_DEV_SKIP_WORLD=1` is local-only, produces DEV records and fails closed on deployed builds. It is not a successful sponsor verification.
 

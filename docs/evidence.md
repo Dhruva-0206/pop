@@ -1,6 +1,32 @@
 # Evidence
 Contract addresses, tx links, Arkiv entity keys and runnable queries. Newest first within each section.
 
+## Live evening orders and World reviews (Fri 6 Nov 2026, about 18:55 to 19:30 IST)
+All on 1874 with test USDT. Every hash below is the full transaction hash, read from the PoPCheckout events by order id on Fri 6 Nov. "Driver" means `scripts/demo-driver.ts` (ship as the seller, courier delivers with the buyer's six words, wait out the problem window, finalize, seller withdraw).
+
+| Order | Seller | How it was placed | How it ended |
+|---|---|---|---|
+| #11 | @kurta.co, 1.50 | Paid in a browser through the live Kurta store (details in the order #11 section below) | Released: [pay](https://explorer.testnet.whitechain.io/tx/0xdaa45657ffae0e638b54ec9ef9e0fc1f0a0e4aecb13ea2e4a88de3bcedc19d17), [finalize](https://explorer.testnet.whitechain.io/tx/0xee163815e16110c405d2918287c8cf075edbafc9e7c58e4beea6f7e464d3d179), [withdraw](https://explorer.testnet.whitechain.io/tx/0x087e45bd1420d224dc10618f1ac0aa79662f346ec74b82d5d2f2a2db0d39fe3c) |
+| #16 | @meera.jewels, 1.00 | Demo dry run from a script: [pay](https://explorer.testnet.whitechain.io/tx/0xa1787feee6ba856bcec74185db2748e3a2be347cfefaa0523aab0213c87b1b03) | Delivered, buyer reported a problem ([openDispute](https://explorer.testnet.whitechain.io/tx/0xd64d92cb531fe9a3e0af4598c06cee19bf382bf0e7d535e4e07c189505c31657)), the arbiter key resolved it as a **50/50 split** ([resolveDispute](https://explorer.testnet.whitechain.io/tx/0x317912f725369419fb9086c1d9ead89a28b7aaedda0383c4bf6397bedcacb3d7)) |
+| #17 | @meera.jewels, 1.00 | [pay](https://explorer.testnet.whitechain.io/tx/0x46be3418165ffb4875fd56598e34dd299961199602498e25f89c816e20eb99c2) | Driven to release by the driver: [ship](https://explorer.testnet.whitechain.io/tx/0x837264376c34d7901a25ba600d06f651e417586105294882613feb7ecceb7973), [deliver](https://explorer.testnet.whitechain.io/tx/0x831e57cc3e729de06190b90bb3eb00cae075a333021d4f155335f3aefc046bfe), [finalize](https://explorer.testnet.whitechain.io/tx/0x729fc4819ef49d29c451abf04180e43fc9f263440d6868047e7a23ec42e9b988), [withdraw](https://explorer.testnet.whitechain.io/tx/0x4bb0d99e0d3bc368714487cd8df378a8a6033438ce1f03c90563f82f753e9487) |
+| #18 | @kurta.co, 1.50 | Paid in a browser through the live Kurta store: [pay](https://explorer.testnet.whitechain.io/tx/0x3ed1afc4ce4610057bf80707964b93f4435eafde76fedd3dd465e7390401509e) | Driven to release by the driver: [ship](https://explorer.testnet.whitechain.io/tx/0x3d8b86873cdf176de0addb548b10dce1863f1b87eb19784e0857f93fe664b2ef), [deliver](https://explorer.testnet.whitechain.io/tx/0x176b2ba3a21d07952cdf2b3ab196f52a3d9e59e6ffe5b044520055fccb45c27f), [finalize](https://explorer.testnet.whitechain.io/tx/0xb2039b9f5da80b144147510747636f6006ffdf406ae6fa2ff84e5fff37640a39), [withdraw](https://explorer.testnet.whitechain.io/tx/0xbf3c31b6b9086e76cdcd6074bdf7e32af3861c836135cfce371c2e916b7072f4) |
+| **#19** | @kurta.co, 1.50 | **Paid by a person on a real phone over mobile data (4G) through the live Kurta store, Fri 6 Nov about 19:26 IST** (the chain timestamp of the payment is 13:56:24 UTC, which is 19:26:24 IST): [pay](https://explorer.testnet.whitechain.io/tx/0x28d7bcaade234cb29b7d5a8fa8e987a26227a82f8229852a903e6134dbf38fd7) | Driven to release by the driver: ship [`0x9b5bed42…b1708`](https://explorer.testnet.whitechain.io/tx/0x9b5bed420f52621de57c8ec3081fd5e7de7308c699dd154bf1d8091baf4b1708), deliver [`0x98275553…b38048`](https://explorer.testnet.whitechain.io/tx/0x9827555357b8d0c8026ab8f231c7544cebb68517be4d4c79ef740894a6b38048), finalize [`0xe33009d0…b886`](https://explorer.testnet.whitechain.io/tx/0xe33009d0d04778e0e18f402ccc1e38e3a85684bf5033091e9ae9caeb3851b886), seller withdraw [`0xae66158d…f11058`](https://explorer.testnet.whitechain.io/tx/0xae66158d2bfd798b5e0cf97d4438ec2b74c76349989f94725f406e99c2f11058) |
+
+Order #19 is the only order here placed from a phone. The seller (@kurta.co) had 3 or more completed orders by then, so its problem window was the short one: finalize came 36 blocks after delivery.
+
+### World ID reviews (staging environment, World Simulator on a laptop, done by a person)
+| Result | Seller and order | When | Log row on /proof | Nullifier hint (first 12 hex characters, not an id) |
+|---|---|---|---|---|
+| **Verified**, review published | @meera.jewels, order #1 | 16:43 IST (11:13:05 UTC) | id 5 | `f2d508a533b2` |
+| **Verified**, review published | @kurta.co, order #18 | 19:11:55 IST (13:41:55 UTC) | id 8 | `595fe89d6634` |
+| **Replay refused** ("nullifier already used for this seller, or order already reviewed"), nothing written | @meera.jewels, order #17, the same person as order #1 | 19:04 and 19:05 IST (13:34:17 and 13:35:12 UTC) | ids 6 and 7 | `f2d508a533b2` (the same person gives the same hint for the same seller) |
+
+The simulator showed Unique Human with World ID 4.0 selected. The earlier 08:46 UTC "rejected" rows (ids 1 to 4) came from scripted probes, not from a person.
+
+Arkiv entities written by these two verified reviews (creator is the attestor, readonly, owner is the buyer wallet): order #1 [`0xa444fb932ea107e2814e191d8adc878e5936fd70c64ea4bd90c936e508c03508`] and order #18 [`0x5f509ea8843c62d9c4b8c10de5a219710de819d62cdf0a43eea3301d6065f42b`]. Both are read by PoP's key and by the Kurta store's own key (`scripts/arkiv-query.ts`, Fri 6 Nov, 12 attestor entities seen by each key: 2 real reviews, 9 DEV entries from fork tests, 1 smoke entity).
+
+**A World review cannot be completed on a phone with the staging simulator.** The World widget asks for the real World App on a phone, so the reviews above were done on a laptop with the Simulator. The phone order #19 was paid and settled, but not reviewed.
+
 ## Live deployments (Vercel Pro)
 | What | Value | Checked |
 |---|---|---|
