@@ -197,11 +197,12 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 ## 3. Active claims
 | Agent or human | Task | Files claimed | Claimed at (IST) |
 |---|---|---|---|
+| agent 1 (Dhruva's agent) | Screenshot run: one full vendor run for the submission (shop silverline.studio) | `apps/web/src/app/onboard/Onboard.tsx` (link origin from NEXT_PUBLIC_BASE_URL), `screenshots/` (never committed), `parallel.md` | Fri 22:27 |
 
 ## 4. Locks
 | Lock | Holder | Since | Note |
 |---|---|---|---|
-| chain (Whitechain 1874 and Arkiv writes) | free | | |
+| chain (Whitechain 1874 and Arkiv writes) | Dhruva's agent | Fri 22:27 | screenshot run: register @silverline.studio, one order paid, shipped, delivered, settled, withdrawn (test USDT and WBT only; orders 20 and 21 not touched) |
 | fork (local anvil, schemas `pop_fork` and `kurta_31337`) | Shantanu's agent (badge-ux branch) | Fri 22:27 | badge UX tests on the fork; work is on branch badge-ux, not main |
 | vercel (deploys and env changes) | free | | |
 
