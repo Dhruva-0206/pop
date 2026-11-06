@@ -18,7 +18,7 @@ import { join, resolve } from "node:path";
 import { opt } from "./env";
 
 type Step = { type?: [string, string]; click?: string; waitUrl?: string; wait?: number };
-type Job = { name: string; url: string; width: number; profile?: string; storage?: Record<string, string>; steps?: Step[]; fold?: boolean; height?: number };
+type Job = { settle?: number; name: string; url: string; width: number; profile?: string; storage?: Record<string, string>; steps?: Step[]; fold?: boolean; height?: number };
 
 const [jobsFile, outDir] = process.argv.slice(2);
 if (!jobsFile || !outDir) throw new Error("usage: npx tsx scripts/screens.ts <jobs.json> <outDir>");
@@ -119,8 +119,8 @@ for (const job of jobs) {
     } else if (s.wait) await sleep(s.wait);
   }
   // Wait until the page has replaced its skeletons with content (max 15 s), then a short settle for fonts.
-  for (let i = 0; i < 60 && (await evaluate(cdp, `!!document.querySelector('.skeleton,[aria-busy="true"]')`)); i++) await sleep(250);
-  await sleep(3500); // the order page learns who the buyer is on its second 3 s poll
+  if (job.settle === undefined) for (let i = 0; i < 60 && (await evaluate(cdp, `!!document.querySelector('.skeleton,[aria-busy="true"]')`)); i++) await sleep(250);
+  await sleep(job.settle ?? 3500); // the order page learns who the buyer is on its second 3 s poll
   const m = await evaluate(cdp, `({ sw: document.documentElement.scrollWidth, iw: innerWidth, sh: document.documentElement.scrollHeight, h1: document.querySelectorAll('h1').length })`);
   if (job.fold) {
     const shot = await cdp.send("Page.captureScreenshot", { format: "png" });

@@ -473,6 +473,92 @@
     font-weight: 500;
   }
 
+  /* payment checklist: same squares as the tracker, stacked */
+  .checklist {
+    display: grid;
+    gap: 0.5rem;
+  }
+  .check {
+    display: grid;
+    grid-template-columns: 14px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  .check-done .track-mark {
+    background: var(--color-ink);
+  }
+  .check-now .track-mark {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+  .check-next .track-mark {
+    border-color: var(--color-line-strong);
+  }
+  .check-label {
+    color: var(--color-ink);
+  }
+  .check-now .check-label {
+    font-weight: 600;
+  }
+  .check-next .check-label {
+    color: var(--color-muted);
+  }
+  .check-note {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-ink-2);
+  }
+  .check-now .check-note {
+    color: var(--color-accent-strong);
+  }
+
+  /* product picture: a fixed square, the image fills it */
+  .product-pic {
+    flex-shrink: 0;
+    width: 6rem;
+    height: 6rem;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background-color: var(--color-surface);
+    background-size: cover;
+    background-position: center;
+  }
+  @media (min-width: 768px) {
+    .product-pic {
+      width: 9rem;
+      height: 9rem;
+    }
+  }
+
+  /* definition list of rules: term left, rule right on wide screens, stacked on phones */
+  .rules {
+    display: grid;
+  }
+  .rules > div {
+    display: grid;
+    gap: 0.125rem;
+    padding: 0.75rem 0;
+    border-top: 1px solid var(--color-line);
+  }
+  .rules > div:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .rules dt {
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+  .rules dd {
+    color: var(--color-ink-2);
+  }
+
+  .paybar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
   /* checkout Pay bar: fixed to the bottom on phones, inline from 768 px */
   @media (max-width: 767px) {
     .paybar {

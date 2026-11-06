@@ -8,9 +8,11 @@ import { checkoutAbi, deliveryCodeHash, termsHash, type Terms } from "@pop/share
 import { publicClientOf, useConfig } from "@/lib/client/config";
 import { getTestAccount, saveCode, walletOf } from "@/lib/client/wallet";
 import { newDeliveryCode } from "@/lib/client/code";
-import { priceLabel, short, usdt, when } from "@/lib/client/format";
+import { inr, short, usdt, when } from "@/lib/client/format";
 import { TestModeBanner } from "@/components/Banners";
-import { Details, ErrorBox, Notice, PageSkeleton, Progress } from "@/components/ui";
+import { Details, ErrorBox, Notice, PageSkeleton } from "@/components/ui";
+import { Checklist } from "@/components/Checklist";
+import { Money } from "@/components/receipt";
 import { orderRegisterMessage } from "@/lib/messages";
 
 type ListingResp = {
@@ -186,7 +188,9 @@ export default function Checkout() {
   const shipH = Math.round(l.terms.shipWithinSec / 60);
   const delH = Math.round(l.terms.deliverWithinSec / 60);
   const recomputed = termsHash(l.terms);
-  const price = priceLabel(l.priceInr, l.priceUnits, cfg.tokenDecimals);
+  const priceUsdt = usdt(l.priceUnits, cfg.tokenDecimals);
+  const done = Number(s.completed);
+  const lost = Number(s.lostDisputes);
   const stage = !busy ? -1 : step.startsWith("Adding") ? 0 : step.startsWith("Step 1") ? 1 : step.startsWith("Step 2") ? 2 : 3;
   const bad = {
     name: tried && !form.name.trim(),
@@ -195,112 +199,149 @@ export default function Checkout() {
   };
 
   return (
-    <div className="page stack">
+    <div className="page-wide stack">
       <TestModeBanner cfg={cfg} />
 
-      <section className="stack-sm">
-        <p className="text-sm text-muted">
-          Sold by{" "}
-          <Link href={`/verify/${l.sellerHandle}`}>@{l.sellerHandle}</Link>
-        </p>
-        <h1>{l.title}</h1>
-        <p className="text-lg font-semibold">{price}</p>
-      </section>
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-x-12">
+        <div className="stack lg:col-start-1">
+          <section className="flex items-start gap-4" aria-labelledby="product">
+            <div className="product-pic" role="img" aria-label={`Picture of ${l.title}`} style={l.imageUrl ? { backgroundImage: `url(${JSON.stringify(l.imageUrl)})` } : undefined} />
+            <div className="stack-sm min-w-0">
+              <p className="text-sm text-ink-2">
+                Sold by <Link href={`/verify/${l.sellerHandle}`}>@{l.sellerHandle}</Link>
+              </p>
+              <h1 id="product">{l.title}</h1>
+              <Money inr={inr(l.priceInr)} usdt={priceUsdt} />
+            </div>
+          </section>
 
-      <section aria-labelledby="protect" className="card stack-sm">
-        <h2 id="protect">Before you pay</h2>
-        {s.active ? (
-          <p>
-            <strong>{s.completed}</strong> protected orders completed, <strong>{s.lostDisputes}</strong> disputes lost. {TIER[s.handleTier] ?? "Unknown handle check"}.{" "}
-            <Link href={`/verify/${l.sellerHandle}`}>See the full record and reviews</Link>.
-          </p>
-        ) : (
-          <Notice tone="danger" title="Not an active PoP seller">
-            This seller is unknown or banned. Do not pay.
-          </Notice>
-        )}
-        <ul className="list-disc space-y-1 pl-5 text-ink-2">
-          <li>
-            If it isn&apos;t shipped within {shipH} {shipH === 1 ? "minute" : "minutes"}, you are refunded automatically.
-          </li>
-          <li>
-            If it doesn&apos;t arrive within {delH} {delH === 1 ? "minute" : "minutes"} of shipping, you are refunded automatically.
-          </li>
-          <li>@{l.sellerHandle} is paid only when you give your delivery code at the door.</li>
-          <li>You can report a problem after delivery. The length of that window is set by the seller&apos;s record.</li>
-        </ul>
-        <p className="text-sm text-muted">Demo timings are in minutes. Real orders use days.</p>
-        <Details summary="Show details">
-          <p>
-            Terms fingerprint <span className="mono">{short(l.termsHash)}</span>: {recomputed === l.termsHash ? "matches the terms above." : "DOES NOT MATCH the terms above. Do not pay."}
-          </p>
-          <p>
-            Your test wallet: <span className="mono">{short(buyer)}</span>, holding {bal ? `${usdt(bal.usdt, cfg.tokenDecimals)} test USDT` : "checking balance"}.
-          </p>
-          <p>This offer is valid until {when(Number(l.offer.validUntil))}.</p>
-        </Details>
-      </section>
-
-      <form
-        className="card stack"
-        aria-labelledby="deliver"
-        noValidate
-        onSubmit={(e) => {
-          e.preventDefault();
-          pay();
-        }}
-      >
-        <div>
-          <h2 id="deliver">Delivery details</h2>
-          <p className="hint">Only the seller can read these. They are stored encrypted.</p>
-        </div>
-        <div>
-          <label className="label" htmlFor="f-name">
-            Full name
-          </label>
-          <input id="f-name" className="field" autoComplete="name" aria-invalid={bad.name} aria-describedby={bad.name ? "e-name" : undefined} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          {bad.name && (
-            <p id="e-name" className="hint text-danger">
-              Enter your name so the courier knows who to ask for.
+          {s.active ? (
+            <p className="text-ink-2">
+              <strong className="text-ink">@{l.sellerHandle}</strong>: {done} protected {done === 1 ? "order" : "orders"} completed, {lost} {lost === 1 ? "dispute" : "disputes"} lost.{" "}
+              {TIER[s.handleTier] ?? "Unknown handle check"}. <Link href={`/verify/${l.sellerHandle}`}>See the record</Link>
             </p>
+          ) : (
+            <Notice tone="danger" title="Not an active PoP seller">
+              This seller is unknown or banned. Do not pay.
+            </Notice>
           )}
-        </div>
-        <div>
-          <label className="label" htmlFor="f-phone">
-            Phone number
-          </label>
-          <input id="f-phone" className="field" type="tel" inputMode="tel" autoComplete="tel" aria-invalid={bad.phone} aria-describedby={bad.phone ? "e-phone" : undefined} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-          {bad.phone && (
-            <p id="e-phone" className="hint text-danger">
-              Enter a phone number the courier can call.
-            </p>
-          )}
-        </div>
-        <div>
-          <label className="label" htmlFor="f-address">
-            Delivery address
-          </label>
-          <textarea id="f-address" className="field" rows={3} autoComplete="street-address" aria-invalid={bad.address} aria-describedby={bad.address ? "e-address" : undefined} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
-          {bad.address && (
-            <p id="e-address" className="hint text-danger">
-              Enter the full address, including the area and pin code.
-            </p>
-          )}
+
         </div>
 
-        {busy ? (
-          <Progress label="Payment progress" current={stage} steps={["Add test funds if needed", "Allow this exact amount", "Pay the seller's offer", "Save your order"]} />
-        ) : (
-          step && <ErrorBox what="Your payment did not go through." why={step} next="Nothing was taken unless you see an order page. Check your details and press Pay again." />
-        )}
+        <aside className="stack lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:pt-1" aria-labelledby="protect">
+          <div className="stack-sm">
+            <h2 id="protect">How this payment is protected</h2>
+            <dl className="rules">
+              <div>
+                <dt>Ship by</dt>
+                <dd>
+                  Within {shipH} {shipH === 1 ? "minute" : "minutes"} of paying. If not, you are refunded automatically.
+                </dd>
+              </div>
+              <div>
+                <dt>Deliver by</dt>
+                <dd>
+                  Within {delH} {delH === 1 ? "minute" : "minutes"} of shipping. If not, you are refunded automatically.
+                </dd>
+              </div>
+              <div>
+                <dt>Seller paid when</dt>
+                <dd>You give your delivery code at the door and the short window to report a problem has passed.</dd>
+              </div>
+            </dl>
+            <p className="text-sm text-muted">Demo timings are in minutes. Real orders use days.</p>
+          </div>
+          <Details summary="Show details">
+            <p>
+              Terms fingerprint <span className="mono">{short(l.termsHash)}</span>: {recomputed === l.termsHash ? "matches the terms above." : "DOES NOT MATCH the terms above. Do not pay."}
+            </p>
+            <p>
+              Your test wallet: <span className="mono">{short(buyer)}</span>, holding {bal ? `${usdt(bal.usdt, cfg.tokenDecimals)} test USDT` : "checking balance"}.
+            </p>
+            <p>This offer is valid until {when(Number(l.offer.validUntil))}.</p>
+          </Details>
+        </aside>
 
-        <div className="stack-sm">
-          <button type="submit" disabled={busy || !s.active} className="btn btn-primary btn-block">
-            {busy ? "Working on your payment" : `Pay ${price}`}
-          </button>
-          <p className="text-center text-sm text-muted">Each step takes about 5 seconds. Keep this page open.</p>
+        <div className="lg:col-start-1">
+          <form
+            className="stack"
+            aria-labelledby="deliver"
+            noValidate
+            onSubmit={(e) => {
+              e.preventDefault();
+              pay();
+            }}
+          >
+            <div className="border-t pt-6">
+              <h2 id="deliver">Delivery details</h2>
+              <p className="hint">Only the seller can read these. They are stored encrypted.</p>
+            </div>
+            <div>
+              <label className="label" htmlFor="f-name">
+                Full name
+              </label>
+              <input id="f-name" className="field" autoComplete="name" aria-invalid={bad.name} aria-describedby={bad.name ? "e-name" : undefined} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              {bad.name && (
+                <p id="e-name" className="hint text-danger">
+                  Enter your name so the courier knows who to ask for.
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="label" htmlFor="f-phone">
+                Phone number
+              </label>
+              <input id="f-phone" className="field" type="tel" inputMode="tel" autoComplete="tel" aria-invalid={bad.phone} aria-describedby={bad.phone ? "e-phone" : undefined} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              {bad.phone && (
+                <p id="e-phone" className="hint text-danger">
+                  Enter a phone number the courier can call.
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="label" htmlFor="f-address">
+                Delivery address
+              </label>
+              <textarea id="f-address" className="field" rows={3} autoComplete="street-address" aria-invalid={bad.address} aria-describedby={bad.address ? "e-address" : undefined} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+              {bad.address && (
+                <p id="e-address" className="hint text-danger">
+                  Enter the full address, including the area and pin code.
+                </p>
+              )}
+            </div>
+
+            {busy ? (
+              <Checklist label="Payment progress" current={stage} steps={["Add test funds if needed", "Allow this exact amount", "Pay the seller's offer", "Save your order"]} />
+            ) : (
+              step && <ErrorBox what="Your payment did not go through." why={step} next="Nothing was taken unless you see an order page. Check your details and press Pay again." />
+            )}
+
+            <p className="text-sm text-muted">Paying takes up to four steps of about 5 seconds each. Keep this page open.</p>
+            <div className="paybar">
+              <div className="min-w-0 md:hidden">
+                <span className="block text-xs text-ink-2">Total</span>
+                <Money inr={inr(l.priceInr)} usdt={priceUsdt} size="md" />
+              </div>
+              <button type="submit" disabled={busy || !s.active} className="btn btn-primary flex-1">
+                {busy ? (
+                    <>
+                      <span className="md:hidden">Paying</span>
+                      <span className="hidden md:inline">Working on your payment</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="md:hidden">Pay {inr(l.priceInr)}</span>
+                      <span className="hidden md:inline">
+                        Pay {inr(l.priceInr)} · {priceUsdt} test USDT
+                      </span>
+                    </>
+                  )}
+              </button>
+            </div>
+            <div className="paybar-space" aria-hidden="true" />
+          </form>
         </div>
-      </form>
+      </div>
     </div>
   );
 }
