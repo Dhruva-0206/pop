@@ -172,7 +172,7 @@ export default function Dashboard() {
           <div className="card flex items-center justify-between">
             <div>
               <div className="text-sm text-muted">Ready to withdraw</div>
-              <div className="text-xl font-semibold">{usdt(credit, cfg.tokenDecimals)} test USDT</div>
+              <div className="mono text-xl font-medium">{usdt(credit, cfg.tokenDecimals)} test USDT</div>
             </div>
             <button disabled={busy || credit === BigInt(0)} onClick={withdraw} className="btn btn-primary">
               Withdraw
@@ -186,8 +186,8 @@ export default function Dashboard() {
           {rows.map((r) => (
             <div key={r.orderId} className="card stack-sm text-sm">
               <div className="flex justify-between">
-                <span className="font-semibold">Order #{r.orderId}</span>
-                <span>{usdt(r.amountUnits, cfg.tokenDecimals)} test USDT</span>
+                <span className="mono font-semibold">Order #{r.orderId}</span>
+                <span className="mono">{usdt(r.amountUnits, cfg.tokenDecimals)} test USDT</span>
               </div>
               <div>{r.live ? STATE_LABEL[r.live.state] ?? r.live.state : "?"}</div>
               {r.delivery && (

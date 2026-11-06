@@ -159,7 +159,7 @@ export default function Onboard() {
 
       {st.status === "none" && (
         <div className="card stack-sm">
-          <div className="font-semibold">1. Your Instagram handle</div>
+          <h2>1. Your Instagram handle</h2>
           <input className="field" placeholder="@yourshop" aria-label="@yourshop" value={handle} onChange={(e) => setHandle(e.target.value)} />
           <button disabled={busy || !handle.trim()} onClick={requestCode} className="btn btn-primary btn-block">
             Get my bio code
@@ -169,7 +169,7 @@ export default function Onboard() {
 
       {st.status === "pending" && (
         <div className="card stack-sm">
-          <div className="font-semibold">2. Put this code in your Instagram bio</div>
+          <h2>2. Put this code in your Instagram bio</h2>
           <div className="rounded-control bg-surface p-3 text-center font-mono text-xl">{st.bioCode}</div>
           <div className="text-sm text-muted">
             A PoP team member checks @{st.handle}&apos;s bio and approves you. This page updates by itself. (Staff: /arbiter.)
@@ -181,7 +181,7 @@ export default function Onboard() {
 
       {st.status === "approved" && !registered && (
         <div className="card stack-sm">
-          <div className="font-semibold">3. Approved. Register on-chain</div>
+          <h2>3. Approved. Register on-chain</h2>
           <div className="text-sm text-muted">@{st.handle} was checked by the team (handle proof: tier 1). One transaction from your test wallet registers you.</div>
           <button disabled={busy || !st.registration} onClick={registerOnChain} className="btn btn-primary btn-block">
             {busy ? "Registering…" : "Register @" + st.handle}
@@ -191,7 +191,7 @@ export default function Onboard() {
 
       {registered && !st.listing && (
         <div className="card stack-sm">
-          <div className="font-semibold">4. Your product (you sign the offer in your wallet)</div>
+          <h2>4. Your product (you sign the offer in your wallet)</h2>
           <TxLink cfg={cfg} hash={regTx} label="registration" />
           <input className="field" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Product name" aria-label="Product name" />
           <div className="grid grid-cols-2 gap-2">
@@ -220,7 +220,7 @@ export default function Onboard() {
 
       {st.listing && (
         <div className="card stack-sm border-2 border-accent">
-          <div className="font-semibold">You&apos;re live: {st.listing.title}</div>
+          <h2>You&apos;re live: {st.listing.title}</h2>
           <div className="break-all rounded-control bg-surface p-2 text-sm">
             <a className="underline" href={link}>
               {link}

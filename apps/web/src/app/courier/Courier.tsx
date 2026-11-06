@@ -66,7 +66,7 @@ export default function Courier() {
   return (
     <div className="page-wide stack">
       <h1>Courier desk</h1>
-      <Notice tone="info" title="SIMULATED COURIER">
+      <Notice tone="neutral" title="SIMULATED COURIER">
         Operated by the PoP team for the demo. It is not a real delivery service.
       </Notice>
       <TestModeBanner cfg={cfg} />
@@ -76,8 +76,12 @@ export default function Courier() {
       </p>
 
       {authed === false && (
-        <div className="flex gap-2">
-          <input className="field flex-1" type="password" placeholder="Team passcode" aria-label="Team passcode" value={pass} onChange={(e) => setPass(e.target.value)} />
+        <div>
+          <label className="label" htmlFor="courier-pass">
+            Team passcode
+          </label>
+          <div className="flex gap-2">
+          <input id="courier-pass" className="field flex-1" type="password" value={pass} onChange={(e) => setPass(e.target.value)} />
           <button
             className="btn btn-primary"
             onClick={async () => {
@@ -92,6 +96,7 @@ export default function Courier() {
           >
             Sign in
           </button>
+          </div>
         </div>
       )}
 
@@ -99,8 +104,8 @@ export default function Courier() {
         rows.map((r) => (
           <div key={r.orderId} className="card stack-sm text-sm">
             <div className="flex justify-between">
-              <span className="font-semibold">Order #{r.orderId}</span>
-              <span>{r.live ? STATE_LABEL[r.live.state] ?? r.live.state : "?"}</span>
+              <span className="mono font-semibold">Order #{r.orderId}</span>
+              <span className="text-ink-2">{r.live ? STATE_LABEL[r.live.state] ?? r.live.state : "?"}</span>
             </div>
             <div className="text-xs text-muted">
               {r.trackingNo ? `Tracking ${r.trackingNo} · ` : ""}

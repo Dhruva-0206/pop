@@ -129,7 +129,7 @@ export default function Arbiter() {
       <h1 className="text-xl font-semibold">Arbiter and staff</h1>
 
       <section className="card stack-sm text-sm">
-        <div className="font-semibold">Arbiter wallet (TEST MODE: the key stays in this browser)</div>
+        <h2>Arbiter wallet (TEST MODE: the key stays in this browser)</h2>
         {addr ? (
           <div className="space-y-1">
             <div className="font-mono text-xs">{addr}</div>
@@ -147,13 +147,13 @@ export default function Arbiter() {
       </section>
 
       <section className="space-y-3">
-        <div className="font-semibold">Disputes waiting for a decision ({disputes.length})</div>
+        <h2>Disputes waiting for a decision ({disputes.length})</h2>
         {disputes.length === 0 && <div className="text-sm text-muted">None right now.</div>}
         {disputes.map((d) => (
           <div key={d.orderId} className="card stack-sm text-sm">
             <div className="flex justify-between">
-              <span className="font-semibold">Order #{d.orderId} · {d.sellerHandle ? `@${d.sellerHandle}` : d.seller.slice(0, 8)}</span>
-              <span>{usdt(d.amount, cfg.tokenDecimals)} test USDT</span>
+              <span className="mono font-semibold">Order #{d.orderId} · {d.sellerHandle ? `@${d.sellerHandle}` : d.seller.slice(0, 8)}</span>
+              <span className="mono">{usdt(d.amount, cfg.tokenDecimals)} test USDT</span>
             </div>
             <div className="text-xs text-muted">
               {d.kind === "handover-refused" ? "Courier reported: the buyer refused the handover." : "Buyer opened a dispute after delivery."}{" "}
@@ -172,7 +172,7 @@ export default function Arbiter() {
       </section>
 
       <section className="card stack-sm text-sm">
-        <div className="font-semibold">Ban a seller (permanent)</div>
+        <h2>Ban a seller (permanent)</h2>
         <div className="flex gap-2">
           <input className="field flex-1 min-w-0" placeholder="@handle" aria-label="@handle" value={handle} onChange={(e) => setHandle(e.target.value)} />
           <button disabled={!handle.trim()} onClick={lookup} className="btn btn-primary">Look up</button>
@@ -181,7 +181,7 @@ export default function Arbiter() {
           <div className="space-y-2">
             <div>
               @{seller.handle} · {seller.completed} of {seller.totalOrders} completed · {seller.lostDisputes} disputes lost ·{" "}
-              <b className={seller.banned ? "text-danger" : "text-accent-strong"}>{seller.banned ? "BANNED" : seller.active ? "active" : "inactive"}</b>
+              <span className={`stamp ml-1 text-sm ${seller.banned ? "text-danger" : "text-accent-strong"}`}>{seller.banned ? "Banned" : seller.active ? "Active" : "Inactive"}</span>
             </div>
             {!seller.banned && (
               <label className="flex items-center gap-2 text-xs">
@@ -206,7 +206,7 @@ export default function Arbiter() {
       </section>
 
       <section className="card stack-sm text-sm">
-        <div className="font-semibold">Seller onboarding (staff)</div>
+        <h2>Seller onboarding (staff)</h2>
         {staff === false ? (
           <div className="flex gap-2">
             <input type="password" className="field flex-1 min-w-0" placeholder="team passcode" aria-label="team passcode" value={pass} onChange={(e) => setPass(e.target.value)} />

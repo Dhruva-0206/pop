@@ -77,7 +77,7 @@ async function Live() {
             {row("Test USDT", <>{link("address", facts.token, facts.token)} ({facts.tokenDecimals} decimals)</>)}
             {row(`Treasury (fee ${facts.feeBps / 100}%)`, link("address", facts.treasury, facts.treasury))}
             {row("Windows", `${facts.shortWindow} s trusted sellers · ${facts.longWindow} s others · arbiter decides within ${facts.arbiterTimeout} s · trusted after ${facts.trustedMin} completed orders`)}
-            {row("Held right now", `${formatUnits(BigInt(facts.totalLocked), facts.tokenDecimals)} locked in open orders · ${formatUnits(BigInt(facts.totalCredit), facts.tokenDecimals)} waiting to be withdrawn`)}
+            {row("Held right now", `${Number(formatUnits(BigInt(facts.totalLocked), facts.tokenDecimals)).toFixed(2)} locked in open orders · ${Number(formatUnits(BigInt(facts.totalCredit), facts.tokenDecimals)).toFixed(2)} waiting to be withdrawn`)}
             {row("Deployed at block", facts.deployBlock)}
         </dl>
       </section>
@@ -95,7 +95,7 @@ async function Live() {
                 <tr>
                   <th>#</th>
                   <th>State</th>
-                  <th>USDT</th>
+                  <th className="text-right">USDT</th>
                   <th>Paid</th>
                   <th>Shipped</th>
                   <th>Delivered</th>
@@ -107,7 +107,7 @@ async function Live() {
                   <tr key={o.orderId}>
                     <td>{o.orderId}</td>
                     <td>{o.state}</td>
-                    <td>{formatUnits(BigInt(o.amount), facts.tokenDecimals)}</td>
+                    <td className="mono text-right">{Number(formatUnits(BigInt(o.amount), facts.tokenDecimals)).toFixed(2)}</td>
                     <td>{o.txs.funded ? link("tx", o.txs.funded) : ""}</td>
                     <td>{o.txs.shipped ? link("tx", o.txs.shipped) : ""}</td>
                     <td>{o.txs.delivered ? link("tx", o.txs.delivered) : ""}</td>
