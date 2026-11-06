@@ -197,12 +197,13 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 ## 3. Active claims
 | Agent or human | Task | Files claimed | Claimed at (IST) |
 |---|---|---|---|
+| agent 1 (Dhruva's agent) | readable review refusals on the order page | `apps/web/src/components/ReviewBox.tsx`, `apps/web/src/lib/client/review-errors.ts` (new) | Fri 19:07 |
 
 ## 4. Locks
 | Lock | Holder | Since | Note |
 |---|---|---|---|
 | chain (Whitechain 1874 and Arkiv writes) | free | | |
-| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | free | | |
+| fork (local anvil, schemas `pop_fork` and `kurta_31337`) | Dhruva's agent | Fri 19:07 | fork e2e for the review message change |
 | vercel (deploys and env changes) | free | | |
 
 ## 5. Requests between agents
