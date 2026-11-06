@@ -12,13 +12,13 @@ function need(name: string): string {
 export const POP_BASE_URL = () => process.env.POP_BASE_URL?.trim() || "http://localhost:3000";
 
 /**
- * Optional pin: set CHAIN_ID + RPC_URL + CHECKOUT_ADDRESS (+ REGISTRY_ADDRESS) and the on-chain recheck and the reputation reads
+ * Optional pin: set CHAIN_ID + RPC_URL + CHECKOUT_ADDRESS + REGISTRY_ADDRESS + DEPLOY_BLOCK and the on-chain recheck and the reputation reads
  * no longer rely on PoP to tell us which contract is the real one. Without them we fall back to PoP's public /api/config (dev).
  */
-export function pinnedChain(): { id: number; rpcUrl: string; checkout: Address; registry: Address } | undefined {
+export function pinnedChain(): { id: number; rpcUrl: string; checkout: Address; registry: Address; deployBlock: string } | undefined {
   const e = process.env;
-  if (e.CHAIN_ID && e.RPC_URL && e.CHECKOUT_ADDRESS && e.REGISTRY_ADDRESS) {
-    return { id: Number(e.CHAIN_ID), rpcUrl: e.RPC_URL, checkout: e.CHECKOUT_ADDRESS as Address, registry: e.REGISTRY_ADDRESS as Address };
+  if (e.CHAIN_ID && e.RPC_URL && e.CHECKOUT_ADDRESS && e.REGISTRY_ADDRESS && e.DEPLOY_BLOCK) {
+    return { id: Number(e.CHAIN_ID), rpcUrl: e.RPC_URL, checkout: e.CHECKOUT_ADDRESS as Address, registry: e.REGISTRY_ADDRESS as Address, deployBlock: e.DEPLOY_BLOCK };
   }
   return undefined;
 }

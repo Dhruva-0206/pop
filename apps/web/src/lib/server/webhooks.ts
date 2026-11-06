@@ -1,6 +1,6 @@
 import "server-only";
 import type { Address, Hex } from "viem";
-import { checkoutAbi } from "@pop/shared";
+import { checkoutAbi, chunkedLogs } from "@pop/shared";
 import { decryptPII } from "@pop/shared/server/crypto";
 import { deployment, encKey, net, pub, store } from "./chain";
 import { signWebhook } from "./merchants";
@@ -20,7 +20,7 @@ const EVENT_TYPE = {
   OrderRefunded: "order.refunded",
 } as const;
 type EventName = keyof typeof EVENT_TYPE;
-const CHUNK = BigInt(20_000);
+const CHUNK = BigInt(9_000); // the Whitechain RPC rejects eth_getLogs over 10,000 blocks
 const MAX_ATTEMPTS = 8;
 const BACKOFF_SEC = 20;
 const MIN_INTERVAL_MS = 1500;
@@ -60,7 +60,10 @@ async function run(): Promise<Summary> {
     const k = orderId.toString();
     const hit = orderInfo.get(k);
     if (hit) return hit;
-    const evs = await pub.getContractEvents({ address: d.checkout, abi: checkoutAbi, eventName: "OrderFunded", args: { orderId }, fromBlock: BigInt(d.deployBlock), toBlock: "latest" });
+    const tip = await pub.getBlockNumber();
+    const evs = await chunkedLogs(BigInt(d.deployBlock), tip, (fromBlock, toBlock) =>
+      pub.getContractEvents({ address: d.checkout, abi: checkoutAbi, eventName: "OrderFunded", args: { orderId }, fromBlock, toBlock }),
+    );
     const e = evs[0];
     if (!e) return undefined;
     const v = { seller: e.args.seller!, buyer: e.args.buyer!, amount: e.args.amount!, txHash: e.transactionHash, listingId: e.args.listingId! };

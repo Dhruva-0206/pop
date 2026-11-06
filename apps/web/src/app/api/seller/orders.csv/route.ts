@@ -1,6 +1,6 @@
 import { connection } from "next/server";
 import { formatUnits, type Address } from "viem";
-import { checkoutAbi, ORDER_STATES } from "@pop/shared";
+import { checkoutAbi, chunkedLogs, ORDER_STATES } from "@pop/shared";
 import { getSession } from "@/lib/server/auth";
 import { deployment, net, pub, store } from "@/lib/server/chain";
 
@@ -29,14 +29,19 @@ export async function GET() {
   if (!s) return new Response("sign in", { status: 401 });
   const seller = s.wallet as Address;
   const d = deployment();
-  const range = { address: d.checkout, abi: checkoutAbi, fromBlock: BigInt(d.deployBlock), toBlock: "latest" as const };
+  const latest = await pub.getBlockNumber();
+  const from = BigInt(d.deployBlock);
+  const base = { address: d.checkout, abi: checkoutAbi } as const;
 
-  const funded = (await pub.getContractEvents({ ...range, eventName: "OrderFunded", args: { seller } })).slice(-MAX_ORDERS);
+  const funded = (
+    await chunkedLogs(from, latest, (fromBlock, toBlock) => pub.getContractEvents({ ...base, eventName: "OrderFunded", args: { seller }, fromBlock, toBlock }))
+  ).slice(-MAX_ORDERS);
   const ids = funded.map((e) => e.args.orderId!);
   const byOrder = async (eventName: "OrderShipped" | "OrderDelivered" | "OrderReleased" | "OrderRefunded" | "DisputeResolved") => {
     const m = new Map<string, Hex>();
     if (!ids.length) return m;
-    for (const e of await pub.getContractEvents({ ...range, eventName, args: { orderId: ids } })) m.set(e.args.orderId!.toString(), e.transactionHash);
+    const evs = await chunkedLogs(from, latest, (fromBlock, toBlock) => pub.getContractEvents({ ...base, eventName, args: { orderId: ids }, fromBlock, toBlock }));
+    for (const e of evs) m.set(e.args.orderId!.toString(), e.transactionHash);
     return m;
   };
   type Hex = `0x${string}`;

@@ -5,3 +5,4 @@ export * from "./network";
 export * from "./code";
 export * from "./abi";
 export * from "./terms";
+export * from "./logs";

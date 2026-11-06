@@ -1,6 +1,6 @@
 import "server-only";
 import { createPublicClient, http, type Address } from "viem";
-import { checkoutAbi, registryAbi } from "@pop/shared";
+import { checkoutAbi, chunkedLogs, registryAbi } from "@pop/shared";
 import { readSellerReviews } from "@pop/shared/server/arkiv";
 import { POP_BASE_URL, pinnedChain } from "./pop";
 
@@ -24,7 +24,7 @@ export async function readReputation(seller: Address): Promise<Reputation> {
   const attestor = process.env.POP_ATTESTOR_ADDRESS?.trim() as Address | undefined;
   const pin = pinnedChain();
   const cfg = pin
-    ? { rpcUrl: pin.rpcUrl, checkout: pin.checkout, registry: pin.registry, deployBlock: "0" }
+    ? { rpcUrl: pin.rpcUrl, checkout: pin.checkout, registry: pin.registry, deployBlock: pin.deployBlock }
     : await (await fetch(`${POP_BASE_URL()}/api/config`, { cache: "no-store" })).json();
   const pc = createPublicClient({ transport: http(cfg.rpcUrl) });
   const [active, completed, lostDisputes] = await Promise.all([
@@ -32,14 +32,10 @@ export async function readReputation(seller: Address): Promise<Reputation> {
     pc.readContract({ address: cfg.checkout, abi: checkoutAbi, functionName: "completed", args: [seller] }),
     pc.readContract({ address: cfg.checkout, abi: checkoutAbi, functionName: "lostDisputes", args: [seller] }),
   ]);
-  const funded = await pc.getContractEvents({
-    address: cfg.checkout,
-    abi: checkoutAbi,
-    eventName: "OrderFunded",
-    args: { seller },
-    fromBlock: BigInt(cfg.deployBlock ?? "0"),
-    toBlock: "latest",
-  });
+  const tip = await pc.getBlockNumber();
+  const funded = await chunkedLogs(BigInt(cfg.deployBlock ?? "0"), tip, (fromBlock, toBlock) =>
+    pc.getContractEvents({ address: cfg.checkout, abi: checkoutAbi, eventName: "OrderFunded", args: { seller }, fromBlock, toBlock }),
+  );
   const out: Reputation = {
     active,
     completed: completed.toString(),

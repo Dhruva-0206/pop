@@ -1,6 +1,6 @@
 import { NextResponse, connection } from "next/server";
 import { zeroAddress, type Address } from "viem";
-import { checkoutAbi, handleHash, registryAbi, ORDER_STATES } from "@pop/shared";
+import { checkoutAbi, chunkedLogs, handleHash, registryAbi, ORDER_STATES } from "@pop/shared";
 import { readSellerReviews } from "@pop/shared/server/arkiv";
 import { deployment, pub } from "@/lib/server/chain";
 import { arkivAccessKey, attestorAddress } from "@/lib/server/reviews";
@@ -39,14 +39,10 @@ export async function GET(_req: Request, ctx: { params: Promise<{ handle: string
   }
 
   // Denominator: every protected order ever paid to this seller (OrderFunded events, indexed by seller).
-  const funded = await pub.getContractEvents({
-    address: d.checkout,
-    abi: checkoutAbi,
-    eventName: "OrderFunded",
-    args: { seller: owner },
-    fromBlock: BigInt(d.deployBlock),
-    toBlock: "latest",
-  });
+  const latest = await pub.getBlockNumber();
+  const funded = await chunkedLogs(BigInt(d.deployBlock), latest, (fromBlock, toBlock) =>
+    pub.getContractEvents({ address: d.checkout, abi: checkoutAbi, eventName: "OrderFunded", args: { seller: owner }, fromBlock, toBlock }),
+  );
   const total = funded.length;
   let breakdown: { released: number; refunded: number; split: number; open: number } | null = null;
   if (total <= MAX_ORDERS_FOR_BREAKDOWN) {
