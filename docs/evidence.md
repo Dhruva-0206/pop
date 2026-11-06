@@ -4,12 +4,27 @@ Contract addresses, tx links, Arkiv entity keys and runnable queries. Newest fir
 ## Live deployments (Vercel Pro)
 | What | Value | Checked |
 |---|---|---|
-| PoP web | https://pop-web-six.vercel.app | Fri 06 Nov 2026 12:13 IST: `scripts/vercel-smoke.ts` 11 of 11 PASS |
-| Kurta Co. store | https://kurta-store.vercel.app | Fri 06 Nov 2026 12:13 IST: same run, store checks 4 of 4 PASS |
-| Merchant row for @kurta.co (schema `public`) | webhook URL `https://kurta-store.vercel.app/api/pop/webhook`, return origin `https://kurta-store.vercel.app` | Fri 06 Nov 2026 12:13 IST: `npm run seed:merchant` in testnet mode; output said `@kurta.co already registered`; no transaction sent |
-| Webhook dispatcher | `GET https://pop-web-six.vercel.app/api/webhooks/dispatch` answered 200 with `{"scannedTo":12370672,"enqueued":0,"delivered":0,"failed":0}` | Fri 06 Nov 2026 12:13 IST. Whether Vercel Cron fires is not proven yet (see parallel.md section 6) |
+| PoP web | https://pop-web-six.vercel.app | Fri 06 Nov 2026 17:43 IST: `scripts/vercel-smoke.ts` 11 of 11 PASS |
+| Kurta Co. store | https://kurta-store.vercel.app | Fri 06 Nov 2026 17:43 IST: same run, store checks 4 of 4 PASS |
+| Merchant row for @kurta.co (schema `public`) | webhook URL `https://kurta-store.vercel.app/api/pop/webhook`, return origin `https://kurta-store.vercel.app` | Fri 06 Nov 2026 17:43 IST: `npm run seed:merchant` in testnet mode; output said `@kurta.co already registered`; no transaction sent |
+| Webhook dispatcher | `GET https://pop-web-six.vercel.app/api/webhooks/dispatch` answered 200 with `{"scannedTo":12370672,"enqueued":0,"delivered":0,"failed":0}` | Fri 06 Nov 2026 17:43 IST. Whether Vercel Cron fires is not proven yet (see parallel.md section 6) |
 
 Re-run: `npx tsx scripts/vercel-smoke.ts https://pop-web-six.vercel.app https://kurta-store.vercel.app`
+
+## Order #11: paid through the web checkout by a browser (Fri 6 Nov 2026, about 17:55 to 17:58 IST)
+Kurta Co. on https://kurta-store.vercel.app, "Pay with PoP", PoP checkout on https://pop-web-six.vercel.app with the in-page TEST MODE wallet (a fresh browser wallet `0xF8262B3e43DE0E4d82ec7D0285a6720B1588428b`, funded by the faucet inside the page). Session `s_18f7d33d43a1153e`, store reference `KC-9E24AE5A`, 1.50 test USDT, TEST values and fake delivery details. The payment, the redirect and the order page were driven in Chrome. Shipping, the courier step, finalize and withdraw were sent by a script (`scripts/_drive-store-order.ts`, a temporary file not kept in the repo) with the store merchant wallet, the courier wallet and the deployer wallet as the third party; the buyer's 6 words were read from the order page.
+| Step | Tx |
+|---|---|
+| Faucet sends 0.05 WBT to the browser wallet (block 12371557) | [`0xdb689b94…9d3f30`](https://explorer.testnet.whitechain.io/tx/0xdb689b94211b153c43d16f368f42e73ab583973e9307166e3d7b508e6c9d3f30) |
+| Faucet sends 2 test USDT (block 12371559) | [`0x429f9c63…805100`](https://explorer.testnet.whitechain.io/tx/0x429f9c6320f0272c1d2866f70e93cba5f9ae79d13ad88ed1410bc5b0b8805100) |
+| Buyer `approve` 1.50 USDT (block 12371563) | [`0x40e3c5cd…42813a`](https://explorer.testnet.whitechain.io/tx/0x40e3c5cdfee85847b2c3f8f8ac7d1450513b5659acb593c1318c0afebb42813a) |
+| Buyer `pay`, order **#11** (block 12371566) | [`0xdaa45657…c19d17`](https://explorer.testnet.whitechain.io/tx/0xdaa45657ffae0e638b54ec9ef9e0fc1f0a0e4aecb13ea2e4a88de3bcedc19d17) |
+| Merchant `markShipped` (block 12371597) | [`0x038d8f8b…bee913`](https://explorer.testnet.whitechain.io/tx/0x038d8f8b501c44b7d8f5e73ee5e47427f074e8e93db83aa8f10e191534bee913) |
+| Courier `confirmDelivery` with the buyer's 6 words (block 12371600) | [`0xdf0db4c7…ad75e9`](https://explorer.testnet.whitechain.io/tx/0xdf0db4c7d65d68d4aa0f298621ee258abf0be924ba25bfafb906e95999ad75e9) |
+| Third party `finalize` after the problem window (block 12371635) to Released | [`0xee163815…d3d179`](https://explorer.testnet.whitechain.io/tx/0xee163815e16110c405d2918287c8cf075edbafc9e7c58e4beea6f7e464d3d179) |
+| Seller `withdraw` (block 12371638) | [`0x087e45bd…39fe3c`](https://explorer.testnet.whitechain.io/tx/0x087e45bd1420d224dc10618f1ac0aa79662f346ec74b82d5d2f2a2db0d39fe3c) |
+
+Store side (read from the live store, `GET /api/orders`, and from `webhook_deliveries` in schema `public`): order book entry `KC-9E24AE5A` is `released` with history funded, shipped, delivered, released, each with the on-chain state the store rechecked. Four webhooks (`order.funded`, `order.shipped`, `order.delivered`, `order.released`), all `delivered` on attempt 1. The store's `/orders` page shows the order as complete. PoP's "Back to Kurta Co." link points at `https://kurta-store.vercel.app/orders`. The proof page lists order 11 after the next read.
 
 ## Whitechain Sepolia (1874)
 | What | Value | Link |
