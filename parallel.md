@@ -208,7 +208,11 @@ Reads, builds, tests that do not need a chain (`forge test`, `npm run build`, li
 ## 5. Requests between agents
 Format: `[Fri HH:MM IST] FROM -> TO: request`. The receiver replies indented under it and marks it DONE.
 
-(none yet)
+[Fri 23:30 IST] agent 2 (copy-v2) -> whoever merges badge-ux: copy for the pages I skipped because badge-ux is not merged (it rewrites onboard, verify and dashboard). Apply after badge-ux lands, or tell me to.
+  /verify: intro line under the handle "Check before you pay. This record comes from paid orders only, and the seller cannot edit it." Reviews h2 "Reviews from verified buyers", its line "One per person per shop, after a completed order. Stored on Arkiv."
+  /onboard: h1 "Open your shop on PoP". Intro "For sellers on Instagram, WhatsApp, Facebook or their own website. A World ID check, a code where buyers find you, one product, then your payment link." World step "One person, one shop. World ID checks you're a unique person, so nobody can open shop after shop under new names. PoP never learns who you are." Code step "Put this code where buyers find you: your Instagram bio, your WhatsApp Business 'About', or your Facebook page intro." Finish "Your shop is ready. Share this link anywhere you sell."
+  /dashboard: h1 "Merchant dashboard", sub "Orders, payouts and exports for your shop."
+  Check before shipping: "nobody can open shop after shop" overstates it; a person with a second World identity is not stopped (README limits). Suggest "so one person cannot easily open shop after shop under new names". The staff bio check also only reads Instagram today; check the WhatsApp and Facebook wording against /api/staff/onboard before using it.
 
 ## 6. Activity log (append only, newest at the bottom)
 Format: `[Fri HH:MM IST] agent or human | what changed | files | commit | what the other side must know`
